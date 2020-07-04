@@ -1415,8 +1415,12 @@ InternalPrelinkKext64 (
                NumUndefinedSymbols
                );
     if (!Result) {
-      DEBUG ((DEBUG_INFO, "OCAK: Symbol %s was unresolved for kext %a\n",
-        MachoGetSymbolName64 (MachoContext, Symbol), Kext->Identifier));
+      DEBUG ((
+        DEBUG_INFO,
+        "OCAK: Symbol %s was unresolved for kext %a\n",
+        MachoGetSymbolName64 (MachoContext, Symbol),
+        Kext->Identifier
+        ));
       return EFI_LOAD_ERROR;
     }
   }
@@ -1644,7 +1648,7 @@ InternalPrelinkKext64 (
   // Reinitialize the Mach-O context to account for the changed __LINKEDIT
   // segment and file size.
   //
-  if (!MachoInitializeContext (MachoContext, MachHeader, (SegmentOffset + SegmentSize))) {
+  if (!MachoInitializeContext (MachoContext, MachHeader, (SegmentOffset + SegmentSize), MachoContext->ContainerOffset)) {
     //
     // This should never failed under normal and abnormal conditions.
     //
