@@ -26,7 +26,7 @@ buildutil() {
   pushd "${selfdir}/Utilities" || exit 1
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
-    echo "Building ${util}..."
+    echo "构建 ${util}..."
     make || exit 1
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
@@ -36,7 +36,7 @@ buildutil() {
     fi
 
     if [ "$(which i686-w64-mingw32-gcc)" != "" ]; then
-      echo "Building ${util} for Windows..."
+      echo "为windows构建 ${util}..."
       UDK_ARCH=Ia32 CC=i686-w64-mingw32-gcc STRIP=i686-w64-mingw32-strip DIST=Windows make clean || exit 1
       UDK_ARCH=Ia32 CC=i686-w64-mingw32-gcc STRIP=i686-w64-mingw32-strip DIST=Windows make || exit 1
     fi
@@ -47,14 +47,14 @@ buildutil() {
 
 package() {
   if [ ! -d "$1" ]; then
-    echo "Missing package directory"
+    echo "丢失包目录"
     exit 1
   fi
 
   local ver
   ver=$(grep OPEN_CORE_VERSION ./Include/Acidanthera/OpenCore.h | sed 's/.*"\(.*\)".*/\1/' | grep -E '^[0-9.]+$')
   if [ "$ver" = "" ]; then
-    echo "Invalid version $ver"
+    echo "无效版本 $ver"
     ver="UNKNOWN"
   fi
 
@@ -194,7 +194,8 @@ NO_ARCHIVES=0
 export SELFPKG
 export NO_ARCHIVES
 
-src=$(curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/efibuild.sh) && eval "$src" || exit 1
+# src=$(curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/efibuild.sh) && eval "$src" || exit 1
+src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval "$src" || exit 1
 
 cd Library/OcConfigurationLib || exit 1
 ./CheckSchema.py OcConfigurationLib.c || exit 1
