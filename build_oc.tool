@@ -142,8 +142,9 @@ package() {
   done
   cp "${selfdir}/Changelog.md" tmp/Docs/ || exit 1
   cp -r "${selfdir}/Docs/AcpiSamples/" tmp/Docs/AcpiSamples/ || exit 1
-
-  utilScpts=(
+  cp -r "${selfdir}/Resources/" tmp/EFI/OC/Resources/ || exit 1
+  
+ utilScpts=(
     "LegacyBoot"
     "CreateVault"
     "LogoutHook"
