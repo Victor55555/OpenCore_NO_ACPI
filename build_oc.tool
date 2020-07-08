@@ -199,3 +199,4 @@ src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval
 
 cd Library/OcConfigurationLib || exit 1
 ./CheckSchema.py OcConfigurationLib.c || exit 1
+echo "编译成功!"
