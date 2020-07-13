@@ -1,7 +1,7 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Tue Jun  2 03:55:18 2020
-%DIF ADD ../Configuration.tex        Sun Jun 28 10:17:00 2020
+%DIF DEL PreviousConfiguration.tex   Sun Jul 12 19:04:46 2020
+%DIF ADD ../Configuration.tex        Mon Jul 13 00:27:07 2020
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
@@ -1442,6 +1442,8 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 
   \emph{Note}: This quirk may potentially weaken firmware security, please use
   \texttt{RebuildAppleMemoryMap} if your firmware supports memory attributes table (MAT).
+  \DIFaddbegin \DIFadd{Refer to }\texttt{\DIFadd{OCABC: MAT support is 1/0}} \DIFadd{log entry to determine whether MAT is supported.
+}\DIFaddend 
 
 \item
   \texttt{ForceExitBootServices}\\
@@ -4528,7 +4530,9 @@ similar to the builtin text interface.
 
 OpenCanopy requires graphical resources located in \texttt{Resources} directory to run.
 Sample resources (fonts and images) can be found in
-\href{https://github.com/acidanthera/OcBinaryData}{OcBinaryData repository}.
+\href{https://github.com/acidanthera/OcBinaryData}{OcBinaryData repository}. \DIFaddbegin \DIFadd{You can find customised icons over the internet 
+(e.g. }\href{https://github.com/blackosx/OpenCanopyIcons}{here} \DIFadd{or }\href{https://applelife.ru/threads/kastomizacija-opencanopy.2945020/}{there}\DIFadd{).
+}\DIFaddend 
 
 OpenCanopy provides full support for \texttt{PickerAttributes} and offers a configurable
 builtin icon set. The default chosen icon set depends on the \texttt{DefaultBackgroundColor}
@@ -4646,7 +4650,8 @@ functioning. Feature highlights:
   \item Audio path is the base filename corresponding to a file identifier. For macOS bootloader audio paths refer to
   \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Apple/Protocol/AppleVoiceOver.h}{\texttt{APPLE\_VOICE\_OVER\_AUDIO\_FILE} definition}.
   For OpenCore audio paths refer to
-  \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Protocol/OcAudio.h}{\texttt{OC\_VOICE\_OVER\_AUDIO\_FILE} definition}.
+  \DIFdelbegin %DIFDELCMD < \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Protocol/OcAudio.h}{\texttt{OC\_VOICE\_OVER\_AUDIO\_FILE} definition}%%%
+\DIFdelend \DIFaddbegin \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Acidanthera/Protocol/OcAudio.h}{\texttt{OC\_VOICE\_OVER\_AUDIO\_FILE} definition}\DIFaddend .
   The only exception is OpenCore boot chime file, which is \texttt{OCEFIAudio\_VoiceOver\_Boot.wav}.
   \end{itemize}
 
@@ -4790,7 +4795,8 @@ functioning. Feature highlights:
     \item \texttt{-1} --- permit any release date to load (strongly discouraged).
     \item Other --- use custom minimal APFS release date, e.g. \texttt{20200401}
     for 2020/04/01. APFS release dates can be found in OpenCore boot log
-    and \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Library/OcApfsLib.h}{\texttt{OcApfsLib}}.
+    and \DIFdelbegin %DIFDELCMD < \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Library/OcApfsLib.h}{\texttt{OcApfsLib}}%%%
+\DIFdelend \DIFaddbegin \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Acidanthera/Library/OcApfsLib.h}{\texttt{OcApfsLib}}\DIFaddend .
   \end{itemize}
 
 \item
@@ -4814,7 +4820,8 @@ functioning. Feature highlights:
     \item \texttt{-1} --- permit any version to load (strongly discouraged).
     \item Other --- use custom minimal APFS version, e.g. \texttt{1412101001000000}
     from macOS Catalina 10.15.4. APFS versions can be found in OpenCore boot log
-    and \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Library/OcApfsLib.h}{\texttt{OcApfsLib}}.
+    and \DIFdelbegin %DIFDELCMD < \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Library/OcApfsLib.h}{\texttt{OcApfsLib}}%%%
+\DIFdelend \DIFaddbegin \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Acidanthera/Library/OcApfsLib.h}{\texttt{OcApfsLib}}\DIFaddend .
   \end{itemize}
 
 \end{enumerate}
@@ -5866,11 +5873,13 @@ you will need \texttt{debug=0x8} boot argument.
   necessary.
 
   Unfortunately for some quirks like \texttt{RebuildAppleMemoryMap},
-  \texttt{EnableWriteUnprotector}, \texttt{ProtectMemoryRegions},
-  \texttt{RebuildAppleMemoryMap}, \texttt{SetupVirtualMap},
-  and \texttt{SyncRuntimePermissions} there is no definite approach even on similar
-  systems, so trying all their combinations may be required for optimal setup.
-  Refer to individual quirk descriptions in this document for more details.
+  \texttt{EnableWriteUnprotector}, \texttt{ProtectMemoryRegions}\DIFdelbegin \DIFdel{,
+  }\texttt{\DIFdel{RebuildAppleMemoryMap}}%DIFAUXCMD
+\DIFdelend ,
+  \texttt{SetupVirtualMap}, and \texttt{SyncRuntimePermissions} there
+  is no definite approach even on similar systems, so trying all their
+  combinations may be required for optimal setup. Refer to individual quirk
+  descriptions in this document for more details.
 
 \end{enumerate}
 
