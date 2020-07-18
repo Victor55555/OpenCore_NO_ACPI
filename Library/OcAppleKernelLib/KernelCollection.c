@@ -201,7 +201,7 @@ KcRebuildMachHeader (
 
   CurrentSize  = MachHeader->CommandsSize + sizeof (*MachHeader);
   FilesetSize  = InternalKcGetKextFilesetSize (Context);
-  RequiredSize = FilesetSize + sizeof (MACH_LOAD_COMMAND_SEGMENT_64) + Context->PrelinkedInfoSegment->CommandSize;
+  RequiredSize = FilesetSize + sizeof (MACH_SEGMENT_COMMAND_64) + Context->PrelinkedInfoSegment->CommandSize;
 
   TextSegment = MachoGetSegmentByName64 (
     &Context->PrelinkedMachContext,
@@ -531,7 +531,7 @@ InternalKcConvertRelocToFixup (
     // if the previous one was the last.
     //
     if (IterFixup.Next != 0) {
-      ASSERT (IterFixup.Next > FixupDelta);
+      ASSERT (IterFixup.Next >= FixupDelta);
       NewFixup.Next = IterFixup.Next - FixupDelta;
     } else {
       NewFixup.Next = 0;
