@@ -28,13 +28,8 @@ buildutil() {
   pushd "${selfdir}/Utilities" || exit 1
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
-<<<<<<< HEAD
     echo "构建 ${util}..."
-    make || exit 1
-=======
-    echo "Building ${util}..."
     make -j $cores || exit 1
->>>>>>> b2e55152ea4ef45fb64d2267b4d4606165692b5c
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
     #
@@ -54,11 +49,7 @@ buildutil() {
 
 package() {
   if [ ! -d "$1" ]; then
-<<<<<<< HEAD
-    echo "丢失包目录"
-=======
-    echo "Missing package directory $1"
->>>>>>> b2e55152ea4ef45fb64d2267b4d4606165692b5c
+    echo "丢失包目录$1"
     exit 1
   fi
 
