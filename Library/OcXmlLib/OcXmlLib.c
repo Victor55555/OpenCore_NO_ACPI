@@ -52,6 +52,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 #define XML_EXPORT_MIN_ALLOCATION_SIZE 4096
 
+#define XML_PLIST_HEADER  "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
+
 struct XML_NODE_LIST_;
 struct XML_PARSER_;
 
@@ -1146,15 +1148,18 @@ CHAR8 *
 XmlDocumentExport (
   XML_DOCUMENT  *Document,
   UINT32        *Length,
-  UINT32        Skip
+  UINT32        Skip,
+  BOOLEAN       PrependPlistInfo
   )
 {
   CHAR8   *Buffer;
+  CHAR8   *NewBuffer;
   UINT32  AllocSize;
   UINT32  CurrentSize;
+  UINT32  NewSize;
 
   AllocSize = Document->Buffer.Length + 1;
-  Buffer    = AllocatePool (AllocSize);
+  Buffer = AllocatePool (AllocSize);
   if (Buffer == NULL) {
     XML_USAGE_ERROR ("XmlDocumentExport::failed to allocate");
     return NULL;
@@ -1163,12 +1168,41 @@ XmlDocumentExport (
   CurrentSize = 0;
   XmlNodeExportRecursive (Document->Root, &Buffer, &AllocSize, &CurrentSize, Skip);
 
+  if (PrependPlistInfo) {
+    //
+    // XmlNodeExportRecursive returns a size that does not include the null terminator,
+    // but the allocated buffer does. During this reallocation, we count the null terminator
+    // of the plist header instead to ensure allocated buffer is the proper size.
+    //
+    if (OcOverflowAddU32 (CurrentSize, L_STR_SIZE (XML_PLIST_HEADER), &NewSize)) {
+      FreePool (Buffer);
+      return NULL;
+    }
+
+    NewBuffer = AllocatePool (NewSize);
+    if (NewBuffer == NULL) {
+      FreePool (Buffer);
+      XML_USAGE_ERROR ("XmlDocumentExport::failed to allocate");
+      return NULL;
+    }
+    CopyMem (NewBuffer, XML_PLIST_HEADER, L_STR_SIZE_NT (XML_PLIST_HEADER));
+    CopyMem (&NewBuffer[L_STR_LEN (XML_PLIST_HEADER)], Buffer, CurrentSize);
+    FreePool (Buffer);
+
+    //
+    // Null terminator is not included in size returned by XmlBufferAppend.
+    //
+    CurrentSize = NewSize - 1;
+    Buffer      = NewBuffer;
+  }
+
   if (Length != NULL) {
     *Length = CurrentSize;
   }
 
   //
-  // XmlBufferAppend guarantees one more byte.
+  // Null terminator is not included in size returned by XmlBufferAppend,
+  // but the buffer is allocated to include it.
   //
   Buffer[CurrentSize] = '\0';
 
