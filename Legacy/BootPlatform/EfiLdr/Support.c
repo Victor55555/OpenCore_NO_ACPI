@@ -106,25 +106,28 @@ FindSpace (
   MaxNoPages       = 0;
   CurrentMemoryDescriptor = NULL;
   for (Index = 0; Index < *NumberOfMemoryMapEntries; Index++) {
-    if (EfiMemoryDescriptor[Index].PhysicalStart + LShiftU64(EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT) <= 0x100000) {
+    if (EfiMemoryDescriptor[Index].PhysicalStart + LShiftU64 (EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT) <= BASE_1MB) {
       continue;
     }
+
     if ((EfiMemoryDescriptor[Index].Type == EfiConventionalMemory) && 
         (EfiMemoryDescriptor[Index].NumberOfPages >= NoPages)) {
       if (EfiMemoryDescriptor[Index].PhysicalStart > MaxPhysicalStart) {
-        if (EfiMemoryDescriptor[Index].PhysicalStart + LShiftU64(EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT) <= 0x100000000ULL) {
+        if (EfiMemoryDescriptor[Index].PhysicalStart + LShiftU64 (EfiMemoryDescriptor[Index].NumberOfPages, EFI_PAGE_SHIFT) <= BASE_4GB) {
           MaxPhysicalStart = EfiMemoryDescriptor[Index].PhysicalStart;
           MaxNoPages       = EfiMemoryDescriptor[Index].NumberOfPages;
           CurrentMemoryDescriptor = &EfiMemoryDescriptor[Index];
         }
       }
     }
-    if ((EfiMemoryDescriptor[Index].Type == EfiReservedMemoryType) ||
-        (EfiMemoryDescriptor[Index].Type >= EfiACPIReclaimMemory) ) {
+
+    if (EfiMemoryDescriptor[Index].Type == EfiReservedMemoryType
+     || EfiMemoryDescriptor[Index].Type >= EfiACPIReclaimMemory) {
       continue;
     }
-    if ((EfiMemoryDescriptor[Index].Type == EfiRuntimeServicesCode) ||
-        (EfiMemoryDescriptor[Index].Type == EfiRuntimeServicesData)) {
+
+    if (EfiMemoryDescriptor[Index].Type == EfiRuntimeServicesCode
+      || EfiMemoryDescriptor[Index].Type == EfiRuntimeServicesData) {
       break;
     }
   }
@@ -136,7 +139,7 @@ FindSpace (
   if (MaxNoPages != NoPages) {
     CurrentMemoryDescriptor->NumberOfPages = MaxNoPages - NoPages;
     EfiMemoryDescriptor[*NumberOfMemoryMapEntries].Type          = Type;
-    EfiMemoryDescriptor[*NumberOfMemoryMapEntries].PhysicalStart = MaxPhysicalStart + LShiftU64(MaxNoPages - NoPages, EFI_PAGE_SHIFT);
+    EfiMemoryDescriptor[*NumberOfMemoryMapEntries].PhysicalStart = MaxPhysicalStart + LShiftU64 (MaxNoPages - NoPages, EFI_PAGE_SHIFT);
     EfiMemoryDescriptor[*NumberOfMemoryMapEntries].NumberOfPages = NoPages;
     EfiMemoryDescriptor[*NumberOfMemoryMapEntries].VirtualStart  = 0;
     EfiMemoryDescriptor[*NumberOfMemoryMapEntries].Attribute     = Attribute;
@@ -146,7 +149,7 @@ FindSpace (
     CurrentMemoryDescriptor->Attribute = Attribute;
   }
 
-  return (UINTN)(MaxPhysicalStart + LShiftU64(MaxNoPages - NoPages, EFI_PAGE_SHIFT));
+  return (UINTN)(MaxPhysicalStart + LShiftU64 (MaxNoPages - NoPages, EFI_PAGE_SHIFT));
 }
 
 VOID
@@ -250,11 +253,14 @@ GenMemoryMap (
       //
     }
 
+    //
+    // Note, that BaseAddress can be above BASE_4GB even on 32-bit systems.
+    //
     EfiAddMemoryDescriptor (
       NumberOfMemoryMapEntries,
       EfiMemoryDescriptor,
       Type,
-      (EFI_PHYSICAL_ADDRESS)(UINTN) BaseAddress,
+      (EFI_PHYSICAL_ADDRESS) BaseAddress,
       RShiftU64 (Length, EFI_PAGE_SHIFT),
       Attr
       );
