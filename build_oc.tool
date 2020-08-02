@@ -29,7 +29,7 @@ buildutil() {
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
     echo "构建 ${util}..."
-    make -j "$cores" || exit 1
+    makeme -j "$cores" >/dev/null || exit 1
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
     #
@@ -167,10 +167,10 @@ package() {
   booter="$(pwd)/../../../OpenDuetPkg/${tgt}/${arch}/boot"
 
   if [ -f "${booter}" ]; then
-    echo "Copying OpenDuetPkg boot file from ${booter}..."
+    echo "从${booter}复制OpenDuetPkg启动文件..."
     cp "${booter}" tmp/Utilities/LegacyBoot/boot || exit 1
   else
-    echo "Failed to find OpenDuetPkg at ${booter}!"
+    echo "在${booter}找不到OpenDuetPkg!"
   fi
 
   buildutil || exit 1
@@ -215,5 +215,8 @@ export NO_ARCHIVES
 src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval "$src" || exit 1
 
 cd Library/OcConfigurationLib || exit 1
-./CheckSchema.py OcConfigurationLib.c || exit 1
-echo "编译成功!"
+echo "----------------------------------------------------------------"
+echo "运行检查架构脚本......"
+./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
+echo "架构检查完成！"
+echo "编译成功!" && open $BUILDDIR/Binaries
