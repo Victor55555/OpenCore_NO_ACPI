@@ -634,7 +634,7 @@ OcMiscMiddleInit (
   *LoadHandle = OcHandle;
 
   DEBUG_CODE_BEGIN ();
-  if (Config->Misc.Debug.SysReport) {
+  if (OcHandle != NULL && Config->Misc.Debug.SysReport) {
     ProduceDebugReport (OcHandle);
   }
   DEBUG_CODE_END ();
