@@ -75,7 +75,28 @@ OcStartImage (
 {
   EFI_STATUS                       Status;
   EFI_CONSOLE_CONTROL_SCREEN_MODE  OldMode;
+  CHAR16                           *DevicePathText;
 
+    if (Chosen->DevicePath != NULL) {
+      DevicePathText = ConvertDevicePathToText (Chosen->DevicePath, FALSE, FALSE);
+      if ((Chosen->Type & OC_BOOT_APPLE_ANY) != 0 || StrStr(DevicePathText, L"\\System\\Library\\CoreServices\\boot.efi") != NULL) {
+        if (!mOpenCoreConfiguration.Booter.Quirks.EnableForAll) {
+          DEBUG ((DEBUG_INFO, "OC: OcLoadBooterUefiSupport...\n"));
+          OcLoadBooterUefiSupport (&mOpenCoreConfiguration);
+        }
+
+        if (!mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
+          DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for macOS...\n"));
+          OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+        }
+
+        DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
+        OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
+        DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
+        OcLoadDevPropsSupport (&mOpenCoreConfiguration);
+      }
+      FreePool (DevicePathText);
+    }
   OldMode = OcConsoleControlSetMode (EfiConsoleControlScreenGraphics);
 
   Status = gBS->StartImage (
@@ -122,8 +143,14 @@ OcMain (
   OcMiscMiddleInit (Storage, &mOpenCoreConfiguration, LoadPath, &mLoadHandle);
   DEBUG ((DEBUG_INFO, "OC: OcLoadUefiSupport...\n"));
   OcLoadUefiSupport (Storage, &mOpenCoreConfiguration, &mOpenCoreCpuInfo);
-  DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport...\n"));
-  OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+//   DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport...\n"));
+//   OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+  if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
+      DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for all OSes...\n"));
+      OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
+    }
+    DEBUG ((DEBUG_INFO, "OC: OcMiscLateInit...\n"));
+
   DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
   OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
   DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
