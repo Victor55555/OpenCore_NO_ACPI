@@ -29,7 +29,7 @@ buildutil() {
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
     echo "构建 ${util}..."
-    makeme -j "$cores" >/dev/null || exit 1
+    make -j "$cores" &>/dev/null || exit 1
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
     #
@@ -195,7 +195,7 @@ package() {
   cp "${selfdir}/Utilities/macserial/README.md" tmp/Utilities/macserial/ || exit 1
 
   pushd tmp || exit 1
-  zip -qr -FS ../"OpenCore-${ver}-${2}.zip" ./* || exit 1
+  zip -qr -FS ../"OpenCore-${ver}-${2}.zip" ./* >/dev/null || exit 1
   popd || exit 1
   rm -rf tmp || exit 1
   popd || exit 1
@@ -215,9 +215,8 @@ export NO_ARCHIVES
 src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval "$src" || exit 1
 
 cd Library/OcConfigurationLib || exit 1
-./CheckSchema.py OcConfigurationLib.c || exit 1
+./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
 echo "编译成功!"
-=======
 echo "----------------------------------------------------------------"
 echo "运行检查架构脚本......"
 ./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
