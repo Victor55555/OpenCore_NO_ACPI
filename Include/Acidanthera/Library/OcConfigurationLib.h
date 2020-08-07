@@ -283,7 +283,8 @@
   _(BOOLEAN                     , PickerAudioAssist           ,     , FALSE                               , ())                   \
   _(BOOLEAN                     , HideAuxiliary               ,     , FALSE                               , ())                   \
   _(BOOLEAN                     , PollAppleHotKeys            ,     , FALSE                               , ())                   \
-  _(BOOLEAN                     , ShowPicker                  ,     , FALSE                               , ())
+  _(BOOLEAN                     , ShowPicker                  ,     , FALSE                               , ())                   \
+  _(BOOLEAN                     , SkipCustomEntryCheck        ,     , FALSE                               , ())
   OC_DECLARE (OC_MISC_BOOT)
 
 #define OC_MISC_DEBUG_FIELDS(_, __) \
