@@ -195,7 +195,7 @@ package() {
   cp "${selfdir}/Utilities/macserial/README.md" tmp/Utilities/macserial/ || exit 1
 
   pushd tmp || exit 1
-  zip -qr -FS ../"OpenCore-${ver}-${2}.zip" ./* >/dev/null || exit 1
+  zip -qr -FS ../"OpenCore-Mod-${ver}-${2}.zip" ./* >/dev/null || exit 1
   popd || exit 1
   rm -rf tmp || exit 1
   popd || exit 1
