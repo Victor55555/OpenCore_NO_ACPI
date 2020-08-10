@@ -1,12 +1,14 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Wed Aug  5 06:12:32 2020
-%DIF ADD ../Configuration.tex        Wed Aug  5 06:19:42 2020
+%DIF DEL PreviousConfiguration.tex   Sat Aug  8 20:55:30 2020
+%DIF ADD ../Configuration.tex        Mon Aug 10 11:05:50 2020
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
-\usepackage{fixltx2e} % provides \textsubscript
+%DIF 6d6
+%DIF < \usepackage{fixltx2e} % provides \textsubscript
+%DIF -------
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{upquote}
@@ -2437,7 +2439,7 @@ entry choice will update till next manual reconfiguration.
   \hyperref[miscsecurityprops]{Security Properties} section below.
 
 \item
-  \texttt{Tools}\\
+  \texttt{Tools}\DIFaddbegin \label{misctools}\DIFaddend \\
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Description}: Add tool entries to boot picker.
 
@@ -2447,7 +2449,9 @@ entry choice will update till next manual reconfiguration.
   \emph{Note}: Select tools, for example, UEFI Shell, are very
   dangerous and \textbf{MUST NOT} appear in production configurations, especially
   in vaulted ones and protected with secure boot, as they may be used to easily
-  bypass secure boot chain.
+  bypass secure boot chain. \DIFaddbegin \DIFadd{For tool examples check the }\hyperref[uefitools]{UEFI}
+  \DIFadd{section of this document.
+}\DIFaddend 
 
 \end{enumerate}
 
@@ -2718,7 +2722,8 @@ entry choice will update till next manual reconfiguration.
   presses of \texttt{Escape} key to enter the boot menu.
 
   \emph{Note 3}: On Macs with problematic GOP it may be difficult to access Apple BootPicker.
-  To workaround this problem even without loading OpenCore \texttt{BootKicker} utility can be blessed.
+  \DIFdelbegin \DIFdel{To }\DIFdelend \DIFaddbegin \texttt{\DIFadd{BootKicker}} \DIFadd{utility can be blessed to }\DIFaddend workaround this problem even without loading
+  OpenCore\DIFaddbegin \DIFadd{. On some Macs }\DIFaddend \texttt{BootKicker} \DIFdelbegin \DIFdel{utility can be blessed}\DIFdelend \DIFaddbegin \DIFadd{will not run from OpenCore}\DIFaddend .
 
 \end{enumerate}
 
@@ -2981,7 +2986,25 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   to set the default boot option in boot picker.
 
 \item
-  \texttt{AuthRestart}\\
+  \DIFaddbegin \texttt{\DIFadd{ApECID}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ integer}}\DIFadd{, 64 bit}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{0}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Apple Enclave Identifier.
+}
+
+  \DIFadd{Setting this value to any (random) non-zero 64-bit integer will allow using
+  personalised Apple Secure Boot identifiers. This value set and
+  }\texttt{\DIFadd{SecureBootModel}} \DIFadd{valid and not }\texttt{\DIFadd{Disabled}} \DIFadd{is equivalent to
+  to ahieve }\href{https://support.apple.com/en-us/HT208330}{\texttt{Full Security}}
+  \DIFadd{of Apple Secure Boot.
+}
+
+  \emph{\DIFadd{Note}}\DIFadd{: You will have to reinstall the operating system or use the recovery
+  after setting this value to non-zero.
+}
+
+\item
+  \DIFaddend \texttt{AuthRestart}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Enable \texttt{VirtualSMC}-compatible authenticated restart.
@@ -3023,10 +3046,9 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
 
   \emph{Note 2}: Be warned that while NVRAM reset executed from OpenCore should not erase the boot
   option created in \texttt{Bootstrap}, executing NVRAM reset prior to loading OpenCore will remove it.
-\DIFaddbegin 
 
 \item
-  \texttt{\DIFadd{DmgLoading}}\\
+  \DIFaddbegin \texttt{\DIFadd{DmgLoading}}\\
   \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ string}}\\
   \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{Signed}}\\
   \textbf{\DIFadd{Description}}\DIFadd{: Attempt to provide bootloader persistence.
@@ -3041,10 +3063,9 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   }\item \texttt{\DIFadd{Signed}} \DIFadd{--- only Apple-signed DMG images will load.
   }\item \texttt{\DIFadd{Any}} \DIFadd{--- any DMG images will mount as normal filesystems.
   }\end{itemize}
-\DIFaddend 
 
 \item
-  \texttt{ExposeSensitiveData}\\
+  \DIFaddend \texttt{ExposeSensitiveData}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{0x6}\\
   \textbf{Description}: Sensitive data exposure bitmask (sum) to operating system.
@@ -3075,7 +3096,9 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
 \end{lstlisting}
 
   To obtain OEM information use the following commands in macOS:
-\begin{lstlisting}[label=nvramver, style=ocbash]
+\DIFdelbegin %DIFDELCMD < \begin{lstlisting}[label=nvramver, style=ocbash]
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \begin{lstlisting}[label=nvramoem, style=ocbash]
 nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:oem-product # SMBIOS Type1 ProductName
 nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:oem-vendor  # SMBIOS Type2 Manufacturer
 nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:oem-board   # SMBIOS Type2 ProductName
@@ -3242,7 +3265,55 @@ rm vault.pub
   \item \texttt{OC\_SCAN\_ALLOW\_DEVICE\_NVME}
   \end{itemize}
 
-\end{enumerate}
+\DIFaddbegin \item
+  \texttt{\DIFadd{SecureBootModel}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ string}}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{Default}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Apple Secure Boot hardware model.
+}
+
+  \DIFadd{Defines Apple Secure Boot hardware model and policy. Specifying
+  this value defines which operating systems will be bootable.
+  Operating systems shipped before the specified model was released
+  will not boot. Valid values:
+}
+
+  \begin{itemize}
+  \tightlist
+  \item \texttt{\DIFadd{Default}} \DIFadd{--- Recent available model, currently set to }\texttt{\DIFadd{j215}}\DIFadd{.
+  }\item \texttt{\DIFadd{Disabled}} \DIFadd{--- No model, Secure Boot will be disabled.
+  }\item \texttt{\DIFadd{j137}} \DIFadd{--- }\texttt{\DIFadd{iMacPro1,1}}
+  \item \texttt{\DIFadd{j680}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro15,1}}
+  \item \texttt{\DIFadd{j132}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro15,2}}
+  \item \texttt{\DIFadd{j174}} \DIFadd{--- }\texttt{\DIFadd{Macmini8,1}}
+  \item \texttt{\DIFadd{j140k}} \DIFadd{--- }\texttt{\DIFadd{MacBookAir8,1}}
+  \item \texttt{\DIFadd{j780}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro15,3}}
+  \item \texttt{\DIFadd{j213}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro15,4}}
+  \item \texttt{\DIFadd{j140a}} \DIFadd{--- }\texttt{\DIFadd{MacBookAir8,2}}
+  \item \texttt{\DIFadd{j152f}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro16,1}}
+  \item \texttt{\DIFadd{j160}} \DIFadd{--- }\texttt{\DIFadd{MacPro7,1}}
+  \item \texttt{\DIFadd{j230k}} \DIFadd{--- }\texttt{\DIFadd{MacBookAir9,1}}
+  \item \texttt{\DIFadd{j214k}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro16,2}}
+  \item \texttt{\DIFadd{j223}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro16,3}}
+  \item \texttt{\DIFadd{j215}} \DIFadd{--- }\texttt{\DIFadd{MacBookPro16,4}}
+  \item \texttt{\DIFadd{j185}} \DIFadd{--- }\texttt{\DIFadd{iMac20,1}}
+  \item \texttt{\DIFadd{j185f}} \DIFadd{--- }\texttt{\DIFadd{iMac20,2}}
+  \end{itemize}
+
+  \texttt{\DIFadd{PlatformInfo}} \DIFadd{and }\texttt{\DIFadd{SecureBootModel}} \DIFadd{are independent,
+  allowing to enabling Apple Secure Boot with any SMBIOS. Setting
+  }\texttt{\DIFadd{SecureBootModel}} \DIFadd{to any valid value but }\texttt{\DIFadd{Disabled}} \DIFadd{is equivalent to
+  }\href{https://support.apple.com/en-us/HT208330}{\texttt{Medium Security}}
+  \DIFadd{of Apple Secure Boot. To achieve }\texttt{\DIFadd{Full Security}} \DIFadd{one will need to
+  also specify }\texttt{\DIFadd{ApECID}} \DIFadd{value.
+}
+
+  \emph{\DIFadd{Note}}\DIFadd{: }\texttt{\DIFadd{Default}} \DIFadd{value will increase with time to support the latest
+  major release operating system. It is not recommended to use }\texttt{\DIFadd{ApECID}}
+  \DIFadd{and }\texttt{\DIFadd{Default}} \DIFadd{value together.
+}
+
+\DIFaddend \end{enumerate}
 
 \subsection{Entry Properties}\label{miscentryprops}
 
@@ -4523,11 +4594,12 @@ build -a X64 -b RELEASE -t XCODE5 -p FatPkg/FatPkg.dsc
 build -a X64 -b RELEASE -t XCODE5 -p MdeModulePkg/MdeModulePkg.dsc
 \end{lstlisting}
 
-\subsection{Tools}\label{uefitools}
+\subsection{Tools \DIFaddbegin \DIFadd{and Applications}\DIFaddend }\label{uefitools}
 
 Standalone tools may help to debug firmware and hardware. Some of the known tools are listed below.
-While some tools can be launched from within OpenCore many should be run separately either directly
-or from \texttt{Shell}.
+While some tools can be launched from within OpenCore\DIFdelbegin \DIFdel{many }\DIFdelend \DIFaddbegin \DIFadd{, see more details in
+the }\hyperref[misctools]{Tools} \DIFadd{subsection of the configuration, most }\DIFaddend should be run
+separately either directly or from \texttt{Shell}.
 
 To boot into OpenShell or any other tool directly save \texttt{OpenShell.efi}
 under the name of \texttt{EFI\textbackslash BOOT\textbackslash BOOTX64.EFI}
@@ -5383,7 +5455,16 @@ functioning. Feature highlights:
   version.
 
 \item
-  \texttt{AppleKeyMap}\\
+  \DIFaddbegin \texttt{\DIFadd{AppleImg4Verification}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ boolean}}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{false}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Reinstalls Apple IMG4 Verification protocol with a builtin
+  version. This protocol is used to verify }\texttt{\DIFadd{im4m}} \DIFadd{manifest files used by
+  Apple Secure Boot.
+}
+
+\item
+  \DIFaddend \texttt{AppleKeyMap}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Reinstalls Apple Key Map protocols with builtin
@@ -5399,7 +5480,15 @@ functioning. Feature highlights:
   \emph{Note}: Builtin version of Apple RTC RAM protocol may filter out
   I/O attempts to select RTC memory addresses. The list of addresses
   can be specified in \texttt{4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:rtc-blacklist}
-  variable as a data array.
+  variable as a data array\DIFaddbegin \DIFadd{.
+}
+
+\item
+  \texttt{\DIFadd{AppleSecureBoot}}\\
+  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ boolean}}\\
+  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{false}}\\
+  \textbf{\DIFadd{Description}}\DIFadd{: Reinstalls Apple Secure Boot protocol with a builtin
+  version}\DIFaddend .
 
 \item
   \texttt{AppleSmcIo}\\
