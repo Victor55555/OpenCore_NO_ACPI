@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/MemoryAllocationLib.h>
 #include <Library/OcAppleKernelLib.h>
 #include <Library/OcMiscLib.h>
+#include <Library/OcAppleImg4Lib.h>
 #include <Library/OcStringLib.h>
 #include <Library/OcVirtualFsLib.h>
 #include <Library/PrintLib.h>
@@ -28,6 +29,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 STATIC OC_STORAGE_CONTEXT  *mOcStorage;
 STATIC OC_GLOBAL_CONFIG    *mOcConfiguration;
 STATIC OC_CPU_INFO         *mOcCpuInfo;
+STATIC UINT8               mKernelDigest[SHA384_DIGEST_SIZE];
+
+STATIC UINT32              mOcDarwinVersion;
+
+STATIC CACHELESS_CONTEXT   mOcCachelessContext;
+STATIC BOOLEAN             mOcCachelessInProgress;
 
 STATIC
 UINT32
@@ -722,6 +729,76 @@ OcKernelProcessPrelinked (
 
 STATIC
 EFI_STATUS
+OcKernelInitCacheless (
+  IN     OC_GLOBAL_CONFIG       *Config,
+  IN     CACHELESS_CONTEXT      *Context,
+  IN     UINT32                 DarwinVersion,
+  IN     CHAR16                 *FileName,
+  IN     EFI_FILE_PROTOCOL      *ExtensionsDir,
+     OUT EFI_FILE_PROTOCOL      **File
+  )
+{
+  EFI_STATUS            Status;
+  UINT32                Index;
+
+  OC_KERNEL_ADD_ENTRY   *Kext;
+  CHAR8                 *BundlePath;
+  CHAR8                 *Comment;
+  UINT32                MaxKernel;
+  UINT32                MinKernel;
+
+  Status = CachelessContextInit (Context, FileName, ExtensionsDir);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Add kexts into cacheless context.
+  //
+  for (Index = 0; Index < Config->Kernel.Add.Count; Index++) {
+    Kext = Config->Kernel.Add.Values[Index];
+
+    if (!Kext->Enabled || Kext->PlistDataSize == 0) {
+      continue;
+    }
+
+    BundlePath  = OC_BLOB_GET (&Kext->BundlePath);
+    Comment     = OC_BLOB_GET (&Kext->Comment);
+    MaxKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MaxKernel));
+    MinKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MinKernel));
+
+    if (!OcMatchDarwinVersion (DarwinVersion, MinKernel, MaxKernel)) {
+      DEBUG ((
+        DEBUG_INFO,
+        "OC: Cacheless injection skips %a (%a) kext at %u due to version %u <= %u <= %u\n",
+        BundlePath,
+        Comment,
+        Index,
+        MinKernel,
+        DarwinVersion,
+        MaxKernel
+        ));
+      continue;
+    }
+
+    Status = CachelessContextAddKext (
+      Context,
+      Kext->PlistData,
+      Kext->PlistDataSize,
+      Kext->ImageData,
+      Kext->ImageDataSize
+      );
+    if (EFI_ERROR (Status)) {
+      CachelessContextFree (Context);
+      return Status;
+    }
+  }
+
+  return CachelessContextOverlayExtensionsDir (Context, File);
+}
+
+STATIC
+EFI_STATUS
 EFIAPI
 OcKernelFileOpen (
   IN  EFI_FILE_PROTOCOL       *This,
@@ -740,11 +817,28 @@ OcKernelFileOpen (
   EFI_FILE_PROTOCOL  *VirtualFileHandle;
   EFI_STATUS         PrelinkedStatus;
   EFI_TIME           ModificationTime;
-  UINT32             DarwinVersion;
   UINT32             ReservedInfoSize;
   UINT32             ReservedExeSize;
   UINT32             LinkedExpansion;
   UINT32             ReservedFullSize;
+
+  //
+  // Hook injected OcXXXXXXXX.kext reads from /S/L/E.
+  //
+  if (mOcCachelessInProgress
+    && OpenMode == EFI_FILE_MODE_READ
+    && StrnCmp (FileName, L"System\\Library\\Extensions\\Oc", L_STR_LEN (L"System\\Library\\Extensions\\Oc")) == 0) {
+    Status = CachelessContextPerformInject (&mOcCachelessContext, FileName, NewHandle);
+    DEBUG ((
+      DEBUG_INFO,
+      "OC: Hooking SLE injected file %s with %u mode gave - %r\n",
+      FileName,
+      (UINT32) OpenMode,
+      Status
+      ));
+
+    return Status;
+  }
 
   Status = SafeFileOpen (This, NewHandle, FileName, OpenMode, Attributes);
 
@@ -797,17 +891,27 @@ OcKernelFileOpen (
       &Kernel,
       &KernelSize,
       &AllocatedSize,
-      ReservedFullSize
+      ReservedFullSize,
+      mKernelDigest
       );
-    DEBUG ((DEBUG_INFO, "OC: Result of XNU hook on %s is %r\n", FileName, Status));
+    DEBUG ((
+      DEBUG_INFO,
+      "OC: Result of XNU hook on %s (%02X%02X%02X%02X) is %r\n",
+      FileName,
+      mKernelDigest[0],
+      mKernelDigest[1],
+      mKernelDigest[2],
+      mKernelDigest[3],
+      Status
+      ));
 
     if (!EFI_ERROR (Status)) {
-      DarwinVersion = OcKernelReadDarwinVersion (Kernel, KernelSize);
-      OcKernelApplyPatches (mOcConfiguration, DarwinVersion, NULL, Kernel, KernelSize);
+      mOcDarwinVersion = OcKernelReadDarwinVersion (Kernel, KernelSize);
+      OcKernelApplyPatches (mOcConfiguration, mOcDarwinVersion, NULL, Kernel, KernelSize);
 
       PrelinkedStatus = OcKernelProcessPrelinked (
         mOcConfiguration,
-        DarwinVersion,
+        mOcDarwinVersion,
         Kernel,
         &KernelSize,
         AllocatedSize,
@@ -842,12 +946,75 @@ OcKernelFileOpen (
         return EFI_OUT_OF_RESOURCES;
       }
 
+      OcAppleImg4RegisterOverride (mKernelDigest, Kernel, KernelSize);
+
       //
       // Return our handle.
       //
       *NewHandle = VirtualFileHandle;
       return EFI_SUCCESS;
     }
+  }
+
+  //
+  // Hook /S/L/E for cacheless boots.
+  //
+  if (OpenMode == EFI_FILE_MODE_READ
+    && StrCmp (FileName, L"System\\Library\\Extensions") == 0) {
+
+    //
+    // Free existing context if we are re-opening Extensions directory.
+    //
+    if (mOcCachelessInProgress) {
+      CachelessContextFree (&mOcCachelessContext);
+    }
+    mOcCachelessInProgress = FALSE;
+
+    OcKernelLoadKextsAndReserve (
+      mOcStorage,
+      mOcConfiguration,
+      &ReservedExeSize,
+      &ReservedInfoSize
+      );
+
+    //
+    // Initialize Extensions directory overlay for cacheless injection.
+    //
+    Status = OcKernelInitCacheless (
+      mOcConfiguration,
+      &mOcCachelessContext,
+      mOcDarwinVersion,
+      FileName,
+      *NewHandle,
+      &VirtualFileHandle
+      );
+    
+    DEBUG ((DEBUG_INFO, "OC: Result of SLE hook on %s is %r\n", FileName, Status));
+
+    if (!EFI_ERROR (Status)) {
+      mOcCachelessInProgress  = TRUE;
+      *NewHandle              = VirtualFileHandle;
+      return EFI_SUCCESS;
+    }
+  }
+
+  //
+  // Hook /S/L/E contents for processing during cacheless boots.
+  //
+  if (mOcCachelessInProgress
+    && OpenMode == EFI_FILE_MODE_READ
+    && StrnCmp (FileName, L"System\\Library\\Extensions\\", L_STR_LEN (L"System\\Library\\Extensions\\")) == 0) {
+      Status = CachelessContextHookBuiltin (
+        &mOcCachelessContext,
+        FileName,
+        *NewHandle,
+        &VirtualFileHandle
+        );
+
+      if (!EFI_ERROR (Status) && VirtualFileHandle != NULL) {
+        *NewHandle = VirtualFileHandle;
+        return EFI_SUCCESS;
+      }
   }
 
   //
@@ -869,9 +1036,11 @@ OcLoadKernelSupport (
   Status = EnableVirtualFs (gBS, OcKernelFileOpen);
 
   if (!EFI_ERROR (Status)) {
-    mOcStorage       = Storage;
-    mOcConfiguration = Config;
-    mOcCpuInfo       = CpuInfo;
+    mOcStorage              = Storage;
+    mOcConfiguration        = Config;
+    mOcCpuInfo              = CpuInfo;
+    mOcDarwinVersion        = 0;
+    mOcCachelessInProgress  = FALSE;
   } else {
     DEBUG ((DEBUG_ERROR, "OC: Failed to enable vfs - %r\n", Status));
   }
