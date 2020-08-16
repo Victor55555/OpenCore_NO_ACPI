@@ -6,9 +6,10 @@
 PROJECT = KextInject
 PRODUCT = $(PROJECT)$(SUFFIX)
 OBJS    = $(PROJECT).o \
-	Lilu.o \
-	Vsmc.o \
+	CommonPatches.o \
+	KernelVersion.o \
 	KextPatcher.o \
+	KxldState.o \
 	PrelinkedKext.o \
 	PrelinkedContext.o \
 	Vtables.o \
