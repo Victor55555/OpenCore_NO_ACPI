@@ -222,17 +222,47 @@ OcKernelLoadKextsAndReserve (
 }
 
 STATIC
+EFI_STATUS
+OcKernelApplyQuirk (
+  IN     KERNEL_QUIRK_NAME  Quirk,
+  IN     KERNEL_CACHE_TYPE  CacheType,
+  IN OUT VOID               *Context,
+  IN OUT PATCHER_CONTEXT    *KernelPatcher
+  )
+{
+  //
+  // Apply kernel quirks to kernel, kext patches to context.
+  //
+  if (Context == NULL) {
+    ASSERT (KernelPatcher != NULL);
+
+    return KernelQuirkApply (Quirk, KernelPatcher);
+  } else {
+    if (CacheType == CacheTypeCacheless) {
+      return CachelessContextAddQuirk ((CACHELESS_CONTEXT *) Context, Quirk);
+    } else if (CacheType == CacheTypeMkext) {
+      return MkextContextApplyQuirk ((MKEXT_CONTEXT *) Context, Quirk);
+    } else if (CacheType == CacheTypePrelinked) {
+      return PrelinkedContextApplyQuirk ((PRELINKED_CONTEXT *) Context, Quirk);
+    }
+  }
+
+  return EFI_UNSUPPORTED;
+}
+
+STATIC
 VOID
 OcKernelApplyPatches (
   IN     OC_GLOBAL_CONFIG  *Config,
   IN     UINT32            DarwinVersion,
-  IN     PRELINKED_CONTEXT *Context,
+  IN     KERNEL_CACHE_TYPE CacheType,
+  IN     VOID              *Context,
   IN OUT UINT8             *Kernel,
   IN     UINT32            Size
   )
 {
   EFI_STATUS             Status;
-  PATCHER_CONTEXT        Patcher;
+  PATCHER_CONTEXT        KernelPatcher;
   UINT32                 Index;
   PATCHER_GENERIC_PATCH  Patch;
   OC_KERNEL_PATCH_ENTRY  *UserPatch;
@@ -248,7 +278,7 @@ OcKernelApplyPatches (
     ASSERT (Kernel != NULL);
 
     Status = PatcherInitContextFromBuffer (
-      &Patcher,
+      &KernelPatcher,
       Kernel,
       Size
       );
@@ -283,21 +313,6 @@ OcKernelApplyPatches (
         MaxKernel
         ));
       continue;
-    }
-
-    if (!IsKernelPatch) {
-      Status = PatcherInitContextFromPrelinked (
-        &Patcher,
-        Context,
-        Target
-        );
-
-      if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_WARN, "OC: Kernel patcher %a (%a) init failure - %r\n", Target, Comment, Status));
-        continue;
-      } else {
-        DEBUG ((DEBUG_INFO, "OC: Kernel patcher %a (%a) init succeed\n", Target, Comment));
-      }
     }
 
     //
@@ -344,7 +359,18 @@ OcKernelApplyPatches (
     Patch.Skip    = UserPatch->Skip;
     Patch.Limit   = UserPatch->Limit;
 
-    Status = PatcherApplyGenericPatch (&Patcher, &Patch);
+    if (IsKernelPatch) {
+      Status = PatcherApplyGenericPatch (&KernelPatcher, &Patch);
+    } else {
+      if (CacheType == CacheTypeCacheless) {
+        Status = CachelessContextAddPatch ((CACHELESS_CONTEXT *) Context, Target, &Patch);
+      } else if (CacheType == CacheTypeMkext) {
+        Status = MkextContextApplyPatch ((MKEXT_CONTEXT *) Context, Target, &Patch);
+      } else if (CacheType == CacheTypePrelinked) {
+        Status = PrelinkedContextApplyPatch ((PRELINKED_CONTEXT *) Context, Target, &Patch);
+      }
+    }
+
     DEBUG ((
       EFI_ERROR (Status) ? DEBUG_WARN : DEBUG_INFO,
       "OC: Kernel patcher result %u for %a (%a) - %r\n",
@@ -357,55 +383,58 @@ OcKernelApplyPatches (
 
   if (!IsKernelPatch) {
     if (Config->Kernel.Quirks.AppleCpuPmCfgLock) {
-      PatchAppleCpuPmCfgLock (Context);
+      OcKernelApplyQuirk (KernelQuirkAppleCpuPmCfgLock, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.ExternalDiskIcons) {
-      PatchForceInternalDiskIcons (Context);
+      OcKernelApplyQuirk (KernelQuirkExternalDiskIcons, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.ThirdPartyDrives) {
-      PatchThirdPartyDriveSupport (Context);
+      OcKernelApplyQuirk (KernelQuirkThirdPartyDrives, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.XhciPortLimit) {
-      PatchUsbXhciPortLimit (Context);
+      OcKernelApplyQuirk (KernelQuirkXhciPortLimit1, CacheType, Context, NULL);
+      OcKernelApplyQuirk (KernelQuirkXhciPortLimit2, CacheType, Context, NULL);
+      OcKernelApplyQuirk (KernelQuirkXhciPortLimit3, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.DisableIoMapper) {
-      PatchAppleIoMapperSupport (Context);
+      OcKernelApplyQuirk (KernelQuirkDisableIoMapper, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.DisableRtcChecksum) {
-      PatchAppleRtcChecksum (Context);
+      OcKernelApplyQuirk (KernelQuirkDisableRtcChecksum, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.IncreasePciBarSize) {
-      PatchIncreasePciBarSize (Context);     
+      OcKernelApplyQuirk (KernelQuirkIncreasePciBarSize, CacheType, Context, NULL);     
     }
 
     if (Config->Kernel.Quirks.CustomSmbiosGuid) {
-      PatchCustomSmbiosGuid (Context);
+      OcKernelApplyQuirk (KernelQuirkCustomSmbiosGuid1, CacheType, Context, NULL);
+      OcKernelApplyQuirk (KernelQuirkCustomSmbiosGuid2, CacheType, Context, NULL);
     }
 
     if (Config->Kernel.Quirks.DummyPowerManagement) {
-      PatchDummyPowerManagement (Context);
+      OcKernelApplyQuirk (KernelQuirkDummyPowerManagement, CacheType, Context, NULL);
     }
   } else {
     if (Config->Kernel.Quirks.AppleXcpmCfgLock) {
-      PatchAppleXcpmCfgLock (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkAppleXcpmCfgLock, CacheType, NULL, &KernelPatcher);
     }
 
     if (Config->Kernel.Quirks.AppleXcpmExtraMsrs) {
-      PatchAppleXcpmExtraMsrs (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkAppleXcpmExtraMsrs, CacheType, NULL, &KernelPatcher);
     }
 
     if (Config->Kernel.Quirks.AppleXcpmForceBoost) {
-      PatchAppleXcpmForceBoost (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkAppleXcpmForceBoost, CacheType, NULL, &KernelPatcher);
     }
 
     if (Config->Kernel.Quirks.PanicNoKextDump) {
-      PatchPanicKextDump (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkPanicNoKextDump, CacheType, NULL, &KernelPatcher);
     }
 
     if (Config->Kernel.Emulate.Cpuid1Data[0] != 0
@@ -413,7 +442,7 @@ OcKernelApplyPatches (
       || Config->Kernel.Emulate.Cpuid1Data[2] != 0
       || Config->Kernel.Emulate.Cpuid1Data[3] != 0) {
       PatchKernelCpuId (
-        &Patcher,
+        &KernelPatcher,
         mOcCpuInfo,
         Config->Kernel.Emulate.Cpuid1Data,
         Config->Kernel.Emulate.Cpuid1Mask
@@ -421,11 +450,11 @@ OcKernelApplyPatches (
     }
 
     if (Config->Kernel.Quirks.LapicKernelPanic) {
-      PatchLapicKernelPanic (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkLapicKernelPanic, CacheType, NULL, &KernelPatcher);
     }
 
     if (Config->Kernel.Quirks.PowerTimeoutKernelPanic) {
-      PatchPowerStateTimeout (&Patcher);
+      OcKernelApplyQuirk (KernelQuirkPowerTimeoutKernelPanic, CacheType, NULL, &KernelPatcher);
     }
   }
 }
@@ -522,7 +551,7 @@ OcKernelProcessPrelinked (
   Status = PrelinkedContextInit (&Context, Kernel, *KernelSize, AllocatedSize);
 
   if (!EFI_ERROR (Status)) {
-    OcKernelApplyPatches (Config, DarwinVersion, &Context, NULL, 0);
+    OcKernelApplyPatches (Config, DarwinVersion, CacheTypePrelinked, &Context, NULL, 0);
 
     OcKernelBlockKexts (Config, DarwinVersion, &Context);
 
@@ -639,6 +668,8 @@ OcKernelProcessMkext (
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
+  OcKernelApplyPatches (Config, DarwinVersion, CacheTypeMkext, &Context, NULL, 0);
 
   for (Index = 0; Index < Config->Kernel.Add.Count; ++Index) {
     Kext = Config->Kernel.Add.Values[Index];
@@ -768,6 +799,11 @@ OcKernelInitCacheless (
     }
   }
 
+  //
+  // Process patches and blocks.
+  //
+  OcKernelApplyPatches (Config, DarwinVersion, CacheTypeCacheless, Context, NULL, 0);
+
   return CachelessContextOverlayExtensionsDir (Context, File);
 }
 
@@ -783,11 +819,12 @@ OcKernelFileOpen (
   )
 {
   EFI_STATUS         Status;
+  CONST CHAR8        *ForceCacheType;
+  KERNEL_CACHE_TYPE  MaxCacheTypeAllowed;
   BOOLEAN            Result;
   UINT8              *Kernel;
   UINT32             KernelSize;
   UINT32             AllocatedSize;
-  CHAR16             *FileNameCopy;
   EFI_FILE_PROTOCOL  *VirtualFileHandle;
   EFI_STATUS         PrelinkedStatus;
   EFI_TIME           ModificationTime;
@@ -796,6 +833,18 @@ OcKernelFileOpen (
   UINT32             NumReservedKexts;
   UINT32             LinkedExpansion;
   UINT32             ReservedFullSize;
+
+  //
+  // Prevent access to cache files depending on maximum cache type allowed.
+  //
+  ForceCacheType = OC_BLOB_GET (&mOcConfiguration->Kernel.Quirks.ForceKernelCache);
+  if (AsciiStrCmp (ForceCacheType, "Cacheless") == 0) {
+    MaxCacheTypeAllowed = CacheTypeCacheless;
+  } else if (AsciiStrCmp (ForceCacheType, "Mkext") == 0) {
+    MaxCacheTypeAllowed = CacheTypeMkext;
+  } else {
+    MaxCacheTypeAllowed = CacheTypePrelinked;
+  }
 
   //
   // Hook injected OcXXXXXXXX.kext reads from /S/L/E.
@@ -833,10 +882,13 @@ OcKernelFileOpen (
   // boot.efi uses /S/L/K/kernel as is to determine valid filesystem.
   // Just skip it to speedup the boot process.
   // On 10.9 mach_kernel is loaded for manual linking aferwards, so we cannot skip it.
+  // We also want to skip files named "kernel" that are part of kext bundles, and im4m.
   //
   if (OpenMode == EFI_FILE_MODE_READ
     && OcStriStr (FileName, L"kernel") != NULL
-    && StrCmp (FileName, L"System\\Library\\Kernels\\kernel") != 0) {
+    && StrCmp (FileName, L"System\\Library\\Kernels\\kernel") != 0
+    && OcStriStr (FileName, L".kext") == NULL
+    && OcStriStr (FileName, L".im4m") == NULL) {
 
     OcKernelLoadKextsAndReserve (
       mOcStorage,
@@ -884,7 +936,22 @@ OcKernelFileOpen (
 
     if (!EFI_ERROR (Status)) {
       mOcDarwinVersion = OcKernelReadDarwinVersion (Kernel, KernelSize);
-      OcKernelApplyPatches (mOcConfiguration, mOcDarwinVersion, NULL, Kernel, KernelSize);
+      OcKernelApplyPatches (mOcConfiguration, mOcDarwinVersion, 0, NULL, Kernel, KernelSize);
+
+      //
+      // Disable prelinked if forcing mkext or cacheless, but only on appropriate versions.
+      //
+      if ((OcStriStr (FileName, L"kernelcache") != NULL || OcStriStr (FileName, L"prelinkedkernel") != NULL)
+        && ((MaxCacheTypeAllowed == CacheTypeMkext && mOcDarwinVersion <= KERNEL_VERSION_SNOW_LEOPARD_MAX)
+        || (MaxCacheTypeAllowed == CacheTypeCacheless && mOcDarwinVersion <= KERNEL_VERSION_MAVERICKS_MAX))) {
+        DEBUG ((DEBUG_INFO, "OC: Blocking prelinked due to ForceKernelCache=%s: %a\n", FileName, ForceCacheType));
+
+        FreePool (Kernel);
+        (*NewHandle)->Close(*NewHandle);
+        *NewHandle = NULL;
+
+        return EFI_NOT_FOUND;
+      }
 
       PrelinkedStatus = OcKernelProcessPrelinked (
         mOcConfiguration,
@@ -906,20 +973,12 @@ OcKernelFileOpen (
       (*NewHandle)->Close(*NewHandle);
 
       //
-      // This was our file, yet firmware is dying.
+      // Virtualise newly created kernel.
       //
-      FileNameCopy = AllocateCopyPool (StrSize (FileName), FileName);
-      if (FileNameCopy == NULL) {
-        DEBUG ((DEBUG_WARN, "OC: Failed to allocate kernel name (%a) copy\n", FileName));
-        FreePool (Kernel);
-        return EFI_OUT_OF_RESOURCES;
-      }
-
-      Status = CreateVirtualFile (FileNameCopy, Kernel, KernelSize, &ModificationTime, &VirtualFileHandle);
+      Status = CreateVirtualFileFileNameCopy (FileName, Kernel, KernelSize, &ModificationTime, &VirtualFileHandle);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_WARN, "OC: Failed to virtualise kernel file (%a)\n", FileName));
+        DEBUG ((DEBUG_WARN, "OC: Failed to virtualise kernel file (%s) - %r\n", FileName, Status));
         FreePool (Kernel);
-        FreePool (FileNameCopy);
         return EFI_OUT_OF_RESOURCES;
       }
 
@@ -935,6 +994,17 @@ OcKernelFileOpen (
 
   if (OpenMode == EFI_FILE_MODE_READ
     && OcStriStr (FileName, L"Extensions.mkext") != NULL) {
+
+    //
+    // Disable mkext booting if forcing cacheless.
+    //
+    if (MaxCacheTypeAllowed == CacheTypeCacheless) {
+      DEBUG ((DEBUG_INFO, "OC: Blocking mkext due to ForceKernelCache=%s: %a\n", FileName, ForceCacheType));
+      (*NewHandle)->Close(*NewHandle);
+      *NewHandle = NULL;
+
+      return EFI_NOT_FOUND;
+    }
     
     OcKernelLoadKextsAndReserve (
       mOcStorage,
@@ -980,9 +1050,12 @@ OcKernelFileOpen (
 
         (*NewHandle)->Close(*NewHandle);
 
+        //
+        // Virtualise newly created mkext.
+        //
         Status = CreateVirtualFileFileNameCopy (FileName, Kernel, KernelSize, &ModificationTime, &VirtualFileHandle);
         if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "OC: Failed to virtualise mkext file (%a) - %r\n", FileName, Status));
+          DEBUG ((DEBUG_WARN, "OC: Failed to virtualise mkext file (%s) - %r\n", FileName, Status));
           FreePool (Kernel);
           return EFI_OUT_OF_RESOURCES;
         }
