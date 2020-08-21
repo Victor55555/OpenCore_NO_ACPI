@@ -887,7 +887,7 @@ OcKernelFileOpen (
   if (OpenMode == EFI_FILE_MODE_READ
     && OcStriStr (FileName, L"kernel") != NULL
     && StrCmp (FileName, L"System\\Library\\Kernels\\kernel") != 0
-    && OcStriStr (FileName, L".kext") == NULL
+    && OcStriStr (FileName, L".kext\\") == NULL
     && OcStriStr (FileName, L".im4m") == NULL) {
 
     OcKernelLoadKextsAndReserve (
@@ -917,6 +917,7 @@ OcKernelFileOpen (
     DEBUG ((DEBUG_INFO, "OC: Trying XNU hook on %s\n", FileName));
     Status = ReadAppleKernel (
       *NewHandle,
+      MachCpuTypeX8664,
       &Kernel,
       &KernelSize,
       &AllocatedSize,

@@ -379,6 +379,18 @@ OcLoadAppleSecureBoot (
     SecureBootPolicy = AppleImg4SbModeMedium;
   }
 
+  //
+  // We blindly trust DMG contents after signature verification
+  // essentially skipping secure boot in this case.
+  // Do not allow enabling one but not the other.
+  //
+  if (SecureBootPolicy != AppleImg4SbModeDisabled
+    && AsciiStrCmp (OC_BLOB_GET (&Config->Misc.Security.DmgLoading), "Any") == 0) {
+    DEBUG ((DEBUG_ERROR, "OC: Cannot use Secure Boot with Any DmgLoading!\n"));
+    CpuDeadLoop ();
+    return;
+  }
+
   DEBUG ((
     DEBUG_INFO,
     "OC: Loading Apple Secure Boot with %a (level %u)\n",
@@ -399,7 +411,7 @@ OcLoadAppleSecureBoot (
       return;
     }
 
-    Status = OcAppleSecureBootBootstrapValues (RealSecureBootModel);
+    Status = OcAppleSecureBootBootstrapValues (RealSecureBootModel, Config->Misc.Security.ApECID);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "OC: Failed to bootstrap SB values - %r\n", Status));
       return;
