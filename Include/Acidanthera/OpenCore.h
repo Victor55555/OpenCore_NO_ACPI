@@ -296,8 +296,8 @@ VOID
 OcMiscUefiQuirksLoaded (
   IN OC_GLOBAL_CONFIG   *Config
   );
-
-VOID
+  
+  VOID
 OcLoadBooterUefiSupport (
   IN OC_GLOBAL_CONFIG  *Config
   );

@@ -123,14 +123,6 @@ struct PRELINKED_KEXT_ {
   //
   UINT32                   NumberOfCxxSymbols;
   //
-  // Pointer to KXLD state (read only, it is allocated in PrelinkedStateKexts).
-  //
-  CONST VOID               *KxldState;
-  //
-  // Pointer to KXLD state (read only, it is allocated in PrelinkedStateKexts).
-  //
-  UINT32                   KxldStateSize;
-  //
   // Sorted symbol table used only for dependencies.
   //
   PRELINKED_KEXT_SYMBOL    *LinkedSymbolTable;
@@ -276,6 +268,7 @@ InternalConnectExternalSymtab (
 #define VTABLE_HEADER_SIZE_64  (VTABLE_HEADER_LEN_64 * VTABLE_ENTRY_SIZE_64)
 
 #define KERNEL_ADDRESS_MASK 0xFFFFFFFF00000000ULL
+#define KERNEL_ADDRESS_KEXT 0xFFFFFF7F00000000ULL
 #define KERNEL_ADDRESS_BASE 0xFFFFFF8000000000ULL
 #define KERNEL_FIXUP_OFFSET BASE_1MB
 
@@ -473,6 +466,23 @@ InternalKxldStateBuildLinkedVtables (
 EFI_STATUS
 InternalKxldStateRebuild (
   IN OUT PRELINKED_CONTEXT  *Context
+  );
+
+/**
+  Solve symbol through KXLD state.
+
+  @param[in] KxldState       KXLD state.
+  @param[in] KxldStateSize   KXLD state size.
+  @param[in] Name            Symbol name.
+
+  @retval Address on success.
+  @retval 0 on failure.
+**/
+UINT64
+InternalKxldSolveSymbol (
+  IN CONST VOID    *KxldState,
+  IN UINT32        KxldStateSize,
+  IN CONST CHAR8   *Name
   );
 
 #endif // PRELINKED_INTERNAL_H

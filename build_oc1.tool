@@ -29,10 +29,6 @@ buildutil() {
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
     echo "构建 ${util}..."
-<<<<<<< HEAD
-=======
-    make clean || exit 1
->>>>>>> 3809fb50d43a721a764a80280d5829d350825549
     make -j "$cores" &>/dev/null || exit 1
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
@@ -199,13 +195,9 @@ package() {
   cp "${selfdir}/Utilities/macserial/README.md" tmp/Utilities/macserial/ || exit 1
 
   pushd tmp || exit 1
-<<<<<<< HEAD
   zip -qr -FS ../"OpenCore-Mod-${ver}-${2}.zip" ./* >/dev/null || exit 1
-=======
-  zip -qr -FS ../"OpenCore-${ver}-${2}.zip" ./* >/dev/null || exit 1
->>>>>>> 3809fb50d43a721a764a80280d5829d350825549
   popd || exit 1
-  rm -rf tmp || exit 1
+  #rm -rf tmp || exit 1
   popd || exit 1
 }
 
@@ -229,8 +221,4 @@ echo "----------------------------------------------------------------"
 echo "运行检查架构脚本......"
 ./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
 echo "架构检查完成！"
-<<<<<<< HEAD
 echo "编译成功!" && open $BUILDDIR/Binaries
-=======
-echo "编译成功!" && open $BUILDDIR/Binaries
->>>>>>> 3809fb50d43a721a764a80280d5829d350825549
