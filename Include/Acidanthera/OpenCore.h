@@ -297,6 +297,17 @@ OcMiscUefiQuirksLoaded (
   IN OC_GLOBAL_CONFIG   *Config
   );
   
+  /**
+  Determine platform support for 64-bit kernel mode based
+  on kernel version.
+
+  @param[in]  KernelVersion   Kernel version.
+**/
+BOOLEAN
+OcPlatformIs64BitSupported (
+  IN UINT32     KernelVersion
+  );
+  
   VOID
 OcLoadBooterUefiSupport (
   IN OC_GLOBAL_CONFIG  *Config
