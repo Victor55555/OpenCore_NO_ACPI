@@ -46,7 +46,7 @@ ApfsNewPartitionArrived (
       &Handle
       );
     if (!EFI_ERROR (Status)) {
-      OcApfsConnectDevice (Handle);
+      OcApfsConnectDevice (Handle, TRUE);
     } else {
       break;
     }
@@ -87,7 +87,8 @@ ApfsMonitorNewPartitions (
 
 EFI_STATUS
 OcApfsConnectParentDevice (
-  IN EFI_HANDLE  Handle  OPTIONAL
+  IN EFI_HANDLE  Handle  OPTIONAL,
+  IN BOOLEAN     VerifyPolicy
   )
 {
   EFI_STATUS       Status;
@@ -119,7 +120,7 @@ OcApfsConnectParentDevice (
     if (!EFI_ERROR (Status2)) {
       PrefixLength = GetDevicePathSize (ParentDevicePath) - END_DEVICE_PATH_LENGTH;
     } else {
-      DEBUG ((DEBUG_INFO, "OCJS: No parent device path - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "OCJS: No parent device path - %r\n", Status2));
       ParentDevicePath = NULL;
     }
   }
@@ -135,7 +136,7 @@ OcApfsConnectParentDevice (
           (VOID **) &ChildDevicePath
           );
         if (EFI_ERROR (Status2)) {
-          DEBUG ((DEBUG_INFO, "OCJS: No child device path - %r\n", Status));
+          DEBUG ((DEBUG_INFO, "OCJS: No child device path - %r\n", Status2));
           continue;
         }
 
@@ -147,7 +148,8 @@ OcApfsConnectParentDevice (
       }
 
       Status2 = OcApfsConnectDevice (
-        HandleBuffer[Index]
+        HandleBuffer[Index],
+        VerifyPolicy
         );
       if (!EFI_ERROR (Status2)) {
         Status = Status2;
@@ -155,6 +157,8 @@ OcApfsConnectParentDevice (
     }
 
     FreePool (HandleBuffer);
+  } else {
+    DEBUG ((DEBUG_INFO, "OCJS: BlockIo buffer error - %r\n", Status));
   }
 
   return Status;
@@ -174,5 +178,5 @@ OcApfsConnectDevices (
     }
   }
 
-  return OcApfsConnectParentDevice (NULL);
+  return OcApfsConnectParentDevice (NULL, TRUE);
 }

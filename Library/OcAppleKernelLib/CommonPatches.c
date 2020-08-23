@@ -99,7 +99,8 @@ mAppleIntelCPUPowerManagementPatch2 = {
 STATIC
 EFI_STATUS
 PatchAppleCpuPmCfgLock (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -199,7 +200,8 @@ mXcpmCfgLockDbgPatch = {
 STATIC
 EFI_STATUS
 PatchAppleXcpmCfgLock (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -207,6 +209,11 @@ PatchAppleXcpmCfgLock (
   XCPM_MSR_RECORD     *Last;
 
   UINT32              Replacements;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_MOUNTAIN_LION_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping XcpmCfgLock on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Last = (XCPM_MSR_RECORD *) ((UINT8 *) MachoGetMachHeader64 (&Patcher->MachContext)
     + MachoGetFileSize (&Patcher->MachContext) - sizeof (XCPM_MSR_RECORD));
@@ -323,13 +330,19 @@ mMiscPwrMgmtDbgPatch = {
 STATIC
 EFI_STATUS
 PatchAppleXcpmExtraMsrs (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
   XCPM_MSR_RECORD     *Record;
   XCPM_MSR_RECORD     *Last;
   UINT32              Replacements;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_MOUNTAIN_LION_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping XcpmExtraMsrs on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Last = (XCPM_MSR_RECORD *) ((UINT8 *) MachoGetMachHeader64 (&Patcher->MachContext)
     + MachoGetFileSize (&Patcher->MachContext) - sizeof (XCPM_MSR_RECORD));
@@ -443,12 +456,18 @@ mPerfCtrlMax[] = {
 STATIC
 EFI_STATUS
 PatchAppleXcpmForceBoost (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   UINT8   *Start;
   UINT8   *Last;
   UINT8   *Current;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_MOUNTAIN_LION_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping XcpmForceBoost on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Start   = (UINT8 *) MachoGetMachHeader64 (&Patcher->MachContext);
   Last    = Start + MachoGetFileSize (&Patcher->MachContext) - EFI_PAGE_SIZE*2;
@@ -582,7 +601,8 @@ mRemoveUsbLimitIoP1Patch = {
 STATIC
 EFI_STATUS
 PatchUsbXhciPortLimit1 (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS  Status;
@@ -591,11 +611,16 @@ PatchUsbXhciPortLimit1 (
   // On 10.14.4 and newer IOUSBHostFamily also needs limit removal.
   // Thanks to ydeng discovering this.
   //
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION(18, 5, 0), 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping port patch IOUSBHostFamily on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
+
   Status = PatcherApplyGenericPatch (Patcher, &mRemoveUsbLimitIoP1Patch);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "OCAK: Failed to apply P1 patch com.apple.iokit.IOUSBHostFamily - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "OCAK: Failed to apply port patch com.apple.iokit.IOUSBHostFamily - %r\n", Status));
   } else {
-    DEBUG ((DEBUG_INFO, "OCAK: Patch success com.apple.iokit.IOUSBHostFamily\n"));
+    DEBUG ((DEBUG_INFO, "OCAK: Patch success port com.apple.iokit.IOUSBHostFamily\n"));
   }
 
   return Status;
@@ -604,13 +629,19 @@ PatchUsbXhciPortLimit1 (
 STATIC
 EFI_STATUS
 PatchUsbXhciPortLimit2 (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS  Status;
 
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_HIGH_SIERRA_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping legacy port patch AppleUSBXHCIPCI on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
+
   //
-  // TODO: Implement some locationID hack in IOUSBHFamily.
+  // TODO: Implement some locationID hack in IOUSBHostFamily.
   // The location ID is a 32 bit number which is unique among all USB devices in the system,
   // and which will not change on a system reboot unless the topology of the bus itself changes.
   // See AppleUSBHostPort::setPortLocation():
@@ -641,16 +672,31 @@ PatchUsbXhciPortLimit2 (
     DEBUG ((DEBUG_INFO, "OCAK: Failed to apply patch com.apple.driver.usb.AppleUSBXHCI - %r\n", Status));
   }
 
+  //
+  // TODO: Check when the patch changed actually.
+  //
+  if (EFI_ERROR (Status)
+    && OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_HIGH_SIERRA_MIN, KERNEL_VERSION_HIGH_SIERRA_MAX)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Assuming success for AppleUSBXHCI on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
+
   return Status;
 }
 
 STATIC
 EFI_STATUS
 PatchUsbXhciPortLimit3 (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS  Status;
+
+  if (!OcMatchDarwinVersion (KernelVersion, 0, KERNEL_VERSION_HIGH_SIERRA_MAX)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping legacy port patch AppleUSBXHCIPCI on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   //
   // If we are here, we are on legacy 10.13 or below, try the oldest patch.
@@ -660,6 +706,15 @@ PatchUsbXhciPortLimit3 (
     DEBUG ((DEBUG_INFO, "OCAK: Failed to apply patch com.apple.driver.usb.AppleUSBXHCIPCI - %r\n", Status));
   } else {
     DEBUG ((DEBUG_INFO, "OCAK: Patch success com.apple.driver.usb.AppleUSBXHCIPCI\n"));
+  }
+
+  //
+  // TODO: Check when the patch changed actually.
+  //
+  if (EFI_ERROR (Status)
+    && OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_HIGH_SIERRA_MIN, KERNEL_VERSION_HIGH_SIERRA_MAX)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Assuming success for AppleUSBXHCIPCI on %u\n", KernelVersion));
+    return EFI_SUCCESS;
   }
 
   return Status;
@@ -720,24 +775,39 @@ mIOAHCIBlockStoragePatchV2 = {
 STATIC
 EFI_STATUS
 PatchThirdPartyDriveSupport (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS       Status;
 
-    Status = PatcherApplyGenericPatch (Patcher, &mIOAHCIBlockStoragePatchV1);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "OCAK: Failed to apply patch com.apple.iokit.IOAHCIBlockStorage V1 - %r\n", Status));
-    } else {
-      DEBUG ((DEBUG_INFO, "OCAK: Patch success com.apple.iokit.IOAHCIBlockStorage V1\n"));
-    }
+  Status = PatcherApplyGenericPatch (Patcher, &mIOAHCIBlockStoragePatchV1);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Failed to apply patch com.apple.iokit.IOAHCIBlockStorage V1 - %r\n", Status));
+  } else {
+    DEBUG ((DEBUG_INFO, "OCAK: Patch success com.apple.iokit.IOAHCIBlockStorage V1\n"));
+  }
 
+  if (OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_CATALINA_MIN, 0)) {
     Status = PatcherApplyGenericPatch (Patcher, &mIOAHCIBlockStoragePatchV2);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_INFO, "OCAK: Failed to apply patch com.apple.iokit.IOAHCIBlockStorage V2 - %r\n", Status));
     } else {
       DEBUG ((DEBUG_INFO, "OCAK: Patch success com.apple.iokit.IOAHCIBlockStorage V2\n"));
     }
+  } else {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping IOAHCIBlockStorage V2 on %u\n", KernelVersion));
+  }
+
+  //
+  // This started to be required on 10.6.7 or so.
+  // We cannot trust which minor SnowLeo version is this, just let it pass.
+  //
+  if (EFI_ERROR (Status)
+    && OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_SNOW_LEOPARD_MIN, KERNEL_VERSION_SNOW_LEOPARD_MAX)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Assuming success for IOAHCIBlockStorage on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   return Status;
 }
@@ -771,7 +841,8 @@ mIOAHCIPortPatch = {
 STATIC
 EFI_STATUS
 PatchForceInternalDiskIcons (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -815,10 +886,16 @@ mAppleIoMapperPatch = {
 STATIC
 EFI_STATUS
 PatchAppleIoMapperSupport (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_MOUNTAIN_LION_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping AppleIoMapper patch on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Status = PatcherApplyGenericPatch (Patcher, &mAppleIoMapperPatch);
   if (EFI_ERROR (Status)) {
@@ -853,7 +930,8 @@ mAppleDummyCpuPmPatch = {
 STATIC
 EFI_STATUS
 PatchDummyPowerManagement (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -898,7 +976,8 @@ mIncreasePciBarSizePatch = {
 STATIC
 EFI_STATUS
 PatchIncreasePciBarSize (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -1037,6 +1116,7 @@ PatchKernelCpuIdLegacy (
   UINT8                 *StartPointer;
   UINT8                 *EndPointer;
   UINT8                 *Location;
+  UINT8                 *LocationEnd;
   UINT32                Signature[3];
   UINT32                Index;
   UINT32                MaxExt;
@@ -1067,23 +1147,18 @@ PatchKernelCpuIdLegacy (
 
   StartPointer = Record + sizeof (mKernelCpuidFindLegacyStart) + sizeof (UINT32);
 
-  STATIC CONST UINT8 mKernelCpuidFindLegacyEnd[9] = {
+  STATIC CONST UINT8 mKernelCpuidFindLegacyEnd1[6] = {
     0x00,                         ///< 0 from mov cs:byte_FFFFFF80006C590C, 0
     0xB8, 0x00, 0x00, 0x00, 0x80, ///< mov eax, 80000000h
-    0x0F, 0xA2,                   ///< cpuid
-    0x89                          ///< mov prefix from mov [rbp+var_40], eax
   };
 
   for (; Index < EFI_PAGE_SIZE; ++Index, ++Record) {
-    if (Record[0] == mKernelCpuidFindLegacyEnd[0]
-      && Record[1] == mKernelCpuidFindLegacyEnd[1]
-      && Record[2] == mKernelCpuidFindLegacyEnd[2]
-      && Record[3] == mKernelCpuidFindLegacyEnd[3]
-      && Record[4] == mKernelCpuidFindLegacyEnd[4]
-      && Record[5] == mKernelCpuidFindLegacyEnd[5]
-      && Record[6] == mKernelCpuidFindLegacyEnd[6]
-      && Record[7] == mKernelCpuidFindLegacyEnd[7]
-      && Record[8] == mKernelCpuidFindLegacyEnd[8]) {
+    if (Record[0] == mKernelCpuidFindLegacyEnd1[0]
+      && Record[1] == mKernelCpuidFindLegacyEnd1[1]
+      && Record[2] == mKernelCpuidFindLegacyEnd1[2]
+      && Record[3] == mKernelCpuidFindLegacyEnd1[3]
+      && Record[4] == mKernelCpuidFindLegacyEnd1[4]
+      && Record[5] == mKernelCpuidFindLegacyEnd1[5]) {
       break;
     }
   }
@@ -1092,23 +1167,35 @@ PatchKernelCpuIdLegacy (
     return EFI_NOT_FOUND;
   }
 
-  EndPointer = Record + 1;
-
-  STATIC CONST UINT8 mKernelCpuidFindLegacyLoc[8] = {
-    0xB8, 0x01, 0x00, 0x00, 0x00, ///< mov eax, 1
+  STATIC CONST UINT8 mKernelCpuidFindLegacyEnd2[3] = {
     0x0F, 0xA2,                   ///< cpuid
     0x89                          ///< mov prefix from mov [rbp+var_40], eax
   };
 
   for (; Index < EFI_PAGE_SIZE; ++Index, ++Record) {
-    if (Record[0] == mKernelCpuidFindLegacyLoc[0]
-      && Record[1] == mKernelCpuidFindLegacyLoc[1]
-      && Record[2] == mKernelCpuidFindLegacyLoc[2]
-      && Record[3] == mKernelCpuidFindLegacyLoc[3]
-      && Record[4] == mKernelCpuidFindLegacyLoc[4]
-      && Record[5] == mKernelCpuidFindLegacyLoc[5]
-      && Record[6] == mKernelCpuidFindLegacyLoc[6]
-      && Record[7] == mKernelCpuidFindLegacyLoc[7]) {
+    if (Record[0] == mKernelCpuidFindLegacyEnd2[0]
+      && Record[1] == mKernelCpuidFindLegacyEnd2[1]
+      && Record[2] == mKernelCpuidFindLegacyEnd2[2]) {
+      break;
+    }
+  }
+
+  if (Index >= EFI_PAGE_SIZE) {
+    return EFI_NOT_FOUND;
+  }
+
+  EndPointer = Record - 3;
+
+  STATIC CONST UINT8 mKernelCpuidFindLegacyLoc1[5] = {
+    0xB8, 0x01, 0x00, 0x00, 0x00, ///< mov eax, 1
+  };
+
+  for (; Index < EFI_PAGE_SIZE; ++Index, ++Record) {
+    if (Record[0] == mKernelCpuidFindLegacyLoc1[0]
+      && Record[1] == mKernelCpuidFindLegacyLoc1[1]
+      && Record[2] == mKernelCpuidFindLegacyLoc1[2]
+      && Record[3] == mKernelCpuidFindLegacyLoc1[3]
+      && Record[4] == mKernelCpuidFindLegacyLoc1[4]) {
       break;
     }
   }
@@ -1119,11 +1206,29 @@ PatchKernelCpuIdLegacy (
 
   Location = Record;
 
+  STATIC CONST UINT8 mKernelCpuidFindLegacyLoc2[3] = {
+    0x0F, 0xA2,                   ///< cpuid
+    0x89                          ///< mov prefix from mov [rbp+var_40], eax
+  };
+
+  for (; Index < EFI_PAGE_SIZE; ++Index, ++Record) {
+    if (Record[0] == mKernelCpuidFindLegacyLoc2[0]
+      && Record[1] == mKernelCpuidFindLegacyLoc2[1]
+      && Record[2] == mKernelCpuidFindLegacyLoc2[2]) {
+      break;
+    }
+  }
+
+  if (Index >= EFI_PAGE_SIZE) {
+    return EFI_NOT_FOUND;
+  }
+
+  LocationEnd = Record + 2;
+
   //
-  // Free 2 more bytes in the end by assigning EAX directly.
+  // Free 2+ more bytes in the end by assigning EAX directly.
   //
   AsmCpuid (0x80000000, &MaxExt, NULL, NULL, NULL);
-  EndPointer += 2;
   EndPointer[0] = 0xB8;
   CopyMem (&EndPointer[1], &MaxExt, sizeof (MaxExt));
 
@@ -1188,8 +1293,9 @@ PatchKernelCpuIdLegacy (
   *Location++ = 0xE9;
   CopyMem (Location, &Delta, sizeof (Delta));
   Location   += sizeof (Delta);
-  *Location++ = 0x90;
-  *Location++ = 0x90;
+  while (Location < LocationEnd) {
+    *Location++ = 0x90;
+  }
 
   //
   // Write virtualised CPUID.
@@ -1403,7 +1509,8 @@ mCustomSmbiosGuidPatch = {
 STATIC
 EFI_STATUS
 PatchCustomSmbiosGuid (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
@@ -1447,12 +1554,18 @@ mPanicKextDumpPatch = {
 STATIC
 EFI_STATUS
 PatchPanicKextDump (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS          Status;
   UINT8               *Record;
   UINT8               *Last;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_HIGH_SIERRA_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping XcpmCfgLock on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Last = ((UINT8 *) MachoGetMachHeader64 (&Patcher->MachContext)
     + MachoGetFileSize (&Patcher->MachContext) - EFI_PAGE_SIZE);
@@ -1597,7 +1710,8 @@ mLapicKernelPanicMasterPatch = {
 STATIC
 EFI_STATUS
 PatchLapicKernelPanic (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS  Status;
@@ -1666,10 +1780,16 @@ mPowerStateTimeoutPanicMasterPatch = {
 STATIC
 EFI_STATUS
 PatchPowerStateTimeout (
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS  Status;
+
+  if (!OcMatchDarwinVersion (KernelVersion, KERNEL_VERSION_CATALINA_MIN, 0)) {
+    DEBUG ((DEBUG_INFO, "OCAK: Skipping power state patch on %u\n", KernelVersion));
+    return EFI_SUCCESS;
+  }
 
   Status = PatcherApplyGenericPatch (Patcher, &mPowerStateTimeoutPanicMasterPatch);
   if (EFI_ERROR (Status)) {
@@ -1729,7 +1849,8 @@ mAppleRtcChecksumPatch = {
 STATIC
 EFI_STATUS
 PatchAppleRtcChecksum (
-  IN PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   EFI_STATUS Status;
@@ -1769,12 +1890,13 @@ KERNEL_QUIRK gKernelQuirks[] = {
 };
 
 EFI_STATUS
-KernelQuirkApply (
+KernelApplyQuirk (
   IN     KERNEL_QUIRK_NAME  Name,
-  IN OUT PATCHER_CONTEXT    *Patcher
+  IN OUT PATCHER_CONTEXT    *Patcher,
+  IN     UINT32             KernelVersion
   )
 {
   ASSERT (Patcher != NULL);
 
-  return gKernelQuirks[Name].PatchFunction (Patcher);
+  return gKernelQuirks[Name].PatchFunction (Patcher, KernelVersion);
 }

@@ -18,6 +18,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/OcAfterBootCompatLib.h>
 #include <Library/OcAppleKernelLib.h>
 #include <Library/OcMiscLib.h>
 #include <Library/OcAppleImg4Lib.h>
@@ -236,16 +237,19 @@ OcKernelApplyQuirk (
   //
   if (Context == NULL) {
     ASSERT (KernelPatcher != NULL);
+    return KernelApplyQuirk (Quirk, KernelPatcher, mOcDarwinVersion);
+  }
 
-    return KernelQuirkApply (Quirk, KernelPatcher);
-  } else {
-    if (CacheType == CacheTypeCacheless) {
-      return CachelessContextAddQuirk ((CACHELESS_CONTEXT *) Context, Quirk);
-    } else if (CacheType == CacheTypeMkext) {
-      return MkextContextApplyQuirk ((MKEXT_CONTEXT *) Context, Quirk);
-    } else if (CacheType == CacheTypePrelinked) {
-      return PrelinkedContextApplyQuirk ((PRELINKED_CONTEXT *) Context, Quirk);
-    }
+  if (CacheType == CacheTypeCacheless) {
+    return CachelessContextAddQuirk (Context, Quirk);
+  }
+  
+  if (CacheType == CacheTypeMkext) {
+    return MkextContextApplyQuirk (Context, Quirk, mOcDarwinVersion);
+  }
+
+  if (CacheType == CacheTypePrelinked) {
+    return PrelinkedContextApplyQuirk (Context, Quirk, mOcDarwinVersion);
   }
 
   return EFI_UNSUPPORTED;
@@ -753,7 +757,12 @@ OcKernelInitCacheless (
   UINT32                MaxKernel;
   UINT32                MinKernel;
 
-  Status = CachelessContextInit (Context, FileName, ExtensionsDir);
+  Status = CachelessContextInit (
+    Context,
+    FileName,
+    ExtensionsDir,
+    DarwinVersion
+    );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -820,6 +829,7 @@ OcKernelFileOpen (
   )
 {
   EFI_STATUS         Status;
+  EFI_STATUS         Status2;
   CONST CHAR8        *ForceCacheType;
   KERNEL_CACHE_TYPE  MaxCacheTypeAllowed;
   BOOLEAN            Result;
@@ -945,15 +955,24 @@ OcKernelFileOpen (
 
     if (!EFI_ERROR (Status)) {
       //
-      // Get kernel version. If this differs from what is cached, recheck 64-bit suitability.
+      // Recheck kernel version and expected vs actual bitness returned. If either of those differ,
+      // re-evaluate whether we can run 64-bit kernels on this platform.
       //
       DarwinVersion = OcKernelReadDarwinVersion (Kernel, KernelSize);
       if (DarwinVersion != mOcDarwinVersion || mUse32BitKernel != IsKernel32Bit) {
         //
+        // Query command line arch= argument and fallback to SMBIOS checking.
+        // Arch argument will force the desired arch.
+        //
+        Status2 = OcAbcIs32BitPreferred (&mUse32BitKernel);
+        if (EFI_ERROR (Status2)) {
+          mUse32BitKernel = !OcPlatformIs64BitSupported (DarwinVersion);
+        }
+
+        //
         // If a different kernel arch is required, but we did not originally read it,
         // we'll need to try to get the kernel again.
         //
-        mUse32BitKernel = !OcPlatformIs64BitSupported (DarwinVersion);
         if (mUse32BitKernel != IsKernel32Bit) {
           FreePool (Kernel);
 
@@ -987,8 +1006,9 @@ OcKernelFileOpen (
             // Ensure we are now matching the requested arch.
             //
             if (mUse32BitKernel != IsKernel32Bit) {
+              DEBUG ((DEBUG_WARN, "OC: %a kernel architecture is not available, aborting.\n", mUse32BitKernel ? "32-bit" : "64-bit"));
               FreePool (Kernel);
-              Status = EFI_INVALID_PARAMETER;
+              return EFI_INVALID_PARAMETER;
             }
           }
         }
