@@ -434,7 +434,8 @@ OcApfsConfigure (
 
 EFI_STATUS
 OcApfsConnectDevice (
-  IN EFI_HANDLE  Handle
+  IN EFI_HANDLE  Handle,
+  IN BOOLEAN     VerifyPolicy
   )
 {
   EFI_STATUS             Status;
@@ -452,6 +453,7 @@ OcApfsConnectDevice (
     &TempProtocol
     );
   if (!EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_VERBOSE, "OCJS: FS already connected\n"));
     return EFI_ALREADY_STARTED;
   }
 
@@ -465,6 +467,7 @@ OcApfsConnectDevice (
     (VOID **) &BlockIo
     );
   if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "OCJS: Cannot connect, BlockIo error - %r\n", Status));
     return EFI_UNSUPPORTED;
   }
 
@@ -475,18 +478,30 @@ OcApfsConnectDevice (
   // - Which have non-POT block size.
   //
   if (BlockIo->Media == NULL
-    || !BlockIo->Media->LogicalPartition
-    || BlockIo->Media->BlockSize == 0
+    || !BlockIo->Media->LogicalPartition) {
+    return EFI_UNSUPPORTED;
+  }
+
+  if (BlockIo->Media->BlockSize == 0
     || (BlockIo->Media->BlockSize & (BlockIo->Media->BlockSize - 1)) != 0) {
+    DEBUG ((
+      DEBUG_INFO,
+      "OCJS: Cannot connect, BlockIo malformed: %d %u\n",
+      BlockIo->Media->LogicalPartition,
+      BlockIo->Media->BlockSize
+      ));
     return EFI_UNSUPPORTED;
   }
 
   //
   // Filter out handles, which do not respect OpenCore policy.
   //
-  Status = ApfsCheckOpenCoreScanPolicy (Handle);
-  if (EFI_ERROR (Status)) {
-    return Status;
+  if (VerifyPolicy) {
+    Status = ApfsCheckOpenCoreScanPolicy (Handle);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_INFO, "OCJS: Cannot connect, Policy error - %r\n", Status));
+      return Status;
+    }
   }
 
   //
@@ -499,6 +514,7 @@ OcApfsConnectDevice (
     &TempProtocol
     );
   if (!EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "OCJS: Cannot connect, unsupported BDS\n"));
     return EFI_UNSUPPORTED;
   }
 
@@ -512,6 +528,7 @@ OcApfsConnectDevice (
     &TempProtocol
     );
   if (!EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "OCJS: Cannot connect, already handled\n"));
     return EFI_UNSUPPORTED;
   }
 

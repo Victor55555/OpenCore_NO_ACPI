@@ -1151,7 +1151,7 @@ PrelinkedContextApplyPatch (
 
   Status = PatcherInitContextFromPrelinked (&Patcher, Context, BundleId);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "OCAK: Failed to find %a - %r\n", BundleId, Status));
+    DEBUG ((DEBUG_INFO, "OCAK: Failed to pk find %a - %r\n", BundleId, Status));
     return Status;
   }
 
@@ -1161,7 +1161,8 @@ PrelinkedContextApplyPatch (
 EFI_STATUS
 PrelinkedContextApplyQuirk (
   IN OUT PRELINKED_CONTEXT    *Context,
-  IN     KERNEL_QUIRK_NAME    Quirk
+  IN     KERNEL_QUIRK_NAME    Quirk,
+  IN     UINT32               KernelVersion
   )
 {
   EFI_STATUS            Status;
@@ -1174,10 +1175,13 @@ PrelinkedContextApplyQuirk (
   ASSERT (KernelQuirk->BundleId != NULL);
 
   Status = PatcherInitContextFromPrelinked (&Patcher, Context, KernelQuirk->BundleId);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "OCAK: Failed to find %a - %r\n", KernelQuirk->BundleId, Status));
-    return Status;
+  if (!EFI_ERROR (Status)) {
+    return KernelQuirk->PatchFunction (&Patcher, KernelVersion);
   }
 
-  return KernelQuirk->PatchFunction (&Patcher);
+  //
+  // It is up to the function to decice whether this is critical or not.
+  //
+  DEBUG ((DEBUG_INFO, "OCAK: Failed to find %a - %r\n", KernelQuirk->BundleId, Status));
+  return KernelQuirk->PatchFunction (NULL, KernelVersion);
 }
