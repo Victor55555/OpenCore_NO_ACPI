@@ -307,8 +307,13 @@ InternalKxldStateBuildLinkedVtables (
     &NumVtables
     );
 
+  //
+  // Some KPIs may not have vtables (e.g. BSD).
+  //
   if (KxldVtables == NULL) {
-    return EFI_UNSUPPORTED;
+    Kext->LinkedVtables   = NULL;
+    Kext->NumberOfVtables = 0;
+    return EFI_SUCCESS;
   }
 
   NumEntries = 0;
@@ -509,6 +514,9 @@ InternalKxldStateRebuild (
       Context,
       (INT64) (Context->PrelinkedStateSectionKexts->Address - Context->PrelinkedStateKextsAddress)
       );
+    if (!EFI_ERROR (Status)) {
+      Context->PrelinkedStateKextsAddress = Context->PrelinkedStateSectionKexts->Address;
+    }
     DEBUG ((
       DEBUG_INFO,
       "OCAK: Rebasing KXLD state from %Lx to %Lx - %r\n",
