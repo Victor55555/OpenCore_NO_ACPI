@@ -35,6 +35,7 @@
 #include <Library/OcDevicePathLib.h>
 #include <Library/OcFileLib.h>
 #include <Library/OcMachoLib.h>
+#include <Library/OcMiscLib.h>
 #include <Library/OcStringLib.h>
 #include <Library/OcPeCoffLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -73,7 +74,11 @@ STATIC EFI_IMAGE_START  mOriginalEfiStartImage;
 STATIC EFI_IMAGE_UNLOAD mOriginalEfiUnloadImage;
 STATIC EFI_EXIT         mOriginalEfiExit;
 STATIC EFI_HANDLE       mCurrentImageHandle;
-STATIC BOOLEAN          mDirectImageLoaderEnabled;
+
+STATIC OC_IMAGE_LOADER_PATCH     mImageLoaderPatch;
+STATIC OC_IMAGE_LOADER_CONFIGURE mImageLoaderConfigure;
+STATIC UINT32                    mImageLoaderCaps;
+STATIC BOOLEAN                   mImageLoaderEnabled;
 
 STATIC
 EFI_STATUS
@@ -185,7 +190,7 @@ InternalUpdateLoadedImage (
 
 EFI_STATUS
 EFIAPI
-OcDirectLoadImage (
+OcImageLoaderLoad (
   IN  BOOLEAN                  BootPolicy,
   IN  EFI_HANDLE               ParentImageHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath,
@@ -196,12 +201,12 @@ OcDirectLoadImage (
 {
   EFI_STATUS                   Status;
   IMAGE_STATUS                 ImageStatus;
-  PE_COFF_LOADER_IMAGE_CONTEXT ImageContext;      
+  PE_COFF_LOADER_IMAGE_CONTEXT ImageContext;
   EFI_PHYSICAL_ADDRESS         DestinationArea;
   VOID                         *DestinationBuffer;
   OC_LOADED_IMAGE_PROTOCOL     *OcLoadedImage;
   EFI_LOADED_IMAGE_PROTOCOL    *LoadedImage;
-  
+
   ASSERT (SourceBuffer != NULL);
 
   //
@@ -328,7 +333,7 @@ OcDirectLoadImage (
 }
 
 /**
-  Unload image routine for OcDirectLoadImage.
+  Unload image routine for OcImageLoaderLoad.
 
   @param[in]  OcLoadedImage     Our loaded image instance.
   @param[in]  ImageHandle       Handle that identifies the image to be unloaded.
@@ -380,7 +385,7 @@ InternalDirectUnloadImage (
 }
 
 /**
-  Unload image routine for OcDirectLoadImage.
+  Unload image routine for OcImageLoaderLoad.
 
   @param[in]  OcLoadedImage     Our loaded image instance.
   @param[in]  ImageHandle       Handle that identifies the image to be unloaded.
@@ -473,7 +478,7 @@ InternalDirectExit (
 
 
 /**
-  Simplified start image routine for OcDirectLoadImage.
+  Simplified start image routine for OcImageLoaderLoad.
 
   @param[in]   OcLoadedImage     Our loaded image instance.
   @param[in]   ImageHandle       Handle of image to be started.
@@ -586,6 +591,81 @@ InternalDirectStartImage (
   return Status;
 }
 
+/**
+  Detect kernel capabilities from EfiBoot image.
+
+  @param[in] SourceBuffer  Buffer containing EfiBoot.
+  @param[in] SourceSize    Size of EfiBoot buffer.
+
+  @returns OC_KERN_CAPABILITY bitmask.
+**/
+STATIC
+UINT32
+DetectCapabilities (
+  IN  VOID                         *SourceBuffer,
+  IN  UINT32                       SourceSize
+  )
+{
+  INT32  Result;
+
+  //
+  // Find Mac OS X version pattern.
+  // This pattern started to appear with 10.7.
+  // We will look in the second half of the binary to optimise
+  // the search a little.
+  //
+  Result = FindPattern (
+    (CONST UINT8 *)"Mac OS X 10.",
+    NULL,
+    L_STR_LEN ("Mac OS X 10."),
+    SourceBuffer,
+    SourceSize - sizeof (UINT32),
+    (INT32) (SourceSize / 2)
+    );
+
+#ifdef MDE_CPU_IA32
+  //
+  // For IA32 mode the only question is whether we support K32_64.
+  // This starts with 10.7, and in theory is valid for some early
+  // developer preview 10.8 images, so simply decide on Mac OS X
+  // version pattern presence.
+  //
+  if (Result >= 0) {
+    return OC_KERN_CAPABILITY_K32_U64;
+  }
+  return OC_KERN_CAPABILITY_K32_U32 | OC_KERN_CAPABILITY_K32_U64;
+#else
+  //
+  // For X64 mode, when the pattern is found, this can be 10.7 or 10.8+.
+  // 10.7 supports K32_64 and K64, while newer versions have only K64.
+  //
+  if (Result >= 0) {
+    if (((UINT8 *)SourceBuffer)[Result + L_STR_LEN ("Mac OS X 10.")] == '7') {
+      return OC_KERN_CAPABILITY_K32_U64 | OC_KERN_CAPABILITY_K64_U64;
+    }
+    return OC_KERN_CAPABILITY_K64_U64;
+  }
+
+  //
+  // The pattern is not found. This can be 10.6 or 10.4~10.5.
+  // 10.6 supports K32 and K64, while older versions have only K32.
+  // Detect 10.6 by x86_64 pattern presence.
+  //
+  Result = FindPattern (
+    (CONST UINT8 *)"x86_64",
+    NULL,
+    L_STR_SIZE ("x86_64"),
+    SourceBuffer,
+    SourceSize - sizeof (UINT32),
+    (INT32) (SourceSize / 2)
+    );
+  if (Result >= 0) {
+    return OC_KERN_CAPABILITY_K32_U32 | OC_KERN_CAPABILITY_K32_U64 | OC_KERN_CAPABILITY_K64_U64;
+  }
+  return OC_KERN_CAPABILITY_K32_U32 | OC_KERN_CAPABILITY_K32_U64;
+#endif
+}
+
 STATIC
 EFI_STATUS
 EFIAPI
@@ -636,7 +716,7 @@ InternalEfiLoadImage (
     }
   }
 
-  if (DevicePath != NULL && SourceBuffer != NULL && mDirectImageLoaderEnabled) {
+  if (DevicePath != NULL && SourceBuffer != NULL && mImageLoaderEnabled) {
     SecureBootStatus = OcAppleSecureBootVerify (
       DevicePath,
       SourceBuffer,
@@ -657,6 +737,15 @@ InternalEfiLoadImage (
     return EFI_SECURITY_VIOLATION;
   }
 
+  //
+  // By default assume target default.
+  //
+#ifdef MDE_CPU_IA32
+  mImageLoaderCaps = OC_KERN_CAPABILITY_K32_U32 | OC_KERN_CAPABILITY_K32_U64;
+#else
+  mImageLoaderCaps = OC_KERN_CAPABILITY_K64_U64;
+#endif
+
   if (SourceBuffer != NULL) {
     RealSize = (UINT32) SourceSize;
 #ifdef MDE_CPU_IA32
@@ -665,13 +754,22 @@ InternalEfiLoadImage (
     Status = FatFilterArchitecture64 ((UINT8 **) &SourceBuffer, &RealSize);
 #endif
 
+    //
+    // This is FAT image.
+    // Determine its capabilities.
+    //
+    if (!EFI_ERROR (Status) && RealSize != SourceSize && RealSize >= EFI_PAGE_SIZE) {
+      mImageLoaderCaps = DetectCapabilities (SourceBuffer, RealSize);
+    }
+
     DEBUG ((
       DEBUG_INFO,
-      "OCB: Arch filtering %p(%u)->%p(%u) - %r\n",
+      "OCB: Arch filtering %p(%u)->%p(%u) caps %u - %r\n",
       AllocatedBuffer,
       (UINT32) SourceSize,
       SourceBuffer,
       RealSize,
+      mImageLoaderCaps,
       Status
       ));
 
@@ -683,12 +781,20 @@ InternalEfiLoadImage (
     }
   }
 
+  if (SourceBuffer != NULL && mImageLoaderPatch != NULL) {
+    mImageLoaderPatch (
+      DevicePath,
+      SourceBuffer,
+      SourceSize
+      );
+  }
+
   //
   // Load the image ourselves in secure boot mode.
   //
   if (SecureBootStatus == EFI_SUCCESS) {
     if (SourceBuffer != NULL) {
-      Status = OcDirectLoadImage (
+      Status = OcImageLoaderLoad (
         FALSE,
         ParentImageHandle,
         DevicePath,
@@ -738,8 +844,9 @@ InternalEfiStartImage (
   OUT CHAR16      **ExitData OPTIONAL
   )
 {
-  EFI_STATUS                Status;
-  OC_LOADED_IMAGE_PROTOCOL  *OcLoadedImage;
+  EFI_STATUS                 Status;
+  OC_LOADED_IMAGE_PROTOCOL   *OcLoadedImage;
+  EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage;
 
   //
   // If we loaded the image, invoke the entry point manually.
@@ -750,12 +857,39 @@ InternalEfiStartImage (
     (VOID **) &OcLoadedImage
     );
   if (!EFI_ERROR (Status)) {
+    //
+    // Call configure update for our images.
+    //
+    if (mImageLoaderConfigure != NULL) {
+      mImageLoaderConfigure (
+        &OcLoadedImage->LoadedImage,
+        mImageLoaderCaps
+        );
+    }
+
     return InternalDirectStartImage (
       OcLoadedImage,
       ImageHandle,
       ExitDataSize,
       ExitData
       );
+  }
+
+  //
+  // Call configure update for generic images too.
+  //
+  if (mImageLoaderConfigure != NULL) {
+    Status = gBS->HandleProtocol (
+      ImageHandle,
+      &gEfiLoadedImageProtocolGuid,
+      (VOID **) &LoadedImage
+      );
+    if (!EFI_ERROR (Status)) {
+      mImageLoaderConfigure (
+        LoadedImage,
+        mImageLoaderCaps
+        );
+    }
   }
 
   return mOriginalEfiStartImage (ImageHandle, ExitDataSize, ExitData);
@@ -827,7 +961,7 @@ InternalEfiExit (
 }
 
 VOID
-OcInitDirectImageLoader (
+OcImageLoaderInit (
   VOID
   )
 {
@@ -846,9 +980,25 @@ OcInitDirectImageLoader (
 }
 
 VOID
-OcActivateDirectImageLoader (
+OcImageLoaderActivate (
   VOID
   )
 {
-  mDirectImageLoaderEnabled = TRUE;
+  mImageLoaderEnabled = TRUE;
+}
+
+VOID
+OcImageLoaderRegisterPatch (
+  IN OC_IMAGE_LOADER_PATCH  Patch      OPTIONAL
+  )
+{
+  mImageLoaderPatch  = Patch;
+}
+
+VOID
+OcImageLoaderRegisterConfigure (
+  IN OC_IMAGE_LOADER_CONFIGURE  Configure  OPTIONAL
+  )
+{
+  mImageLoaderConfigure = Configure;
 }
