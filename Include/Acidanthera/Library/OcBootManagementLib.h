@@ -116,6 +116,24 @@ typedef enum OC_PICKER_MODE_ {
 } OC_PICKER_MODE;
 
 /**
+  macOS Kernel capabilities.
+  Written in pairs of kernel and user capabilities.
+
+  On IA32 firmware:
+  10.4-10.5 - K32_U32 | K32_U64.
+  10.6      - K32_U32 | K32_U64.
+  10.7+     - K32_U64.
+
+  On X64 firmware:
+  10.4-10.5 - K32_U32 | K32_U64.
+  10.6      - K32_U32 | K32_U64 | K64_U64.
+  10.7+     - K32_U64 | K64_U64.
+**/
+#define OC_KERN_CAPABILITY_K32_U32   BIT0 ///< Supports K32 and U32 (10.4~10.6)
+#define OC_KERN_CAPABILITY_K32_U64   BIT1 ///< Supports K32 and U64 (10.4~10.7)
+#define OC_KERN_CAPABILITY_K64_U64   BIT2 ///< Supports K64 and U64 (10.6+)
+
+/**
   Action to perform as part of executing a system boot entry.
 **/
 typedef
@@ -1242,7 +1260,7 @@ OcRegisterBootOption (
   Initialises custom Boot Services overrides to support direct images.
 **/
 VOID
-OcInitDirectImageLoader (
+OcImageLoaderInit (
   VOID
   );
 
@@ -1250,8 +1268,50 @@ OcInitDirectImageLoader (
   Make DirectImageLoader the default for Apple Secure Boot.
 **/
 VOID
-OcActivateDirectImageLoader (
+OcImageLoaderActivate (
   VOID
+  );
+
+/**
+  Image loader callback triggered before LoadImage.
+**/
+typedef
+VOID
+(*OC_IMAGE_LOADER_PATCH) (
+  IN EFI_DEVICE_PATH_PROTOCOL  *DevicePath  OPTIONAL,
+  IN VOID                      *SourceBuffer,
+  IN UINTN                     SourceSize
+  );
+
+/**
+  Image loader callback triggered before StartImage.
+**/
+typedef
+VOID
+(*OC_IMAGE_LOADER_CONFIGURE) (
+  IN OUT EFI_LOADED_IMAGE_PROTOCOL  *LoadedImage,
+  IN     UINT32                     Capabilities
+  );
+
+
+/**
+  Register image loading callback.
+
+  @param[in] Patch      Callback function to call on image load.
+**/
+VOID
+OcImageLoaderRegisterPatch (
+  IN OC_IMAGE_LOADER_PATCH  Patch      OPTIONAL
+  );
+
+/**
+  Register image start callback.
+
+  @param[in] Configure  Callback function to call on image start.
+**/
+VOID
+OcImageLoaderRegisterConfigure (
+  IN OC_IMAGE_LOADER_CONFIGURE  Configure  OPTIONAL
   );
 
 /**
@@ -1268,7 +1328,7 @@ OcActivateDirectImageLoader (
 **/
 EFI_STATUS
 EFIAPI
-OcDirectLoadImage (
+OcImageLoaderLoad (
   IN  BOOLEAN                  BootPolicy,
   IN  EFI_HANDLE               ParentImageHandle,
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath,
