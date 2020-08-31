@@ -48,8 +48,15 @@ OcKernelConfigureCapabilities (
 {
   CONST CHAR8  *KernelArch;
   CHAR8        *AppleArchValue;
+  CONST CHAR8  *NewArguments[2];
+  UINT32       ArgumentCount;
+  UINT32       RequestedArch;
   BOOLEAN      HasAppleArch;
-  BOOLEAN      Automatic;
+  UINT32       KernelVersion;
+  BOOLEAN      IsSnowLeo;
+  BOOLEAN      IsLion;
+
+  DEBUG ((DEBUG_VERBOSE, "OC: Supported boot capabilities %u\n", Capabilities));
 
   //
   // Reset to the default value.
@@ -76,7 +83,7 @@ OcKernelConfigureCapabilities (
     &AppleArchValue
     );
 
-  if (AppleArchValue) {
+  if (HasAppleArch) {
     mUse32BitKernel = AsciiStrCmp (AppleArchValue, "i386") == 0;
     DEBUG ((DEBUG_INFO, "OC: Arch %a overrides capabilities %u\n", AppleArchValue, Capabilities));
     FreePool (AppleArchValue);
@@ -84,20 +91,104 @@ OcKernelConfigureCapabilities (
   }
 
   //
-  // FIXME: The rest is not complete.
+  // Determine requested arch.
   //
-
   KernelArch = OC_BLOB_GET (&mOcConfiguration->Kernel.Scheme.KernelArch);
-  Automatic = KernelArch[0] == '\0' || AsciiStrCmp (KernelArch, "Auto") == 0;
+  if (AsciiStrCmp (KernelArch, "x86_64") == 0) {
+    RequestedArch = OC_KERN_CAPABILITY_K64_U64;
+  } else if (AsciiStrCmp (KernelArch, "i386") == 0) {
+    RequestedArch = OC_KERN_CAPABILITY_K32_U64;
+  } else if (AsciiStrCmp (KernelArch, "i386-user32") == 0) {
+    RequestedArch = OC_KERN_CAPABILITY_K32_U32;
+  } else {
+    RequestedArch = 0;
+  }
+
+  //
+  // Determine the current operating system.
+  //
+  IsSnowLeo = FALSE;
+  IsLion    = FALSE;
+
+  if ((Capabilities & OC_KERN_CAPABILITY_ALL) == OC_KERN_CAPABILITY_ALL) {
+    KernelVersion = KERNEL_VERSION_SNOW_LEOPARD_MIN;
+    IsSnowLeo     = TRUE;
+  } else if ((Capabilities & OC_KERN_CAPABILITY_ALL) == OC_KERN_CAPABILITY_K32_K64_U64) {
+    KernelVersion = KERNEL_VERSION_LION_MIN;
+    IsLion        = TRUE;
+  } else if ((Capabilities & OC_KERN_CAPABILITY_ALL) == OC_KERN_CAPABILITY_K32_U32_U64) {
+    KernelVersion = KERNEL_VERSION_LEOPARD_MIN;
+  } else {
+    KernelVersion = KERNEL_VERSION_MOUNTAIN_LION_MIN;
+  }
 
   //
   // In automatic mode, if we do not support SSSE3 and can downgrade to U32, do it.
   //
-  if (Automatic && (Capabilities & OC_KERN_CAPABILITY_K32_U32) != 0
-    && (Capabilities & (OC_KERN_CAPABILITY_K32_U64 | OC_KERN_CAPABILITY_K64_U64)) != 0
-    && (mOcCpuInfo->Features & CPUID_FEATURE_SSSE3) == 0) {
+  if (RequestedArch == 0
+    && (mOcCpuInfo->ExtFeatures & CPUID_EXTFEATURE_EM64T) != 0
+    && (mOcCpuInfo->Features & CPUID_FEATURE_SSSE3) == 0
+    && (Capabilities & OC_KERN_CAPABILITY_K32_U32) != 0
+    && (Capabilities & OC_KERN_CAPABILITY_K32_K64_U64) != 0) {
     DEBUG ((DEBUG_INFO, "OC: Missing SSSE3 disables U64 capabilities %u\n", Capabilities));
-    Capabilities &= ~(OC_KERN_CAPABILITY_K32_U64 | OC_KERN_CAPABILITY_K64_U64);
+    Capabilities &= ~(OC_KERN_CAPABILITY_K32_K64_U64);
+  }
+
+  //
+  // If we support K64 mode, check whether the board supports it.
+  //
+  if ((Capabilities & OC_KERN_CAPABILITY_K64_U64) != 0
+    && !OcPlatformIs64BitSupported (KernelVersion)) {
+    DEBUG ((DEBUG_INFO, "OC: K64 forbidden due to current platform on version %u\n", KernelVersion));
+    Capabilities &= ~(OC_KERN_CAPABILITY_K64_U64);
+  }
+
+  //
+  // If we are not choosing the architecture automatically, try to use the requested one.
+  // Otherwise try best available.
+  //
+  if (RequestedArch != 0 && (Capabilities & RequestedArch) != 0) {
+    Capabilities = RequestedArch;
+  } else if ((Capabilities & OC_KERN_CAPABILITY_K64_U64) != 0) {
+    Capabilities = OC_KERN_CAPABILITY_K64_U64;
+  } else if ((Capabilities & OC_KERN_CAPABILITY_K32_U64) != 0) {
+    Capabilities = OC_KERN_CAPABILITY_K32_U64;
+  } else if ((Capabilities & OC_KERN_CAPABILITY_K32_U32) != 0) {
+    Capabilities = OC_KERN_CAPABILITY_K32_U32;
+  } else {
+    ASSERT (FALSE);
+  }
+
+  //
+  // Pass arch argument when we are:
+  // - SnowLeo64 and try to boot x86_64.
+  // - SnowLeo64 or Lion64 and try to boot i386.
+  //
+  ArgumentCount = 0;
+  if (Capabilities == OC_KERN_CAPABILITY_K64_U64 && IsSnowLeo) {
+    NewArguments[ArgumentCount++] = "arch=x86_64";
+  } else if (Capabilities != OC_KERN_CAPABILITY_K64_U64 && (IsSnowLeo || IsLion)) {
+    NewArguments[ArgumentCount++] = "arch=i386";
+  }
+
+  //
+  // Pass legacy argument when we are booting i386.
+  //
+  if (Capabilities == OC_KERN_CAPABILITY_K32_U32
+    && OcCheckArgumentFromEnv (LoadedImage, gRT->GetVariable, "-legacy", L_STR_LEN ("-legacy"), NULL)) {
+    NewArguments[ArgumentCount++] = "-legacy";
+  }
+
+  //
+  // Update argument list.
+  //
+  if (ArgumentCount > 0) {
+    OcAppendArgumentsToLoadedImage (
+      LoadedImage,
+      &NewArguments[0],
+      ArgumentCount,
+      FALSE
+      );
   }
 
   //
@@ -451,14 +542,16 @@ OcKernelInjectKext (
   IN BOOLEAN              IsForced,
   IN KERNEL_CACHE_TYPE    CacheType,
   IN VOID                 *Context,
-  IN UINT32               DarwinVersion
+  IN UINT32               DarwinVersion,
+  IN BOOLEAN              Is32Bit
   )
 {
   EFI_STATUS              Status;
-  CHAR8                   *Identifier;
-  CHAR8                   *BundlePath;
-  CHAR8                   *ExecutablePath;
-  CHAR8                   *Comment;
+  CONST CHAR8             *Identifier;
+  CONST CHAR8             *BundlePath;
+  CONST CHAR8             *ExecutablePath;
+  CONST CHAR8             *Comment;
+  CONST CHAR8             *Arch;
   CHAR8                   FullPath[OC_STORAGE_SAFE_PATH_MAX];
   UINT32                  MaxKernel;
   UINT32                  MinKernel;
@@ -470,8 +563,24 @@ OcKernelInjectKext (
   Identifier  = OC_BLOB_GET (&Kext->Identifier);
   BundlePath  = OC_BLOB_GET (&Kext->BundlePath);
   Comment     = OC_BLOB_GET (&Kext->Comment);
+  Arch        = OC_BLOB_GET (&Kext->Arch);
   MaxKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MaxKernel));
   MinKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MinKernel));
+
+  if (AsciiStrCmp (Arch, Is32Bit ? "x86_64" : "i386") == 0) {
+    DEBUG ((
+      DEBUG_INFO,
+      "OC: %a%a injection skips %a (%a) kext at %u due to arch %a != %a\n",
+      PRINT_KERNEL_CACHE_TYPE (CacheType),
+      IsForced ? " force" : "",
+      BundlePath,
+      Comment,
+      Index,
+      Arch,
+      Is32Bit ? "i386" : "x86_64"
+      ));
+    return;
+  }
 
   if (!OcMatchDarwinVersion (DarwinVersion, MinKernel, MaxKernel)) {
     DEBUG ((
@@ -557,6 +666,7 @@ OcKernelInjectKexts (
   IN KERNEL_CACHE_TYPE  CacheType,
   IN VOID               *Context,
   IN UINT32             DarwinVersion,
+  IN BOOLEAN            Is32Bit,
   IN UINT32             LinkedExpansion,
   IN UINT32             ReservedExeSize
   )
@@ -586,7 +696,8 @@ OcKernelInjectKexts (
       TRUE,
       CacheType,
       Context,
-      DarwinVersion
+      DarwinVersion,
+      Is32Bit
       );
   }
 
@@ -600,7 +711,8 @@ OcKernelInjectKexts (
       FALSE,
       CacheType,
       Context,
-      DarwinVersion
+      DarwinVersion,
+      Is32Bit
       );
   }
 
@@ -633,6 +745,7 @@ EFI_STATUS
 OcKernelProcessPrelinked (
   IN     OC_GLOBAL_CONFIG  *Config,
   IN     UINT32            DarwinVersion,
+  IN     BOOLEAN           Is32Bit,
   IN OUT UINT8             *Kernel,
   IN     UINT32            *KernelSize,
   IN     UINT32            AllocatedSize,
@@ -646,11 +759,11 @@ OcKernelProcessPrelinked (
   Status = PrelinkedContextInit (&Context, Kernel, *KernelSize, AllocatedSize);
 
   if (!EFI_ERROR (Status)) {
-    OcKernelInjectKexts (Config, CacheTypePrelinked, &Context, DarwinVersion, LinkedExpansion, ReservedExeSize);
+    OcKernelInjectKexts (Config, CacheTypePrelinked, &Context, DarwinVersion, Is32Bit, LinkedExpansion, ReservedExeSize);
 
-    OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, CacheTypePrelinked, &Context, NULL, 0);
+    OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, Is32Bit, CacheTypePrelinked, &Context, NULL, 0);
 
-    OcKernelBlockKexts (Config, DarwinVersion, &Context);
+    OcKernelBlockKexts (Config, DarwinVersion, Is32Bit, &Context);
 
     *KernelSize = Context.PrelinkedSize;
 
@@ -665,6 +778,7 @@ EFI_STATUS
 OcKernelProcessMkext (
   IN     OC_GLOBAL_CONFIG  *Config,
   IN     UINT32            DarwinVersion,
+  IN     BOOLEAN           Is32Bit,
   IN OUT UINT8             *Mkext,
   IN OUT UINT32            *MkextSize,
   IN     UINT32            AllocatedSize
@@ -678,9 +792,9 @@ OcKernelProcessMkext (
     return Status;
   }
 
-  OcKernelInjectKexts (Config, CacheTypeMkext, &Context, DarwinVersion, 0, 0);
+  OcKernelInjectKexts (Config, CacheTypeMkext, &Context, DarwinVersion, Is32Bit, 0, 0);
 
-  OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, CacheTypeMkext, &Context, NULL, 0);
+  OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, Is32Bit, CacheTypeMkext, &Context, NULL, 0);
 
   MkextInjectPatchComplete (&Context);
 
@@ -696,6 +810,7 @@ OcKernelInitCacheless (
   IN     OC_GLOBAL_CONFIG       *Config,
   IN     CACHELESS_CONTEXT      *Context,
   IN     UINT32                 DarwinVersion,
+  IN     BOOLEAN                Is32Bit,
   IN     CHAR16                 *FileName,
   IN     EFI_FILE_PROTOCOL      *ExtensionsDir,
      OUT EFI_FILE_PROTOCOL      **File
@@ -713,9 +828,9 @@ OcKernelInitCacheless (
     return Status;
   }
 
-  OcKernelInjectKexts (Config, CacheTypeCacheless, Context, DarwinVersion, 0, 0);
+  OcKernelInjectKexts (Config, CacheTypeCacheless, Context, DarwinVersion, Is32Bit, 0, 0);
 
-  OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, CacheTypeCacheless, Context, NULL, 0);
+  OcKernelApplyPatches (Config, mOcCpuInfo, DarwinVersion, Is32Bit, CacheTypeCacheless, Context, NULL, 0);
 
   return CachelessContextOverlayExtensionsDir (Context, File);
 }
@@ -726,6 +841,7 @@ OcKernelReadAppleKernel (
   IN     EFI_FILE_PROTOCOL  *RootFile,
   IN     EFI_FILE_PROTOCOL  *KernelFile,
   IN     CHAR16             *FileName,
+  IN     BOOLEAN            Is32Bit,
   IN OUT UINT32             *DarwinVersion,
      OUT UINT8              **Kernel,
      OUT UINT32             *KernelSize,
@@ -772,10 +888,10 @@ OcKernelReadAppleKernel (
   //
   // Read last requested architecture for kernel.
   //
-  DEBUG ((DEBUG_INFO, "OC: Trying %a XNU hook on %s\n", mUse32BitKernel ? "32-bit" : "64-bit", FileName));
+  DEBUG ((DEBUG_INFO, "OC: Trying %a XNU hook on %s\n", Is32Bit ? "32-bit" : "64-bit", FileName));
   Status = ReadAppleKernel (
     KernelFile,
-    mUse32BitKernel,
+    Is32Bit,
     &IsKernel32Bit,
     Kernel,
     KernelSize,
@@ -810,8 +926,8 @@ OcKernelReadAppleKernel (
     //
     // If we failed to obtain the requested bitness for the platform, abort.
     //
-    if (mUse32BitKernel != IsKernel32Bit) {
-      DEBUG ((DEBUG_WARN, "OC: %a kernel architecture is not available, aborting.\n", mUse32BitKernel ? "32-bit" : "64-bit"));
+    if (Is32Bit != IsKernel32Bit) {
+      DEBUG ((DEBUG_WARN, "OC: %a kernel architecture is not available, aborting.\n", Is32Bit ? "32-bit" : "64-bit"));
       FreePool (*Kernel);
       *Kernel = NULL;
       return EFI_NOT_FOUND;
@@ -830,6 +946,7 @@ OcKernelFuzzyMatch (
   IN     CHAR16             *FileName,
   IN     UINT64             OpenMode,
   IN     UINT64             Attributes,
+  IN     BOOLEAN            Is32Bit,
   IN OUT UINT32             *DarwinVersion,
      OUT EFI_FILE_PROTOCOL  **KernelFile,
      OUT UINT8              **Kernel,
@@ -918,6 +1035,7 @@ OcKernelFuzzyMatch (
       RootFile,
       *KernelFile,
       FileNameCacheNew,
+      Is32Bit,
       DarwinVersion,
       Kernel,
       KernelSize,
@@ -985,7 +1103,7 @@ OcKernelFileOpen (
   // We only want to calculate kernel hashes if secure boot is enabled.
   //
   SecureBootModel = OC_BLOB_GET (&mOcConfiguration->Misc.Security.SecureBootModel);
-  UseSecureBoot = AsciiStrCmp (SecureBootModel, OC_SB_MODEL_DISABLED) != 0;
+  UseSecureBoot   = AsciiStrCmp (SecureBootModel, OC_SB_MODEL_DISABLED) != 0;
 
   //
   // Hook injected OcXXXXXXXX.kext reads from /S/L/E.
@@ -1032,6 +1150,7 @@ OcKernelFileOpen (
       FileName,
       OpenMode,
       Attributes,
+      mUse32BitKernel,
       &mOcDarwinVersion,
       NewHandle,
       &Kernel,
@@ -1067,6 +1186,7 @@ OcKernelFileOpen (
         This,
         *NewHandle,
         FileName,
+        mUse32BitKernel,
         &mOcDarwinVersion,
         &Kernel,
         &KernelSize,
@@ -1100,10 +1220,24 @@ OcKernelFileOpen (
         return EFI_NOT_FOUND;
       }
 
-      OcKernelApplyPatches (mOcConfiguration, mOcCpuInfo, mOcDarwinVersion, 0, NULL, Kernel, KernelSize);
+      //
+      // Apply patches to kernel itself, and then process prelinked.
+      //
+      OcKernelApplyPatches (
+        mOcConfiguration,
+        mOcCpuInfo,
+        mOcDarwinVersion,
+        mUse32BitKernel,
+        0,
+        NULL,
+        Kernel,
+        KernelSize
+        );
+
       PrelinkedStatus = OcKernelProcessPrelinked (
         mOcConfiguration,
         mOcDarwinVersion,
+        mUse32BitKernel,
         Kernel,
         &KernelSize,
         AllocatedSize,
@@ -1139,7 +1273,6 @@ OcKernelFileOpen (
       //
       *NewHandle = VirtualFileHandle;
       return EFI_SUCCESS;
-
     }
   }
 
@@ -1192,7 +1325,14 @@ OcKernelFileOpen (
       //
       // Process mkext.
       //
-      Status = OcKernelProcessMkext (mOcConfiguration, mOcDarwinVersion, Kernel, &KernelSize, AllocatedSize);
+      Status = OcKernelProcessMkext (
+        mOcConfiguration,
+        mOcDarwinVersion,
+        mUse32BitKernel,
+        Kernel,
+        &KernelSize,
+        AllocatedSize
+        );
       DEBUG ((DEBUG_INFO, "OC: Mkext status - %r\n", Status));
       if (!EFI_ERROR (Status)) {
         Status = GetFileModificationTime (*NewHandle, &ModificationTime);
@@ -1251,6 +1391,7 @@ OcKernelFileOpen (
       mOcConfiguration,
       &mOcCachelessContext,
       mOcDarwinVersion,
+      mUse32BitKernel,
       FileName,
       *NewHandle,
       &VirtualFileHandle
