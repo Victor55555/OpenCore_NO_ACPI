@@ -2264,6 +2264,17 @@ blocking.
   VT-d support in other systems in case they need it.
 
 \item
+  \texttt{DisableLinkeditJettison}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Requirement}: 11.0\\
+  \textbf{Description}: Disables \texttt{\_\_LINKEDIT} jettison code.
+
+  This option lets \texttt{Lilu.kext} and possibly some others function
+  in macOS Big Sur with best performance without \texttt{keepsyms=1}
+  boot argument.
+
+\item
   \texttt{DisableRtcChecksum}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
@@ -4260,7 +4271,6 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{Generic}\\
   \textbf{Type}: \texttt{plist\ dictonary}\\
-  \textbf{Optional}: When \texttt{Automatic} is \texttt{false}\\
   \textbf{Description}: Update all fields. This section is read only
   when \texttt{Automatic} is active.
 \item

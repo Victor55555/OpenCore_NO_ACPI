@@ -257,6 +257,7 @@
   _(BOOLEAN                     , AppleXcpmForceBoost         ,     , FALSE  , ()) \
   _(BOOLEAN                     , CustomSmbiosGuid            ,     , FALSE  , ()) \
   _(BOOLEAN                     , DisableIoMapper             ,     , FALSE  , ()) \
+  _(BOOLEAN                     , DisableLinkeditJettison     ,     , FALSE  , ()) \
   _(BOOLEAN                     , DisableRtcChecksum          ,     , FALSE  , ()) \
   _(BOOLEAN                     , DummyPowerManagement        ,     , FALSE  , ()) \
   _(BOOLEAN                     , ExternalDiskIcons           ,     , FALSE  , ()) \
