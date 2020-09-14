@@ -216,17 +216,18 @@ InternalCreatePrelinkedKext (
 
   if (Prelinked != NULL
     && HasExe
-    && !MachoInitializeContext (&NewKext->Context.MachContext, &Prelinked->Prelinked[SourceBase], (UINT32)SourceSize, ContainerOffset)) {
+    && !MachoInitializeContext64 (&NewKext->Context.MachContext, &Prelinked->Prelinked[SourceBase], (UINT32)SourceSize, ContainerOffset)) {
     FreePool (NewKext);
     return NULL;
   }
 
-  NewKext->Signature            = PRELINKED_KEXT_SIGNATURE;
-  NewKext->Identifier           = KextIdentifier;
-  NewKext->BundleLibraries      = BundleLibraries;
-  NewKext->CompatibleVersion    = CompatibleVersion;
-  NewKext->Context.VirtualBase  = VirtualBase;
-  NewKext->Context.VirtualKmod  = VirtualKmod;
+  NewKext->Signature                  = PRELINKED_KEXT_SIGNATURE;
+  NewKext->Identifier                 = KextIdentifier;
+  NewKext->BundleLibraries            = BundleLibraries;
+  NewKext->CompatibleVersion          = CompatibleVersion;
+  NewKext->Context.VirtualBase        = VirtualBase;
+  NewKext->Context.VirtualKmod        = VirtualKmod;
+  NewKext->Context.IsKernelCollection = Prelinked != NULL ? Prelinked->IsKernelCollection : FALSE;
 
   //
   // Provide pointer to 10.6.8 KXLD state.
@@ -288,7 +289,7 @@ InternalScanCurrentPrelinkedKextLinkInfo (
   }
 
   if (Kext->SymbolTable == NULL && Kext->NumberOfSymbols == 0) {
-    Kext->NumberOfSymbols = MachoGetSymbolTable (
+    Kext->NumberOfSymbols = MachoGetSymbolTable64 (
                    &Kext->Context.MachContext,
                    &Kext->SymbolTable,
                    &Kext->StringTable,
@@ -476,7 +477,7 @@ InternalScanBuildLinkedVtables (
     //       need to abort anyway when the value is out of its bounds, we can
     //       just locate it by address in the first place.
     //
-    Tmp = MachoGetFilePointerByAddress64 (
+    Tmp = MachoGetFilePointerByAddress (
             &Kext->Context.MachContext,
             VtableLookups[Index].Vtable.Value,
             &VtableMaxSize
@@ -738,12 +739,13 @@ InternalCachedPrelinkedKernel (
     return NULL;
   }
 
-  NewKext->Signature            = PRELINKED_KEXT_SIGNATURE;
-  NewKext->Identifier           = PRELINK_KERNEL_IDENTIFIER;
-  NewKext->BundleLibraries      = NULL;
-  NewKext->CompatibleVersion    = "0";
-  NewKext->Context.VirtualBase  = Segment->VirtualAddress - Segment->FileOffset;
-  NewKext->Context.VirtualKmod  = 0;
+  NewKext->Signature                  = PRELINKED_KEXT_SIGNATURE;
+  NewKext->Identifier                 = PRELINK_KERNEL_IDENTIFIER;
+  NewKext->BundleLibraries            = NULL;
+  NewKext->CompatibleVersion          = "0";
+  NewKext->Context.VirtualBase        = Segment->VirtualAddress - Segment->FileOffset;
+  NewKext->Context.VirtualKmod        = 0;
+  NewKext->Context.IsKernelCollection = Prelinked->IsKernelCollection;
 
   if (!Prelinked->IsKernelCollection) {
     //
