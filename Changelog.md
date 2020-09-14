@@ -3,6 +3,13 @@ OpenCore Changelog
 #### v0.6.2
 - Updated builtin firmware versions for SMBIOS and the rest
 - Added `ProcessorType` option to `Generic` allowing custom CPU names
+- Fixed `UnblockFsConnect` option not working with APFS JumpStart
+- Added IA32 binary variant to the release bundles
+- Fixed improper handling of cacheless kexts without an Info.plist
+- Fixed improper calculation of kext startup address for blocking
+- Added mkext 32-bit kext injection (10.4-10.6)
+- Added cacheless 32-bit kext injection (10.4-10.7)
+- Added 32-bit kernel/kext patching/blocking support
 
 #### v0.6.1
 - Improved recognition of early pressed hotkeys, thx @varahash

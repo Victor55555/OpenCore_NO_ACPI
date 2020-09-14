@@ -149,13 +149,7 @@ OcMain (
   if (mOpenCoreConfiguration.Acpi.Quirks.EnableForAll) {
       DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for all OSes...\n"));
       OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
-    }
-    DEBUG ((DEBUG_INFO, "OC: OcMiscLateInit...\n"));
-
-  DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
-  OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
-  DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
-  OcLoadDevPropsSupport (&mOpenCoreConfiguration);
+  }
   DEBUG ((DEBUG_INFO, "OC: OcMiscLateInit...\n"));
   OcMiscLateInit (Storage, &mOpenCoreConfiguration);
   DEBUG ((DEBUG_INFO, "OC: OcLoadKernelSupport...\n"));
