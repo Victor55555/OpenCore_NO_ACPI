@@ -137,6 +137,7 @@ package() {
 
     # Special case: OpenShell.efi
     cp "${arch}/Shell.efi" "${dstdir}/${arch}/EFI/OC/Tools/OpenShell.efi" || exit 1
+    cp -r "${selfdir}/Resources/" "${dstdir}/${arch}/EFI/OC/Resources"/ || exit 1
 
     efiDrivers=(
       "HiiDatabase.efi"
@@ -163,11 +164,10 @@ package() {
     "SampleCustom.plist"
     )
   for doc in "${docs[@]}"; do
-    cp "${selfdir}/Docs/${doc}" tmp/Docs/ || exit 1
+    cp "${selfdir}/Docs/${doc}" "${dstdir}/Docs"/ || exit 1
   done
   cp "${selfdir}/Changelog.md" "${dstdir}/Docs"/ || exit 1
   cp -r "${selfdir}/Docs/AcpiSamples/" "${dstdir}/Docs/AcpiSamples"/ || exit 1
-  cp -r "${selfdir}/Resources/" "${dstdir}/${arch}/EFI/OC/Resources"/ || exit 1
 
   utilScpts=(
     "LegacyBoot"
