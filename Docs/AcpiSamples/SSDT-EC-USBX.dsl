@@ -64,7 +64,7 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "SsdtEC", 0x00001000)
                 {
                     Return (Buffer (One)
                     {
-                         0x03                                             // .
+                        0x03                                             // .
                     })
                 }
 
@@ -79,6 +79,17 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "SsdtEC", 0x00001000)
                     "kUSBWakePortCurrentLimit",
                     0x0834
                 })
+            }
+            Method (_STA, 0, NotSerialized)  // _STA: Status
+            {
+                If (_OSI ("Darwin"))
+                {
+                    Return (0x0F)
+                }
+                Else
+                {
+                    Return (Zero)
+                }
             }
         }
     }
