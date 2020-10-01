@@ -32,6 +32,10 @@
  rm -rf Macho.dSYM DICT fuzz*.log Macho
 */
 
+#ifdef FUZZING_TEST
+#define main no_main
+#endif
+
 MACH_HEADER_64 Header;
 MACH_SECTION_64 Sect;
 MACH_SEGMENT_COMMAND_64 Seg;
@@ -46,7 +50,7 @@ static int FeedMacho(void *file, uint32_t size) {
   int code = 0;
 
   MACH_HEADER_64 *Hdr = MachoGetMachHeader64 (&Context);
-  if (Hdr && MachoGetFileSize(&Context) > 10 && MachoGetLastAddress64(&Context) != 10) {
+  if (Hdr && MachoGetFileSize(&Context) > 10 && MachoGetLastAddress(&Context) != 10) {
     memcpy(&Header, Hdr, sizeof(Header));
     code++;
   }
