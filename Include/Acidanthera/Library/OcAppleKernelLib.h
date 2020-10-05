@@ -531,6 +531,10 @@ typedef enum {
   //
   KernelQuirkDummyPowerManagement,
   //
+  // Apply feature flags patches to IOBluetoothFamily kext to ensure full Bluetooth functionality.
+  //
+  KernelQuirkExtendBTFeatureFlags,
+  //
   // Apply icon type patches to IOAHCIPort kext to force internal disk icons.
   //
   KernelQuirkExternalDiskIcons,
@@ -546,6 +550,10 @@ typedef enum {
   // Apply kernel patches to remove kext dumping in the panic log.
   //
   KernelQuirkPanicNoKextDump,
+  //
+  // Replaces the 64-bit commpage bcopy implementation with one that does not use SSSE3.
+  //
+  KernelQuirkLegacyCommpage,
   //
   // Disable power state change timeout kernel panic (10.15+).
   //
