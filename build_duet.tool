@@ -1,43 +1,45 @@
 #!/bin/bash
 
 imgbuild() {
+  local arch="$1"
+
   echo "删除旧文件..."
-  rm -f "${BUILD_DIR}/FV/DUETEFIMAINFV${TARGETARCH}.z" \
-    "${BUILD_DIR}/FV/DxeMain${TARGETARCH}.z" \
-    "${BUILD_DIR}/FV/DxeIpl${TARGETARCH}.z" \
+  rm -f "${BUILD_DIR}/FV/DUETEFIMAINFV${arch}.z" \
+    "${BUILD_DIR}/FV/DxeMain${arch}.z" \
+    "${BUILD_DIR}/FV/DxeIpl${arch}.z" \
     "${BUILD_DIR_ARCH}/EfiLoaderRebased.efi" \
-    "${BUILD_DIR}/FV/Efildr${TARGETARCH}" \
-    "${BUILD_DIR}/FV/Efildr${TARGETARCH}Pure" \
-    "${BUILD_DIR}/FV/Efildr${TARGETARCH}Out" \
+    "${BUILD_DIR}/FV/Efildr${arch}" \
+    "${BUILD_DIR}/FV/Efildr${arch}Pure" \
+    "${BUILD_DIR}/FV/Efildr${arch}Out" \
     "${BUILD_DIR_ARCH}/boot"
 
   echo "压缩DUETEFIMainFv.FV..."
-  LzmaCompress -e -o "${BUILD_DIR}/FV/DUETEFIMAINFV${TARGETARCH}.z" \
-    "${BUILD_DIR}/FV/DUETEFIMAINFV${TARGETARCH}.Fv" >/dev/null || exit 1
+  LzmaCompress -e -o "${BUILD_DIR}/FV/DUETEFIMAINFV${arch}.z" \
+    "${BUILD_DIR}/FV/DUETEFIMAINFV${arch}.Fv" || exit 1
 
   echo "压缩DxeCore.efi..."
-  LzmaCompress -e -o "${BUILD_DIR}/FV/DxeMain${TARGETARCH}.z" \
-    "${BUILD_DIR_ARCH}/DxeCore.efi" >/dev/null || exit 1
+  LzmaCompress -e -o "${BUILD_DIR}/FV/DxeMain${arch}.z" \
+    "${BUILD_DIR_ARCH}/DxeCore.efi" || exit 1
 
   echo "压缩DxeIpl.efi..."
-  LzmaCompress -e -o "${BUILD_DIR}/FV/DxeIpl${TARGETARCH}.z" \
-    "$BUILD_DIR_ARCH/DxeIpl.efi" >/dev/null || exit 1
+  LzmaCompress -e -o "${BUILD_DIR}/FV/DxeIpl${arch}.z" \
+    "$BUILD_DIR_ARCH/DxeIpl.efi" || exit 1
 
   echo "生成加载程序映像..."
 
   GenFw --rebase 0x10000 -o "${BUILD_DIR_ARCH}/EfiLoaderRebased.efi" \
     "${BUILD_DIR_ARCH}/EfiLoader.efi" || exit 1
-  "${FV_TOOLS}/EfiLdrImage" -o "${BUILD_DIR}/FV/Efildr${TARGETARCH}" \
-    "${BUILD_DIR_ARCH}/EfiLoaderRebased.efi" "${BUILD_DIR}/FV/DxeIpl${TARGETARCH}.z" \
-    "${BUILD_DIR}/FV/DxeMain${TARGETARCH}.z" "${BUILD_DIR}/FV/DUETEFIMAINFV${TARGETARCH}.z" >/dev/null || exit 1
+  "${FV_TOOLS}/EfiLdrImage" -o "${BUILD_DIR}/FV/Efildr${arch}" \
+    "${BUILD_DIR_ARCH}/EfiLoaderRebased.efi" "${BUILD_DIR}/FV/DxeIpl${arch}.z" \
+    "${BUILD_DIR}/FV/DxeMain${arch}.z" "${BUILD_DIR}/FV/DUETEFIMAINFV${arch}.z" || exit 1
 
   # Calculate page table location for 64-bit builds.
   # Page table must be 4K aligned, bootsectors are 4K each, and 0x20000 is base address.
-  if [ "${TARGETARCH}" = "X64" ]; then
+  if [ "${arch}" = "X64" ]; then
     if [ "$(uname)" = "Darwin" ]; then
-      EL_SIZE=$(stat -f "%z" "${BUILD_DIR}/FV/Efildr${TARGETARCH}")
+      EL_SIZE=$(stat -f "%z" "${BUILD_DIR}/FV/Efildr${arch}")
     else
-      EL_SIZE=$(stat --printf="%s\n" "${BUILD_DIR}/FV/Efildr${TARGETARCH}")
+      EL_SIZE=$(stat --printf="%s\n" "${BUILD_DIR}/FV/Efildr${arch}")
     fi
     PAGE_TABLE_OFF=$( printf "0x%x" $(( (EL_SIZE + 0x2000 + 0xFFF) & ~0xFFF )) )
     PAGE_TABLE=$( printf "0x%x" $(( PAGE_TABLE_OFF + 0x20000 )) )
@@ -57,40 +59,47 @@ imgbuild() {
   cd - || exit 1
 
   # Concatenate bootsector into the resulting image.
-  cat "${BOOTSECTORS}/Start${TARGETARCH}${BOOTSECTOR_SUFFIX}.com" "${BOOTSECTORS}/Efi${TARGETARCH}.com" \
-    "${BUILD_DIR}/FV/Efildr${TARGETARCH}" > "${BUILD_DIR}/FV/Efildr${TARGETARCH}Pure" >/dev/null || exit 1
+  cat "${BOOTSECTORS}/Start${arch}${BOOTSECTOR_SUFFIX}.com" "${BOOTSECTORS}/Efi${arch}.com" \
+    "${BUILD_DIR}/FV/Efildr${arch}" > "${BUILD_DIR}/FV/Efildr${arch}Pure" || exit 1
 
   # Append page table and skip empty data in 64-bit mode.
-  if [ "${TARGETARCH}" = "X64" ]; then
-    "${FV_TOOLS}/GenPage" "${BUILD_DIR}/FV/Efildr${TARGETARCH}Pure" \
+  if [ "${arch}" = "X64" ]; then
+    "${FV_TOOLS}/GenPage" "${BUILD_DIR}/FV/Efildr${arch}Pure" \
       -b "${PAGE_TABLE}" -f "${PAGE_TABLE_OFF}" \
-      -o "${BUILD_DIR}/FV/Efildr${TARGETARCH}Out" >/dev/null || exit 1
+      -o "${BUILD_DIR}/FV/Efildr${arch}Out" || exit 1
 
-    dd if="${BUILD_DIR}/FV/Efildr${TARGETARCH}Out" of="${BUILD_DIR_ARCH}/boot" bs=512 skip=1 >/dev/null || exit 1
+    dd if="${BUILD_DIR}/FV/Efildr${arch}Out" of="${BUILD_DIR_ARCH}/boot" bs=512 skip=1 || exit 1
   else
-    cp "${BUILD_DIR}/FV/Efildr${TARGETARCH}Pure" "${BUILD_DIR_ARCH}/boot" || exit 1
+    cp "${BUILD_DIR}/FV/Efildr${arch}Pure" "${BUILD_DIR_ARCH}/boot" || exit 1
   fi
 }
 
 package() {
   if [ ! -d "$1" ]; then
-    echo "缺少包目录 $1"
+    echo "$(pwd)缺少软件包目录 $1"
     exit 1
   fi
   
   if [ ! -d "$1"/../FV ]; then
-    echo "缺少FV目录 $1/../FV"
+    echo "$(pwd)的FV目录 $1/../FV 丢失"
     exit 1
   fi
 
   pushd "$1" || exit 1
-  cd -P . || exit 1
-  BUILD_DIR_ARCH=$(pwd)
-  cd -P .. || exit 1
-  BUILD_DIR=$(pwd)
-  popd || exit 1
 
-  imgbuild
+  # Switch to parent directory.
+  pushd .. || exit 1
+  BUILD_DIR=$(pwd)
+
+  for arch in "${ARCHS[@]}"; do
+    pushd "${arch}" || exit 1
+    BUILD_DIR_ARCH=$(pwd)
+    imgbuild "${arch}"
+    popd || exit 1
+  done
+
+  popd || exit 1
+  popd || exit 1
 }
 
 cd "$(dirname "$0")" || exit 1
@@ -118,12 +127,12 @@ fi
 if [ "${INTREE}" != "" ]; then
   # In-tree compilation is merely for packing.
   cd .. || exit 1
+
   echo "正在编译OpenDuetPkg..."
   build -a "${TARGETARCH}" -b "${TARGET}" -t XCODE5 -p OpenCorePkg/OpenDuetPkg.dsc >/dev/null || exit 1
-  
   BUILD_DIR="${WORKSPACE}/Build/OpenDuetPkg/${TARGET}_XCODE5"
   BUILD_DIR_ARCH="${BUILD_DIR}/${TARGETARCH}"
-  imgbuild
+  imgbuild "${TARGETARCH}"
 else
   TARGETS=(DEBUG RELEASE)
   if [ "$ARCHS" = "" ]; then
