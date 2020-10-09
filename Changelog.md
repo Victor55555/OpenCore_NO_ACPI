@@ -1,5 +1,8 @@
 OpenCore Changelog
 ==================
+#### v0.6.3
+- Added support for xml comments in plist files
+
 #### v0.6.2
 - Updated builtin firmware versions for SMBIOS and the rest
 - Added `ProcessorType` option to `Generic` allowing custom CPU names
