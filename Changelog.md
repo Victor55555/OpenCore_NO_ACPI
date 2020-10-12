@@ -2,6 +2,9 @@ OpenCore Changelog
 ==================
 #### v0.6.3
 - Added support for xml comments in plist files
+- Updated underlying EDK II package to edk2-stable202008
+- Provide fallbacks for NULL memory SMBIOS strings
+- Fixed `BOOTx64.efi` and `BOOTIA32.efi` convention
 
 #### v0.6.2
 - Updated builtin firmware versions for SMBIOS and the rest
