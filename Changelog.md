@@ -12,6 +12,8 @@ OpenCore Changelog
 - Added `SSDT-UNC.dsl` ACPI sample to resolve X99 issues, thx @RemB
 - Updated builtin firmware versions for SMBIOS and the rest
 - Increased slide allocation reserve to 200 MB for Big Sur beta 10
+- Fixed assert when trying to enable direct renderer on blit-only GOP
+- Added support for custom memory properties
 
 #### v0.6.2
 - Updated builtin firmware versions for SMBIOS and the rest
