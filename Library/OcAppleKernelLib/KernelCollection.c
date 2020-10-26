@@ -169,6 +169,7 @@ InternalKcWriteCommandHeaders (
   // Must choose a different name to avoid collisions.
   //
   CopyMem (Context->PrelinkedInfoSegment->Segment64.SegmentName, "__KREMLIN_START", sizeof ("__KREMLIN_START"));
+  CopyMem (Context->PrelinkedInfoSection->Section64.SegmentName, "__KREMLIN_START", sizeof ("__KREMLIN_START"));
   CopyMem (Context->PrelinkedInfoSection->Section64.SectionName, "__kremlin_start", sizeof ("__kremlin_start"));
 
   //
@@ -221,10 +222,6 @@ KcRebuildMachHeader (
     || TextSegment->FileSize != TextSegment->Size
     || TextSegment->FileSize < CurrentSize) {
     return EFI_INVALID_PARAMETER;
-  }
-
-  if (FilesetSize == 0) {
-    return EFI_SUCCESS; ///< Just in case.
   }
 
   if (CurrentSize + RequiredSize > TextSegment->FileSize) {
