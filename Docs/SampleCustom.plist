@@ -680,6 +680,8 @@
 			<false/>
 			<key>ExternalDiskIcons</key>
 			<false/>
+			<key>ForceSecureBootScheme</key>
+			<false/>
 			<key>IncreasePciBarSize</key>
 			<false/>
 			<key>LapicKernelPanic</key>
@@ -1086,6 +1088,8 @@
 			<string>M0000000000000001</string>
 			<key>ROM</key>
 			<data>ESIzRFVm</data>
+			<key>SystemUUID</key>
+			<string>00000000-0000-0000-0000-000000000000</string>
 		</dict>
 		<key>SMBIOS</key>
 		<dict>
