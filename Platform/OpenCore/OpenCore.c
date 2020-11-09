@@ -99,8 +99,6 @@ OcStartImage (
           DEBUG ((DEBUG_INFO, "OC: OcLoadAcpiSupport for macOS...\n"));
           OcLoadAcpiSupport (&mOpenCoreStorage, &mOpenCoreConfiguration);
         }
-
-<<<<<<< HEAD
         DEBUG ((DEBUG_INFO, "OC: OcLoadPlatformSupport...\n"));
         OcLoadPlatformSupport (&mOpenCoreConfiguration, &mOpenCoreCpuInfo);
         DEBUG ((DEBUG_INFO, "OC: OcLoadDevPropsSupport...\n"));
@@ -108,12 +106,9 @@ OcStartImage (
       }
       FreePool (DevicePathText);
     }
-  OldMode = OcConsoleControlSetMode (EfiConsoleControlScreenGraphics);
-=======
   OldMode = OcConsoleControlSetMode (
     LaunchInText ? EfiConsoleControlScreenText : EfiConsoleControlScreenGraphics
     );
->>>>>>> 1fb07d8d313e9ca46b8ef5de093a0075e58d7073
 
   Status = gBS->StartImage (
     ImageHandle,
