@@ -6,6 +6,10 @@ OpenCore Changelog
 - Dropped HII services from OpenDuet improving size and performance
 - Fixed patching of injected kexts in mkext
 - Added support for launching from relative paths
+- Added direct path passing for tools via `RealPath`
+- Allowed launching tools and entries in text mode via `TextMode`
+- Updated builtin firmware versions for SMBIOS and the rest
+- Fixed ACPI patches not applying if tables are in locked memory
 
 #### v0.6.3
 - Added support for xml comments in plist files

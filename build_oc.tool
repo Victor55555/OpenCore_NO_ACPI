@@ -237,7 +237,6 @@ export SELFPKG
 export NO_ARCHIVES
 
 src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval "$src" || exit 1
-
 cd Library/OcConfigurationLib || exit 1
 ./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
 echo "编译成功!"

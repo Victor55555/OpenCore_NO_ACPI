@@ -334,9 +334,18 @@ OcAllocatePages (
   EFI_STATUS              Status;
   BOOT_COMPAT_CONTEXT     *BootCompat;
   BOOLEAN                 IsPerfAlloc;
+  BOOLEAN                 IsCallGateAlloc;
 
-  BootCompat  = GetBootCompatContext ();
-  IsPerfAlloc = FALSE;
+  //
+  // Filter out garbage right away.
+  //
+  if (Memory == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  BootCompat      = GetBootCompatContext ();
+  IsPerfAlloc     = FALSE;
+  IsCallGateAlloc = FALSE;
 
   if (BootCompat->ServiceState.AwaitingPerfAlloc) {
     if (BootCompat->ServiceState.AppleBootNestedCount > 0) {
@@ -350,6 +359,14 @@ OcAllocatePages (
     }
   }
 
+  if (BootCompat->ServiceState.AppleBootNestedCount > 0
+    && Type == AllocateMaxAddress
+    && MemoryType == EfiLoaderCode
+    && *Memory == BASE_4GB - 1
+    && NumberOfPages == 1) {
+    IsCallGateAlloc = TRUE;
+  }
+
   Status = BootCompat->ServicePtrs.AllocatePages (
     Type,
     MemoryType,
@@ -361,29 +378,18 @@ OcAllocatePages (
     FixRuntimeAttributes (BootCompat, MemoryType);
 
     if (BootCompat->ServiceState.AppleBootNestedCount > 0) {
-      if (IsPerfAlloc) {
+      if (IsCallGateAlloc) {
+        //
+        // Called from boot.efi.
+        // Memory allocated for boot.efi to kernel trampoline.
+        //
+        BootCompat->ServiceState.KernelCallGate = *Memory;
+      } else if (IsPerfAlloc) {
         //
         // Called from boot.efi.
         // New perf data, it can be reallocated multiple times.
         //
         OcAppleDebugLogPerfAllocated ((VOID *)(UINTN) *Memory, EFI_PAGES_TO_SIZE (NumberOfPages));
-      } else if (Type == AllocateAddress && MemoryType == EfiLoaderData) {
-        //
-        // Called from boot.efi.
-        // Store minimally allocated address to find kernel image start.
-        //
-        if (BootCompat->ServiceState.MinAllocatedAddr == 0
-          || *Memory < BootCompat->ServiceState.MinAllocatedAddr) {
-          BootCompat->ServiceState.MinAllocatedAddr = *Memory;
-        }
-      } else if (BootCompat->ServiceState.AppleHibernateWake
-        && Type == AllocateAnyPages && MemoryType == EfiLoaderData
-        && BootCompat->ServiceState.HibernateImageAddress == 0) {
-        //
-        // Called from boot.efi during hibernate wake,
-        // first such allocation is for hibernate image
-        //
-        BootCompat->ServiceState.HibernateImageAddress = *Memory;
       }
     }
   }
@@ -631,7 +637,7 @@ OcStartImage (
   //
   // Clear monitoring vars
   //
-  BootCompat->ServiceState.MinAllocatedAddr = 0;
+  BootCompat->ServiceState.KernelCallGate = 0;
 
   if (AppleLoadedImage != NULL) {
     //
@@ -827,19 +833,10 @@ OcExitBootServices (
     return Status;
   }
 
-  if (!BootCompat->ServiceState.AppleHibernateWake) {
-    AppleMapPrepareKernelJump (
-      BootCompat,
-      (UINTN) BootCompat->ServiceState.MinAllocatedAddr,
-      FALSE
-      );
-  } else {
-    AppleMapPrepareKernelJump (
-      BootCompat,
-      (UINTN) BootCompat->ServiceState.HibernateImageAddress,
-      TRUE
-      );
-  }
+  AppleMapPrepareKernelJump (
+    BootCompat,
+    (UINTN) BootCompat->ServiceState.KernelCallGate
+    );
 
   return Status;
 }
