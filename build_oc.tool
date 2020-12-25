@@ -150,6 +150,7 @@ package() {
       "Ps2MouseDxe.efi"
       "Ps2KeyboardDxe.efi"
       "UsbMouseDxe.efi"
+      "VBoxHfs.efi"
       "XhciDxe.efi"
       )
     for efiDriver in "${efiDrivers[@]}"; do
@@ -167,7 +168,13 @@ package() {
     cp "${selfdir}/Docs/${doc}" "${dstdir}/Docs"/ || exit 1
   done
   cp "${selfdir}/Changelog.md" "${dstdir}/Docs"/ || exit 1
-  cp -r "${selfdir}/Docs/AcpiSamples/" "${dstdir}/Docs/AcpiSamples"/ || exit 1
+  cp -r "${selfdir}/Docs/AcpiSamples/"* "${dstdir}/Docs/AcpiSamples"/ || exit 1
+
+  cd "${dstdir}/Docs/AcpiSamples" || exit 1
+  for i in *.dsl ; do
+    iasl "$i" || exit 1
+  done
+  cd - || exit 1
 
   utilScpts=(
     "LegacyBoot"
@@ -215,6 +222,8 @@ package() {
   # additional docs for macserial.
   cp "${selfdir}/Utilities/macserial/FORMAT.md" "${dstdir}/Utilities/macserial"/ || exit 1
   cp "${selfdir}/Utilities/macserial/README.md" "${dstdir}/Utilities/macserial"/ || exit 1
+  # additional docs for ocvalidate.
+  cp "${selfdir}/Utilities/ocvalidate/README.md" "${dstdir}/Utilities/ocvalidate"/ || exit 1
 
   pushd "${dstdir}" || exit 1
   zip -qr -FS ../"OpenCore-Mod-${ver}-${2}.zip" ./* || exit 1

@@ -349,6 +349,9 @@
 #define OCS_EXPOSE_VERSION_UI  4U
 #define OCS_EXPOSE_OEM_INFO    8U
 #define OCS_EXPOSE_VERSION     (OCS_EXPOSE_VERSION_VAR | OCS_EXPOSE_VERSION_UI)
+#define OCS_EXPOSE_ALL_BITS (\
+  OCS_EXPOSE_BOOT_PATH  | OCS_EXPOSE_VERSION_VAR | \
+  OCS_EXPOSE_VERSION_UI | OCS_EXPOSE_OEM_INFO)
 
 typedef enum {
   OcsVaultOptional = 0,
@@ -646,7 +649,6 @@ typedef enum {
 #define OC_UEFI_QUIRKS_FIELDS(_, __) \
   _(UINT32                      , ExitBootServicesDelay       ,     , 0      , ()) \
   _(UINT32                      , TscSyncTimeout              ,     , 0      , ()) \
-  _(BOOLEAN                     , DeduplicateBootOrder        ,     , FALSE  , ()) \
   _(BOOLEAN                     , IgnoreInvalidFlexRatio      ,     , FALSE  , ()) \
   _(BOOLEAN                     , ReleaseUsbOwnership         ,     , FALSE  , ()) \
   _(BOOLEAN                     , RequestBootVarRouting       ,     , FALSE  , ()) \
