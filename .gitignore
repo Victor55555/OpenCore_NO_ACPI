@@ -49,9 +49,11 @@ prelinkedkernel.unpack
 *.id2
 *.nam
 *.til
+*.aml
 Debug/QemuRun
 Doxy
 Legacy/BinDrivers/X64
 Legacy/BinDrivers/IA32
 Legacy/BootLoader/bin
 Legacy/BootSector/bin
+Utilities/ocvalidate/*.plist
