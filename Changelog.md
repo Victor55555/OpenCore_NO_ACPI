@@ -14,7 +14,10 @@ OpenCore Changelog
 - Fixed macserial issues when processing 2021 year serials
 - Added advanced error checking in ocvalidate utility
 - Added `SetupDelay` to configure audio setup delay
-- Improved Duet USB legacy management for supported controllers
+- Reworked LogoutHook.command to support older macOS
+- Implemented MP3 audio decoding for audio assistant support
+- Added support for `PickerVariant` for more theme variants
+- Added `OC_ATTR_HIDE_THEMED_ICONS` `PickerAttribute` for Time Machine
 
 #### v0.6.4
 - Added `BlacklistAppleUpdate` to fix macOS 11 broken update optout
