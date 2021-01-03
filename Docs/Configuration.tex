@@ -3040,9 +3040,9 @@ entry choice will update till next manual reconfiguration.
   \item \texttt{0x0004} --- \texttt{OC\_ATTR\_USE\_GENERIC\_LABEL\_IMAGE}, provides predefined
     label images for boot entries without custom entries. May give less detail for the actual
     boot entry.
-  \item \texttt{0x0008} --- \texttt{OC\_ATTR\_USE\_ALTERNATE\_ICONS}, changes used icon set to
-    an alternate one if it is supported. For example, this could make a use of old-style icons
-    with a custom background colour.
+  \item \texttt{0x0008} --- \texttt{OC\_ATTR\_HIDE\_THEMED\_ICONS}, prefers builtin icons
+    for certain icon categories to match the theme style. For example, this could force
+    displaying the builtin Time Machine icon. Requires \texttt{OC\_ATTR\_USE\_VOLUME\_ICON}.
   \item \texttt{0x0010} --- \texttt{OC\_ATTR\_USE\_POINTER\_CONTROL}, enable pointer control
   in the picker when available. For example, this could make use of mouse or trackpad to
   control UI elements.
@@ -3178,6 +3178,23 @@ entry choice will update till next manual reconfiguration.
   \emph{Note 3}: On Macs with problematic GOP, it may be difficult to access the Apple BootPicker.
   The \texttt{BootKicker} utility can be blessed to workaround this problem even without loading
   OpenCore. On some Macs however, the \texttt{BootKicker} utility cannot be run from OpenCore.
+
+\item
+  \texttt{PickerVariant}\\
+  \textbf{Type}: \texttt{plist\ string}\\
+  \textbf{Failsafe}: \texttt{Auto}\\
+  \textbf{Description}: Choose specific icon set used for boot management.
+  
+  The following values are supported:
+  \begin{itemize}
+  \tightlist
+  \item \texttt{Auto} --- Automatically select one set of icons based on \texttt{DefaultBackground}
+  colour.
+  \item \texttt{Default} --- Normal icon set (without prefix).
+  \item \texttt{Old} --- Vintage icon set (\texttt{Old} filename prefix).
+  \item \texttt{Modern} --- Nouveau icon set (\texttt{Modern} filename prefix).
+  \item Other value --- Custom icon set if supported by the resources.
+  \end{itemize}
 
 \end{enumerate}
 
@@ -5638,14 +5655,15 @@ functioning. Feature highlights:
   Audio support provides a way for upstream protocols to interact with the
   selected hardware and audio resources. All audio resources should reside
   in \texttt{\textbackslash EFI\textbackslash OC\textbackslash Resources\textbackslash Audio}
-  directory. Currently the only supported audio file format is WAVE PCM. While it is
+  directory. Currently the supported audio file formats are MP3 and WAVE PCM. While it is
   driver-dependent which audio stream format is supported, most common audio cards
   support 16-bit signed stereo audio at 44100 or 48000 Hz.
 
   Audio file path is determined by audio type, audio localisation, and audio path. Each filename
-  looks as follows: \texttt{[audio type]\_[audio localisation]\_[audio path].wav}. For unlocalised
-  files filename does not include the language code and looks as follows:
-  \texttt{[audio type]\_[audio path].wav}.
+  looks as follows: \texttt{[audio type]\_[audio localisation]\_[audio path].[audio ext]}.
+  For unlocalised files filename does not include the language code and looks as follows:
+  \texttt{[audio type]\_[audio path].[audio ext]}. Audio extension can either be \texttt{mp3}
+  or \texttt{wav}.
 
   \begin{itemize}
   \tightlist
@@ -5659,7 +5677,7 @@ functioning. Feature highlights:
   \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Apple/Protocol/AppleVoiceOver.h}{\texttt{APPLE\_VOICE\_OVER\_AUDIO\_FILE} definition}.
   For OpenCore audio paths refer to
   \href{https://github.com/acidanthera/OpenCorePkg/blob/master/Include/Acidanthera/Protocol/OcAudio.h}{\texttt{OC\_VOICE\_OVER\_AUDIO\_FILE} definition}.
-  The only exception is OpenCore boot chime file, which is \texttt{OCEFIAudio\_VoiceOver\_Boot.wav}.
+  The only exception is OpenCore boot chime file, which is \texttt{OCEFIAudio\_VoiceOver\_Boot.mp3}.
   \end{itemize}
 
   Audio localisation is determined separately for macOS bootloader and OpenCore.
