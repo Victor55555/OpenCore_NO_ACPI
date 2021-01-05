@@ -15,7 +15,7 @@
 
 #include "ocvalidate.h"
 #include "OcValidateLib.h"
-#include "KextInfo.h"
+#include "ValidateKernel.h"
 
 #include <Library/OcAppleKernelLib.h>
 
@@ -156,6 +156,12 @@ CheckKernel (
   CONST CHAR8         *ChildKext;
 
   DEBUG ((DEBUG_VERBOSE, "config loaded into Kernel checker!\n"));
+  //
+  // Ensure Lilu to be always placed where it is supposed to be.
+  // 
+  ASSERT (AsciiStrCmp (mKextInfo[INDEX_KEXT_LILU].KextBundlePath, "Lilu.kext") == 0);
+  ASSERT (AsciiStrCmp (mKextInfo[INDEX_KEXT_LILU].KextExecutablePath, "Contents/MacOS/Lilu") == 0);
+  ASSERT (AsciiStrCmp (mKextInfo[INDEX_KEXT_LILU].KextPlistPath, "Contents/Info.plist") == 0);
 
   ErrorCount                       = 0;
   UserKernel                       = &Config->Kernel;
@@ -178,11 +184,11 @@ CheckKernel (
     // Sanitise strings.
     //
     if (!AsciiArchIsLegal (Arch, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->Arch内容不对 (只能是 Any, i386, 和 x86_64)!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->Arch is borked (Can only be Any, i386, and x86_64)!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiFileSystemPathIsLegal (BundlePath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath 包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
@@ -190,20 +196,20 @@ CheckKernel (
     // Valid BundlePath must contain .kext suffix.
     //
     if (!OcAsciiEndsWith (BundlePath, ".kext", TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath 不包含.kext后缀!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath does NOT contain .kext suffix!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->Comment包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiFileSystemPathIsLegal (ExecutablePath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
     if (!AsciiFileSystemPathIsLegal (PlistPath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
@@ -211,7 +217,7 @@ CheckKernel (
     // Valid PlistPath must contain .plist suffix.
     //
     if (!OcAsciiEndsWith (PlistPath, ".plist", TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath不包含.plist后缀!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath does NOT contain .plist suffix!\n", Index));
       ++ErrorCount;
     }
 
@@ -219,11 +225,11 @@ CheckKernel (
     // FIXME: Handle correct kernel version checking.
     //
     if (MaxKernel[0] != '\0' && OcParseDarwinVersion (MaxKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MaxKernel (当前设置为 %a) 是不对的!\n", Index, MaxKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MaxKernel (currently set to %a) is borked!\n", Index, MaxKernel));
       ++ErrorCount;
     }
     if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MinKernel (当前设置为 %a) 是不对的!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MinKernel (currently set to %a) is borked!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -239,14 +245,14 @@ CheckKernel (
           //
           if (IndexKextInfo == INDEX_KEXT_LILU) {
             if (!IsDisableLinkeditJettisonEnabled) {
-              DEBUG ((DEBUG_WARN, "Lilu.kext在Kernel->Add[%u]处加载, 但在Kernel->Quirks位置未启用DisableLinkeditJettison!\n", Index));
+              DEBUG ((DEBUG_WARN, "Lilu.kext is loaded at Kernel->Add[%u], but DisableLinkeditJettison is not enabled at Kernel->Quirks!\n", Index));
               ++ErrorCount;
             }
           }
         } else {
           DEBUG ((
             DEBUG_WARN,
-            "Kernel->Add[%u] 发现 %a, 但其ExecutablePath(%a)或PlistPath(％a)不太对!\n",
+            "Kernel->Add[%u] discovers %a, but its ExecutablePath (%a) or PlistPath (%a) is borked!\n",
             IndexKextInfo,
             BundlePath,
             ExecutablePath,
@@ -273,7 +279,7 @@ CheckKernel (
         HasParent = TRUE;
       } else if (AsciiStrCmp (CurrentKext, ChildKext) == 0) {
         if (!HasParent) {
-          DEBUG ((DEBUG_WARN, "Kernel->Add[%u] 发现 %a, 但其父项(%a)放在了后面或丢失!\n", Index, CurrentKext, ParentKext));
+          DEBUG ((DEBUG_WARN, "Kernel->Add[%u] discovers %a, but its Parent (%a) is either placed after it or is missing!\n", Index, CurrentKext, ParentKext));
           ++ErrorCount;
         }
         //
@@ -295,15 +301,15 @@ CheckKernel (
     // Sanitise strings.
     //
     if (!AsciiArchIsLegal (Arch, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Arch内容不对 (只能是 Any, i386, 和 x86_64)!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Arch is borked (Can only be Any, i386, and x86_64)!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Comment包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiIdentifierIsLegal (Identifier, TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Identifier包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Identifier contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -311,11 +317,11 @@ CheckKernel (
     // FIXME: Handle correct kernel version checking.
     //
     if (MaxKernel[0] != '\0' && OcParseDarwinVersion (MaxKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MaxKernel (当前设置为 %a) 是不对的!\n", Index, MaxKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MaxKernel (currently set to %a) is borked!\n", Index, MaxKernel));
       ++ErrorCount;
     }
     if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MinKernel (当前设置为 %a) 是不对的!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MinKernel (currently set to %a) is borked!\n", Index, MinKernel));
       ++ErrorCount;
     }
   }
@@ -326,16 +332,16 @@ CheckKernel (
   MaxKernel = OC_BLOB_GET (&UserKernel->Emulate.MaxKernel);
   MinKernel = OC_BLOB_GET (&UserKernel->Emulate.MinKernel);
   if (MaxKernel[0] != '\0' && OcParseDarwinVersion (MaxKernel) == 0) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MaxKernel (当前设置为 %a) 是不对的!\n", MaxKernel));
+    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MaxKernel (currently set to %a) is borked!\n", MaxKernel));
     ++ErrorCount;
   }
   if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MinKernel (当前设置为 %a) 是不对的!\n", MinKernel));
+    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MinKernel (currently set to %a) is borked!\n", MinKernel));
     ++ErrorCount;
   }
 
   if (!DataHasProperMasking (UserKernel->Emulate.Cpuid1Data, UserKernel->Emulate.Cpuid1Mask, sizeof (UserKernel->Emulate.Cpuid1Data))) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data要求Cpuid1Mask对替换的位有效!\n"));
+    DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data requires Cpuid1Mask to be active for replaced bits!\n"));
     ++ErrorCount;
   }
 
@@ -353,15 +359,15 @@ CheckKernel (
     // Sanitise strings.
     //
     if (!AsciiArchIsLegal (Arch, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Arch内容不对 (只能是 Any, i386, 和 x86_64)!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Arch is borked (Can only be Any, i386, and x86_64)!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiIdentifierIsLegal (Identifier, TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Identifier包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Identifier contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiFileSystemPathIsLegal (BundlePath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->BundlePath包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->BundlePath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
@@ -369,20 +375,20 @@ CheckKernel (
     // Valid BundlePath must contain .kext suffix.
     //
     if (!OcAsciiEndsWith (BundlePath, ".kext", TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->BundlePath不包含.kext后缀!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->BundlePath does NOT contain .kext suffix!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Comment包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiFileSystemPathIsLegal (ExecutablePath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->ExecutablePath包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->ExecutablePath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
     if (!AsciiFileSystemPathIsLegal (PlistPath)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->PlistPath包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->PlistPath contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
@@ -390,7 +396,7 @@ CheckKernel (
     // Valid PlistPath must contain .plist suffix.
     //
     if (!OcAsciiEndsWith (PlistPath, ".plist", TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->PlistPath不包含.plist后缀!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->PlistPath does NOT contain .plist suffix!\n", Index));
       ++ErrorCount;
     }
 
@@ -398,11 +404,11 @@ CheckKernel (
     // FIXME: Handle correct kernel version checking.
     //
     if (MaxKernel[0] != '\0' && OcParseDarwinVersion (MaxKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MaxKernel (当前设置为 %a) 不太对!\n", Index, MaxKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MaxKernel (currently set to %a) is borked!\n", Index, MaxKernel));
       ++ErrorCount;
     }
     if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MinKernel (当前设置为 %a) 不太对!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MinKernel (currently set to %a) is borked!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -428,15 +434,15 @@ CheckKernel (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Comment包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiArchIsLegal (Arch, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Arch内容不对 (只能是 Any, i386, 和 x86_64)!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Arch is borked (Can only be Any, i386, and x86_64)!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiIdentifierIsLegal (Identifier, TRUE)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Identifier包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->Identifier contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -444,11 +450,11 @@ CheckKernel (
     // FIXME: Handle correct kernel version checking.
     //
     if (MaxKernel[0] != '\0' && OcParseDarwinVersion (MaxKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MaxKernel (当前设置为 %a) 不太对!\n", Index, MaxKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MaxKernel (currently set to %a) is borked!\n", Index, MaxKernel));
       ++ErrorCount;
     }
     if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MinKernel (当前设置为 %a) 不太对!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MinKernel (currently set to %a) is borked!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -497,7 +503,7 @@ CheckKernel (
   //
   Arch = OC_BLOB_GET (&UserKernel->Scheme.KernelArch);
   if (!AsciiArchIsLegal (Arch, TRUE)) {
-    DEBUG ((DEBUG_WARN, "Kernel->Scheme->KernelArch不太对 (只能是 Auto, i386, i386-user32, 或 x86_64)!\n"));
+    DEBUG ((DEBUG_WARN, "Kernel->Scheme->KernelArch is borked (Can only be Auto, i386, i386-user32, or x86_64)!\n"));
     ++ErrorCount;
   }
 
@@ -505,7 +511,7 @@ CheckKernel (
     && AsciiStrCmp (KernelCache, "Cacheless") != 0
     && AsciiStrCmp (KernelCache, "Mkext") != 0
     && AsciiStrCmp (KernelCache, "Prelinked") != 0) {
-    DEBUG ((DEBUG_WARN, "Kernel->Scheme->KernelCache不太对 (只能是 Auto, Cacheless, Mkext, 或 Prelinked)!\n"));
+    DEBUG ((DEBUG_WARN, "Kernel->Scheme->KernelCache is borked (Can only be Auto, Cacheless, Mkext, or Prelinked)!\n"));
     ++ErrorCount;
   }
 
@@ -513,7 +519,7 @@ CheckKernel (
   // CustomSMBIOSGuid quirk requires UpdateSMBIOSMode at PlatformInfo set to Custom.
   //
   if (IsCustomSMBIOSGuidEnabled && AsciiStrCmp (UpdateSMBIOSMode, "Custom") != 0) {
-    DEBUG ((DEBUG_WARN, "Kernel->Quirks->CustomSMBIOSGuid已启用，但PlatformInfo->UpdateSMBIOSMode未设置为Custom!\n"));
+    DEBUG ((DEBUG_WARN, "Kernel->Quirks->CustomSMBIOSGuid is enabled, but PlatformInfo->UpdateSMBIOSMode is not set to Custom!\n"));
     ++ErrorCount;
   }
 

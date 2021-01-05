@@ -122,7 +122,7 @@ CheckNVRAM (
     AsciiGuid = OC_BLOB_GET (UserNVRAM->Add.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->Add[%u] 有不合适的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->Add[%u] has borked GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
@@ -137,7 +137,7 @@ CheckNVRAM (
       if (!AsciiPropertyIsLegal (AsciiNVRAMKey)) {
         DEBUG ((
           DEBUG_WARN,
-          "NVRAM->Add[%u]->Key[%u] 包含非法字符!\n",
+          "NVRAM->Add[%u]->Key[%u] contains illegal character!\n",
           GuidIndex,
           VariableIndex
           ));
@@ -170,7 +170,7 @@ CheckNVRAM (
     AsciiGuid = OC_BLOB_GET (UserNVRAM->Delete.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->Delete[%u] 有不合适的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->Delete[%u] has borked GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
@@ -183,7 +183,7 @@ CheckNVRAM (
       if (!AsciiPropertyIsLegal (AsciiNVRAMKey)) {
         DEBUG ((
           DEBUG_WARN,
-          "NVRAM->Delete[%u]->Key[%u] 包含非法字符!\n",
+          "NVRAM->Delete[%u]->Key[%u] contains illegal character!\n",
           GuidIndex,
           VariableIndex
           ));
@@ -216,7 +216,7 @@ CheckNVRAM (
     AsciiGuid = OC_BLOB_GET (UserNVRAM->Legacy.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->LegacySchema[%u] 有不合适的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->LegacySchema[%u] has borked GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
@@ -229,7 +229,7 @@ CheckNVRAM (
       if (!AsciiPropertyIsLegal (AsciiNVRAMKey)) {
         DEBUG ((
           DEBUG_WARN,
-          "NVRAM->LegacySchema[%u]->Key[%u] 包含非法字符!\n",
+          "NVRAM->LegacySchema[%u]->Key[%u] contains illegal character!\n",
           GuidIndex,
           VariableIndex
           ));

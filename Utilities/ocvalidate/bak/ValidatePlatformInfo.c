@@ -48,7 +48,7 @@ CheckPlatformInfo (
     && AsciiStrCmp (UpdateSMBIOSMode, "Create") != 0
     && AsciiStrCmp (UpdateSMBIOSMode, "Overwrite") != 0
     && AsciiStrCmp (UpdateSMBIOSMode, "Custom") != 0) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->UpdateSMBIOSMode 不对 (只能是TryOverwrite, Create, Overwrite, 或 Custom)!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->UpdateSMBIOSMode is borked (Can only be TryOverwrite, Create, Overwrite, or Custom)!\n"));
     ++ErrorCount;
   }
 
@@ -60,19 +60,19 @@ CheckPlatformInfo (
   }
 
   if (!HasMacInfo (SystemProductName)) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemProductName 设置了未知的Model!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemProductName has unknown model set!\n"));
     ++ErrorCount;
   }
 
   if (AsciiStrCmp (SystemMemoryStatus, "Auto") != 0
     && AsciiStrCmp (SystemMemoryStatus, "Upgradable") != 0
     && AsciiStrCmp (SystemMemoryStatus, "Soldered") != 0) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemMemoryStatus 不太对(只能是 Auto, Upgradable, 或 Soldered)!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemMemoryStatus is borked (Can only be Auto, Upgradable, or Soldered)!\n"));
     ++ErrorCount;
   }
 
   if (AsciiSystemUUID[0] != '\0' && !AsciiGuidIsLegal (AsciiSystemUUID)) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemUUID 不对!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemUUID is borked!\n"));
     ++ErrorCount;
   }
 

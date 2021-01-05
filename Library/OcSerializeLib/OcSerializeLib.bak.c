@@ -111,7 +111,7 @@ ParseSerializedDict (
     CurrentKey = PlistKeyValue (PlistDictChild (Node, Index, &CurrentValue));
 
     if (CurrentKey == NULL) {
-      DEBUG ((DEBUG_WARN, "警告: 在索引%u处没有序列化键值, 位置: <%a>!\n", Index, Context));
+      DEBUG ((DEBUG_WARN, "OCS: No serialized key at %u index, context <%a>!\n", Index, Context));
       continue;
     }
 
@@ -122,7 +122,7 @@ ParseSerializedDict (
       continue;
     }
 
-    DEBUG ((DEBUG_VERBOSE, "警告: 在%a索引%u处解析序列化!\n", CurrentKey, Index));
+    DEBUG ((DEBUG_VERBOSE, "OCS: Parsing serialized at %a at %u index!\n", CurrentKey, Index));
 
     //
     // We do not protect from duplicating serialized entries.
@@ -130,7 +130,7 @@ ParseSerializedDict (
     NewSchema = LookupConfigSchema (Info->Dict.Schema, Info->Dict.SchemaSize, CurrentKey);
 
     if (NewSchema == NULL) {
-      DEBUG ((DEBUG_WARN, "警告: 发现%a选项在索引%u处，此版本没有这个选项或已移动位置, 位置: <%a>!\n", CurrentKey, Index, Context));
+      DEBUG ((DEBUG_WARN, "OCS: No schema for %a at %u index, context <%a>!\n", CurrentKey, Index, Context));
       continue;
     }
 
@@ -139,7 +139,7 @@ ParseSerializedDict (
     if (CurrentValue == NULL) {
       DEBUG ((
         DEBUG_WARN,
-        "警告:在索引%u处的%a没有类型匹配, 预期类型是%a得到的是%a, 位置: <%a>!\n",
+        "OCS: No type match for %a at %u index, expected type %a got %a, context <%a>!\n",
         CurrentKey,
         Index,
         GetSchemaTypeName (NewSchema->Type),
@@ -174,8 +174,7 @@ ParseSerializedDict (
     if (Index2 == DictSize) {
       DEBUG ((
         DEBUG_WARN,
-        "警告: 缺少 %a 键值, 位置: <%a>!\n",
-
+        "OCS: Missing key %a, context <%a>!\n",
         Info->Dict.Schema[Index].Name,
         Context
         ));
@@ -222,7 +221,7 @@ ParseSerializedValue (
   if (Result == FALSE) {
     DEBUG ((
       DEBUG_WARN,
-      "警告: 无法将%a字段解析为类型为%a和<%a>的值, 位置: <%a>!\n",
+      "OCS: Failed to parse %a field as value with type %a and <%a> contents, context <%a>!\n",
       XmlNodeName (Node),
       GetSchemaTypeName (Info->Value.Type),
       XmlNodeContent (Node) != NULL ? XmlNodeContent (Node) : "empty",
@@ -262,7 +261,7 @@ ParseSerializedBlob (
   if (Result == FALSE) {
     DEBUG ((
       DEBUG_WARN,
-      "警告: 无法计算类型为%a的包含<%a>的%a字段的大小, 位置: <%a>!\n",
+      "OCS: Failed to calculate size of %a field containing <%a> as type %a, context <%a>!\n",
       XmlNodeName (Node),
       XmlNodeContent (Node) != NULL ? XmlNodeContent (Node) : "empty",
       GetSchemaTypeName (Info->Blob.Type),
@@ -277,7 +276,7 @@ ParseSerializedBlob (
   if (BlobMemory == NULL) {
     DEBUG ((
       DEBUG_INFO,
-      "警告: 无法分配类型为%a的%u个字节%a字段, 位置: <%a>!\n",
+      "OCS: Failed to allocate %u bytes %a field of type %a, context <%a>!\n",
       Size,
       XmlNodeName (Node),
       GetSchemaTypeName (Info->Value.Type),
@@ -303,7 +302,7 @@ ParseSerializedBlob (
   if (Result == FALSE) {
     DEBUG ((
       DEBUG_WARN,
-      "警告: 无法将%a字段解析为类型为%a和<%a>, 位置: <%a>!\n",
+      "OCS: Failed to parse %a field as blob with type %a and <%a> contents, context <%a>!\n",
       XmlNodeName (Node),
       GetSchemaTypeName (Info->Value.Type),
       XmlNodeContent (Node) != NULL ? XmlNodeContent (Node) : "empty",
@@ -337,7 +336,7 @@ ParseSerializedMap (
     CurrentKeyLen = CurrentKey != NULL ? (UINT32) (AsciiStrLen (CurrentKey) + 1) : 0;
 
     if (CurrentKeyLen == 0) {
-      DEBUG ((DEBUG_INFO, "警告: 在索引%u处没有获取序列化key!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: No get serialized key at %u index!\n", Index));
       continue;
     }
 
@@ -349,7 +348,7 @@ ParseSerializedMap (
     }
 
     if (PlistNodeCast (ChildNode, Info->List.Schema->Type) == NULL) {
-      DEBUG ((DEBUG_INFO, "警告: 索引%u处没有有效的序列化值!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: No valid serialized value at %u index!\n", Index));
       continue;
     }
 
@@ -359,7 +358,7 @@ ParseSerializedMap (
       &NewKey
       );
     if (Success == FALSE) {
-      DEBUG ((DEBUG_INFO, "警告: 无法在索引%u处插入序列化的字典!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: Couldn't insert dict serialized at %u index!\n", Index));
       continue;
     }
 
@@ -367,7 +366,7 @@ ParseSerializedMap (
     if (NewKeyValue != NULL) {
       AsciiStrnCpyS ((CHAR8 *) NewKeyValue, CurrentKeyLen, CurrentKey, CurrentKeyLen - 1);
     } else {
-      DEBUG ((DEBUG_INFO, "警告: 无法在索引%u处分配键名!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: Couldn't allocate key name at %u index!\n", Index));
     }
 
     Info->List.Schema->Apply (NewValue, ChildNode, &Info->List.Schema->Info, CurrentKey);
@@ -393,10 +392,10 @@ ParseSerializedArray (
   for (Index = 0; Index < ArraySize; Index++) {
     ChildNode = PlistNodeCast (XmlNodeChild (Node, Index), Info->List.Schema->Type);
 
-    DEBUG ((DEBUG_VERBOSE, "警告: 处理数组%u/%u元素\n", Index + 1, ArraySize));
+    DEBUG ((DEBUG_VERBOSE, "OCS: Processing array %u/%u element\n", Index + 1, ArraySize));
 
     if (ChildNode == NULL) {
-      DEBUG ((DEBUG_INFO, "警告: 无法在索引%u处序列化数组!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: Couldn't get array serialized at %u index!\n", Index));
       continue;
     }
 
@@ -406,7 +405,7 @@ ParseSerializedArray (
       NULL
       );
     if (Success == FALSE) {
-      DEBUG ((DEBUG_INFO, "警告: 无法在索引%u处插入序列化的数组!\n", Index));
+      DEBUG ((DEBUG_INFO, "OCS: Couldn't insert array serialized at %u index!\n", Index));
       continue;
     }
 
@@ -428,14 +427,14 @@ ParseSerialized (
   Document = XmlDocumentParse (PlistBuffer, PlistSize, FALSE);
 
   if (Document == NULL) {
-    DEBUG ((DEBUG_INFO, "警告: 无法解析plist文件!\n"));
+    DEBUG ((DEBUG_INFO, "OCS: Couldn't parse serialized file!\n"));
     return FALSE;
   }
 
   RootDict = PlistNodeCast (PlistDocumentRoot (Document), PLIST_NODE_TYPE_DICT);
 
   if (RootDict == NULL) {
-    DEBUG ((DEBUG_INFO, "警告: 无法获得plist的根!\n"));
+    DEBUG ((DEBUG_INFO, "OCS: Couldn't get serialized root!\n"));
     XmlDocumentFree (Document);
     return FALSE;
   }

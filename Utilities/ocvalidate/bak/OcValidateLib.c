@@ -282,7 +282,7 @@ AsciiDevicePathIsLegal (
         if (OcStriCmp (UnicodeDevicePath, TextualDevicePath) != 0) {
           DEBUG ((
             DEBUG_WARN,
-            "原始路径: %s\n内部转换后的路径: %s\n\n",
+            "Original path: %s\nPath after internal conversion: %s\n\n",
             UnicodeDevicePath,
             TextualDevicePath
             ));
@@ -359,7 +359,7 @@ ValidatePatch (
   if (!FindSizeCanBeZero && FindSize != ReplaceSize) {
     DEBUG ((
       DEBUG_WARN,
-      "%a[%u] 查找和替换内容不同 (%u vs %u)!\n",
+      "%a[%u] has different Find and Replace size (%u vs %u)!\n",
       PatchSection,
       PatchIndex,
       FindSize,
@@ -372,7 +372,7 @@ ValidatePatch (
     if (MaskSize != FindSize) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u] 已设置 mask ，但其大小与find处不同 (%u vs %u)!\n",
+        "%a[%u] has Mask set but its size is different from Find (%u vs %u)!\n",
         PatchSection,
         PatchIndex,
         MaskSize,
@@ -382,7 +382,7 @@ ValidatePatch (
     } else if (!DataHasProperMasking (Find, Mask, FindSize)) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u]->查找要求掩码对相应位有效!\n",
+        "%a[%u]->Find requires Mask to be active for corresponding bits!\n",
         PatchSection,
         PatchIndex
         ));
@@ -394,7 +394,7 @@ ValidatePatch (
     if (ReplaceMaskSize != ReplaceSize) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u] 设置了ReplaceMask，但其大小与Replace不同 (%u vs %u)!\n",
+        "%a[%u] has ReplaceMask set but its size is different from Replace (%u vs %u)!\n",
         PatchSection,
         PatchIndex,
         ReplaceMaskSize,
@@ -404,7 +404,7 @@ ValidatePatch (
     } else if (!DataHasProperMasking (Replace, ReplaceMask, ReplaceSize)) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u]->替换要求ReplaceMask对相应位有效!\n",
+        "%a[%u]->Replace requires ReplaceMask to be active for corresponding bits!\n",
         PatchSection,
         PatchIndex
         ));
@@ -443,7 +443,7 @@ FindArrayDuplication (
         //
         // DupChecker prints what is duplicated, and here the index is printed.
         //
-        DEBUG ((DEBUG_WARN, "在索引 %u 和 %u 处!\n", Index, Index2));
+        DEBUG ((DEBUG_WARN, "at Index %u and %u!\n", Index, Index2));
         ++ErrorCount;
       }
     }
@@ -467,7 +467,7 @@ StringIsDuplicated (
     //
     // Print duplicated entries. Index will be printed in the parent function (FindArrayDuplication).
     //
-    DEBUG ((DEBUG_WARN, "%a: %a 重复 ", EntrySection, PrimaryEntry[0] != '\0' ? PrimaryEntry : "<empty string>"));
+    DEBUG ((DEBUG_WARN, "%a: %a is duplicated ", EntrySection, PrimaryEntry[0] != '\0' ? PrimaryEntry : "<empty string>"));
     HasDup = TRUE;
   }
 
@@ -481,9 +481,9 @@ ReportError (
   )
 {
   if (ErrorCount != 0) {
-    DEBUG ((DEBUG_WARN, "%a 返回 %u %a!\n", FuncName, ErrorCount, ErrorCount > 1 ? "错误" : "错误"));
+    DEBUG ((DEBUG_WARN, "%a returns %u %a!\n", FuncName, ErrorCount, ErrorCount > 1 ? "errors" : "error"));
   } else {
-    DEBUG ((DEBUG_VERBOSE, "%a 未返回错误!\n", FuncName));
+    DEBUG ((DEBUG_VERBOSE, "%a returns no errors!\n", FuncName));
   }
 
   return ErrorCount;
