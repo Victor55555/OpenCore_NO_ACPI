@@ -15,7 +15,6 @@
 
 #include "ocvalidate.h"
 #include "OcValidateLib.h"
-#include "KextInfo.h"
 
 #include <Library/BaseLib.h>
 #include <Library/OcBootManagementLib.h>
@@ -102,7 +101,7 @@ MiscToolsHasDuplication (
 
   if (AsciiStrCmp (MiscToolsPrimaryArgumentsString, MiscToolsSecondaryArgumentsString) == 0
     && AsciiStrCmp (MiscToolsPrimaryPathString, MiscToolsSecondaryPathString) == 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Tools->Path: %a 是重复的 ", MiscToolsPrimaryPathString));
+    DEBUG ((DEBUG_WARN, "Misc->Tools->Path: %a is duplicated ", MiscToolsPrimaryPathString));
     return TRUE;
   }
 
@@ -145,41 +144,37 @@ CheckMisc (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32            ErrorCount;
-  UINT32            Index;
-  OC_KERNEL_CONFIG  *UserKernel;
-  OC_MISC_CONFIG    *UserMisc;
-  OC_UEFI_CONFIG    *UserUefi;
-  UINT32            ConsoleAttributes;
-  CONST CHAR8       *HibernateMode;
-  UINT32            PickerAttributes;
-  CONST CHAR8       *PickerMode;
-  CONST CHAR8       *PickerVariant;
-  UINT64            DisplayLevel;
-  UINT64            AllowedDisplayLevel;
-  UINT64            HaltLevel;
-  UINT64            AllowedHaltLevel;
-  UINT32            Target;
-  BOOLEAN           IsAuthRestartEnabled;
-  BOOLEAN           HasVSMCKext;
-  CONST CHAR8       *BootProtect;
-  BOOLEAN           IsRequestBootVarRoutingEnabled;
-  CONST CHAR8       *AsciiDmgLoading;
-  UINT32            ExposeSensitiveData;
-  CONST CHAR8       *AsciiVault;
-  UINT32            ScanPolicy;
-  UINT32            AllowedScanPolicy;
-  CONST CHAR8       *SecureBootModel;
-  CONST CHAR8       *Arguments;
-  CONST CHAR8       *Comment;
-  CONST CHAR8       *AsciiName;
-  CONST CHAR16      *UnicodeName;
-  CONST CHAR8       *Path;
+  UINT32          ErrorCount;
+  UINT32          Index;
+  OC_MISC_CONFIG  *UserMisc;
+  OC_UEFI_CONFIG  *UserUefi;
+  UINT32          ConsoleAttributes;
+  CONST CHAR8     *HibernateMode;
+  UINT32          PickerAttributes;
+  CONST CHAR8     *PickerMode;
+  CONST CHAR8     *PickerVariant;
+  UINT64          DisplayLevel;
+  UINT64          AllowedDisplayLevel;
+  UINT64          HaltLevel;
+  UINT64          AllowedHaltLevel;
+  UINT32          Target;
+  CONST CHAR8     *BootProtect;
+  BOOLEAN         IsRequestBootVarRoutingEnabled;
+  CONST CHAR8     *AsciiDmgLoading;
+  UINT32          ExposeSensitiveData;
+  CONST CHAR8     *AsciiVault;
+  UINT32          ScanPolicy;
+  UINT32          AllowedScanPolicy;
+  CONST CHAR8     *SecureBootModel;
+  CONST CHAR8     *Arguments;
+  CONST CHAR8     *Comment;
+  CONST CHAR8     *AsciiName;
+  CONST CHAR16    *UnicodeName;
+  CONST CHAR8     *Path;
 
   DEBUG ((DEBUG_VERBOSE, "config loaded into Misc checker!\n"));
 
   ErrorCount                     = 0;
-  UserKernel                     = &Config->Kernel;
   UserMisc                       = &Config->Misc;
   UserUefi                       = &Config->Uefi;
   ConsoleAttributes              = UserMisc->Boot.ConsoleAttributes;
@@ -192,8 +187,6 @@ CheckMisc (
   HaltLevel                      = DisplayLevel;
   AllowedHaltLevel               = AllowedDisplayLevel;
   Target                         = UserMisc->Debug.Target;
-  IsAuthRestartEnabled           = UserMisc->Security.AuthRestart;
-  HasVSMCKext                    = FALSE;
   BootProtect                    = OC_BLOB_GET (&UserMisc->Security.BootProtect);
   IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
   AsciiDmgLoading                = OC_BLOB_GET (&UserMisc->Security.DmgLoading);
@@ -204,7 +197,7 @@ CheckMisc (
   SecureBootModel                = OC_BLOB_GET (&UserMisc->Security.SecureBootModel);
 
   if ((ConsoleAttributes & ~0x7FU) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->ConsoleAttributes设置了未知的位!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->ConsoleAttributes has unknown bits set!\n"));
     ++ErrorCount;
   }
 
@@ -212,12 +205,12 @@ CheckMisc (
     && AsciiStrCmp (HibernateMode, "Auto") != 0
     && AsciiStrCmp (HibernateMode, "RTC") != 0
     && AsciiStrCmp (HibernateMode, "NVRAM") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->HibernateMode 不太对 (只能是 None, Auto, RTC, 或 NVRAM)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->HibernateMode is borked (Can only be None, Auto, RTC, or NVRAM)!\n"));
     ++ErrorCount;
   }
 
   if ((PickerAttributes & ~OC_ATTR_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes设置了未知位!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes is has unknown bits set!\n"));
     ++ErrorCount;
   }
 
@@ -227,12 +220,12 @@ CheckMisc (
   if (AsciiStrCmp (PickerMode, "Builtin") != 0
     && AsciiStrCmp (PickerMode, "External") != 0
     && AsciiStrCmp (PickerMode, "Apple") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不太对 (只能是 Builtin, External, 或 Apple)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode is borked (Can only be Builtin, External, or Apple)!\n"));
     ++ErrorCount;
   }
 
   if (PickerVariant[0] == '\0') {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant不能为空!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant cannot be empty!\n"));
     ++ErrorCount;
   }
 
@@ -240,38 +233,32 @@ CheckMisc (
   // FIXME: Check whether DisplayLevel only supports values within AllowedDisplayLevel, or all possible levels in DebugLib.h?
   //
   if ((DisplayLevel & ~AllowedDisplayLevel) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel设置了未知位！\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel is has unknown bits set!\n"));
     ++ErrorCount;
   }
   if ((HaltLevel & ~AllowedHaltLevel) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->HaltLevel 设置了未知位！\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->HaltLevel has unknown bits set!\n"));
     ++ErrorCount;
   }
 
   if ((Target & ~OC_LOG_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Debug->Target 设置了未知位！\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Debug->Target has unknown bits set!\n"));
     ++ErrorCount;
   }
 
-  for (Index = 0; Index < UserKernel->Add.Count; ++Index) {
-    if (AsciiStrCmp (OC_BLOB_GET (&UserKernel->Add.Values[Index]->BundlePath), mKextInfo[INDEX_KEXT_VSMC].KextBundlePath) == 0) {
-      HasVSMCKext = TRUE;
-    }
-  }
-  if (IsAuthRestartEnabled && !HasVSMCKext) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->启用了AuthRestart，但未在Kernel->Add中加载VirtualSMC!\n"));
-    ++ErrorCount;
-  }
+  //
+  // TODO: Check requirements of Security->AuthRestart.
+  //
 
   if (AsciiStrCmp (BootProtect, "None") != 0
     && AsciiStrCmp (BootProtect, "Bootstrap") != 0
     && AsciiStrCmp (BootProtect, "BootstrapShort") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect 不太对 (只能是 None, Bootstrap, 或 BootstrapShort)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect is borked (Can only be None, Bootstrap, or BootstrapShort)!\n"));
     ++ErrorCount;
   } else if (AsciiStrCmp (BootProtect, "Bootstrap") == 0
     || AsciiStrCmp (BootProtect, "BootstrapShort") == 0) {
     if (!IsRequestBootVarRoutingEnabled) {
-      DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect 设置为 %a 需要启用 UEFI->Quirks->RequestBootVarRouting!\n", BootProtect));
+      DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect is set to %a which requires UEFI->Quirks->RequestBootVarRouting to be enabled!\n", BootProtect));
       ++ErrorCount;
     }
     //
@@ -282,19 +269,19 @@ CheckMisc (
   if (AsciiStrCmp (AsciiDmgLoading, "Disabled") != 0
     && AsciiStrCmp (AsciiDmgLoading, "Signed") != 0
     && AsciiStrCmp (AsciiDmgLoading, "Any") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->DmgLoading 不太对 (只能是 Disabled, Signed, 或 Any)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->DmgLoading is borked (Can only be Disabled, Signed, or Any)!\n"));
     ++ErrorCount;
   }
 
   if ((ExposeSensitiveData & ~OCS_EXPOSE_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->ExposeSensitiveData 设置了未知位！\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->ExposeSensitiveData has unknown bits set!\n"));
     ++ErrorCount;
   }
 
   if (AsciiStrCmp (AsciiVault, "Optional") != 0
     && AsciiStrCmp (AsciiVault, "Basic") != 0
     && AsciiStrCmp (AsciiVault, "Secure") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->Vault 不太对 (只能是 Optional, Basic, 或 Secure)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->Vault is borked (Can only be Optional, Basic, or Secure)!\n"));
     ++ErrorCount;
   }
 
@@ -303,17 +290,17 @@ CheckMisc (
   //
   if (ScanPolicy != 0) {
     if ((ScanPolicy & ~AllowedScanPolicy) != 0) { 
-      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy 设置了未知位！\n"));
+      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy has unknown bits set!\n"));
       ++ErrorCount;
     }
 
     if ((ScanPolicy & OC_SCAN_FILE_SYSTEM_BITS) != 0 && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) == 0) {
-      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy需要扫描文件系统, 但是OC_SCAN_FILE_SYSTEM_LOCK (bit 0)未设置!\n"));
+      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy requests scanning filesystem, but OC_SCAN_FILE_SYSTEM_LOCK (bit 0) is not set!\n"));
       ++ErrorCount;
     }
 
     if ((ScanPolicy & OC_SCAN_DEVICE_BITS) != 0 && (ScanPolicy & OC_SCAN_DEVICE_LOCK) == 0) {
-      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy需要扫描设备, 但是OC_SCAN_DEVICE_LOCK (bit 1)未设置!\n"));
+      DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy requests scanning devices, but OC_SCAN_DEVICE_LOCK (bit 1) is not set!\n"));
       ++ErrorCount;
     }
   }
@@ -322,7 +309,7 @@ CheckMisc (
   // Validate SecureBootModel.
   //
   if (!ValidateSecureBootModel (SecureBootModel)) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->SecureBootModel 不太对!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->SecureBootModel is borked!\n"));
     ++ErrorCount;
   }
 
@@ -339,18 +326,18 @@ CheckMisc (
     //       we use Comment sanitiser here.
     //
     if (!AsciiCommentIsLegal (Arguments)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Arguments 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Arguments contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
-        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name 包含非法字符！\n", Index));
+        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name contains illegal character!\n", Index));
         ++ErrorCount;
       }
 
@@ -361,7 +348,7 @@ CheckMisc (
     // FIXME: Properly sanitise Path.
     //
     if (!AsciiCommentIsLegal (Path)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path contains illegal character!\n", Index));
       ++ErrorCount;
     }
   }
@@ -381,18 +368,18 @@ CheckMisc (
     //       we use Comment sanitiser here.
     //
     if (!AsciiCommentIsLegal (Arguments)) {
-      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Arguments 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Arguments contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Comment 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
-        DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Name 包含非法字符！\n", Index));
+        DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Name contains illegal character!\n", Index));
         ++ErrorCount;
       }
 
@@ -403,7 +390,7 @@ CheckMisc (
     // FIXME: Properly sanitise Path.
     //
     if (!AsciiCommentIsLegal (Path)) {
-      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Path 包含非法字符！\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Path contains illegal character!\n", Index));
       ++ErrorCount;
     }
   }

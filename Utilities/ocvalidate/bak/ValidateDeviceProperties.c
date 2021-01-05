@@ -85,7 +85,7 @@ CheckDeviceProperties (
   CONST CHAR8               *AsciiProperty;
   OC_ASSOC                  *PropertyMap;
 
-  DEBUG ((DEBUG_VERBOSE, "配置加载到DeviceProperties检查器中!\n"));
+  DEBUG ((DEBUG_VERBOSE, "config loaded into DeviceProperties checker!\n"));
 
   ErrorCount  = 0;
   UserDevProp = &Config->DeviceProperties;
@@ -94,7 +94,7 @@ CheckDeviceProperties (
     AsciiDevicePath   = OC_BLOB_GET (UserDevProp->Delete.Keys[DeviceIndex]);
     
     if (!AsciiDevicePathIsLegal (AsciiDevicePath)) {
-      DEBUG ((DEBUG_WARN, "DeviceProperties->Delete[%u]->DevicePath不对！请检查以上信息!\n", DeviceIndex));
+      DEBUG ((DEBUG_WARN, "DeviceProperties->Delete[%u]->DevicePath is borked! Please check the information above!\n", DeviceIndex));
       ++ErrorCount;
     }
 
@@ -107,7 +107,7 @@ CheckDeviceProperties (
       if (!AsciiPropertyIsLegal (AsciiProperty)) {
         DEBUG ((
           DEBUG_WARN,
-          "DeviceProperties->Delete[%u]->Property[%u] 包含非法字符!\n",
+          "DeviceProperties->Delete[%u]->Property[%u] contains illegal character!\n",
           DeviceIndex,
           PropertyIndex
           ));
@@ -140,7 +140,7 @@ CheckDeviceProperties (
     AsciiDevicePath   = OC_BLOB_GET (UserDevProp->Add.Keys[DeviceIndex]);
     
     if (!AsciiDevicePathIsLegal (AsciiDevicePath)) {
-      DEBUG ((DEBUG_WARN, "DeviceProperties->Add[%u]->DevicePath不对! 请检查以上信息!\n", DeviceIndex));
+      DEBUG ((DEBUG_WARN, "DeviceProperties->Add[%u]->DevicePath is borked! Please check the information above!\n", DeviceIndex));
       ++ErrorCount;
     }
 
@@ -155,7 +155,7 @@ CheckDeviceProperties (
       if (!AsciiPropertyIsLegal (AsciiProperty)) {
         DEBUG ((
           DEBUG_WARN,
-          "DeviceProperties->Add[%u]->Property[%u] 包含非法字符!\n",
+          "DeviceProperties->Add[%u]->Property[%u] contains illegal character!\n",
           DeviceIndex,
           PropertyIndex
           ));

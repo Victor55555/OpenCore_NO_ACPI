@@ -68,7 +68,7 @@ CheckACPI (
   UINT32          ReplaceMaskSize;
   BOOLEAN         HasCustomDSDT;
 
-  DEBUG ((DEBUG_VERBOSE, "配置加载到ACPI检查器中!\n"));
+  DEBUG ((DEBUG_VERBOSE, "config loaded into ACPI checker!\n"));
 
   ErrorCount    = 0;
   UserAcpi      = &Config->Acpi;
@@ -82,17 +82,17 @@ CheckACPI (
     // Sanitise strings.
     //
     if (!AsciiFileSystemPathIsLegal (Path)) {
-      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径包含非法字符,建议不要使用中文字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->Path contains illegal character!\n", Index));
       ++ErrorCount;
       continue;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->Comment中包含非法字符,建议不要使用中文字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
     if (!OcAsciiEndsWith (Path, ".aml", TRUE) && !OcAsciiEndsWith (Path, ".bin", TRUE)) {
-      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径具有.aml和.bin以外的文件名后缀!\n", Index));
+      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->Path has filename suffix other than .aml and .bin!\n", Index));
       ++ErrorCount;
     }
 
@@ -118,7 +118,7 @@ CheckACPI (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "ACPI->Delete[%u]->Comment中包含非法字符,建议不要使用中文字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "ACPI->Delete[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -143,7 +143,7 @@ CheckACPI (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "ACPI->Patch[%u]->Comment中包含非法字符,建议不要使用中文字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "ACPI->Patch[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -174,7 +174,7 @@ CheckACPI (
   // Check for RebaseRegions when using customised DSDT.
   //
   if (HasCustomDSDT && !UserAcpi->Quirks.RebaseRegions) {
-    DEBUG ((DEBUG_WARN, "ACPI->Quirks->使用自定义DSDT表时未启用RebaseRegions!\n"));
+    DEBUG ((DEBUG_WARN, "ACPI->Quirks->RebaseRegions is not enabled when customised DSDT table is in use!\n"));
     ++ErrorCount;
   }
 

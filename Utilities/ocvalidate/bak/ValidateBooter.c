@@ -48,7 +48,7 @@ CheckBooter (
   BOOLEAN           IsEnableWriteUnprotectorEnabled;
   BOOLEAN           HasOpenRuntimeEfiDriver;
   
-  DEBUG ((DEBUG_VERBOSE, "配置加载到Booter检查器中!\n"));
+  DEBUG ((DEBUG_VERBOSE, "config loaded into Booter checker!\n"));
 
   ErrorCount                      = 0;
   UserBooter                      = &Config->Booter;
@@ -72,7 +72,7 @@ CheckBooter (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Booter->MmioWhitelist[%u]-Comment中包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Booter->MmioWhitelist[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -98,15 +98,15 @@ CheckBooter (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->Comment中包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->Comment contains illegal character!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiArchIsLegal (Arch, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->Arch 内容不对 (只能是 Any, i386, 和 x86_64)!\n", Index));
+      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->Arch is borked (Can only be Any, i386, and x86_64)!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiIdentifierIsLegal (Identifier, FALSE)) {
-      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->标识符包含非法字符!\n", Index));
+      DEBUG ((DEBUG_WARN, "Booter->Patch[%u]->Identifier contains illegal character!\n", Index));
       ++ErrorCount;
     }
 
@@ -141,34 +141,34 @@ CheckBooter (
   }
 
   if (ShouldEnableDevirtualiseMmio && !IsDevirtualiseMmioEnabled) {
-    DEBUG ((DEBUG_WARN, "在Booter->MmioWhitelist下有启用的条目, 但未启用DevirtualiseMmio!\n"));
+    DEBUG ((DEBUG_WARN, "There are enabled entries under Booter->MmioWhitelist, but DevirtualiseMmio is not enabled!\n"));
     ++ErrorCount;
   }
   if (!HasOpenRuntimeEfiDriver) {
     if (IsProvideCustomSlideEnabled) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->ProvideCustomSlide已启用, 但是OpenRuntime.efi没有在UEFI->Drivers中加载!\n"));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->ProvideCustomSlide is enabled, but OpenRuntime.efi is not loaded at UEFI->Drivers!\n"));
       ++ErrorCount;
     }
     if (IsDisableVariableWriteEnabled) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->已启用DisableVariableWrite，但未在UEFI->Drivers中加载OpenRuntime.efi!\n"));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->DisableVariableWrite is enabled, but OpenRuntime.efi is not loaded at UEFI->Drivers!\n"));
       ++ErrorCount;
     }
     if (IsEnableWriteUnprotectorEnabled) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->EnableWriteUnprotector已启用，但未在UEFI->Drivers中加载OpenRuntime.efi!\n"));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->EnableWriteUnprotector is enabled, but OpenRuntime.efi is not loaded at UEFI->Drivers!\n"));
       ++ErrorCount;
     }
   }
   if (!IsProvideCustomSlideEnabled) {
     if (IsAllowRelocationBlockEnabled) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->启用AllowRelocationBlock，但未完全启用ProvideCustomSlide!\n"));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->AllowRelocationBlock is enabled, but ProvideCustomSlide is not enabled altogether!\n"));
       ++ErrorCount;
     }
     if (IsEnableSafeModeSlideEnabled) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->已启用EnableSafeModeSlide，但未完全启用ProvideCustomSlide!\n"));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->EnableSafeModeSlide is enabled, but ProvideCustomSlide is not enabled altogether!\n"));
       ++ErrorCount;
     }
     if (MaxSlide > 0) {
-      DEBUG ((DEBUG_WARN, "Booter->Quirks->ProvideMaxSlide设置为%u，但未完全启用ProvideCustomSlide!\n", MaxSlide));
+      DEBUG ((DEBUG_WARN, "Booter->Quirks->ProvideMaxSlide is set to %u, but ProvideCustomSlide is not enabled altogether!\n", MaxSlide));
       ++ErrorCount;
     }
   }

@@ -15,7 +15,6 @@
 
 #include "ocvalidate.h"
 #include "OcValidateLib.h"
-#include "KextInfo.h"
 
 #include <OpenCore.h>
 
@@ -40,11 +39,6 @@ CheckConfig (
   };
 
   ErrorCount = 0;
-
-  //
-  // Ensure correct kext info prior to verification.
-  //
-  ValidateKextInfo ();
 
   //
   // Pass config structure to all checkers.
@@ -76,8 +70,8 @@ int ENTRY_POINT(int argc, const char *argv[]) {
   // Print usage.
   //
   if (argc != 2 || (argc > 1 && AsciiStrCmp (argv[1], "--version") == 0)) {
-    DEBUG ((DEBUG_ERROR, "\n注意：此版本的ocvalidate仅适用于OpenCore版本 %a!\n\n", OPEN_CORE_VERSION));
-    DEBUG ((DEBUG_ERROR, "用法: %a <指定路径/config.plist>\n\n", argv[0]));
+    DEBUG ((DEBUG_ERROR, "\nNOTE: This version of ocvalidate is only compatible with OpenCore version %a!\n\n", OPEN_CORE_VERSION));
+    DEBUG ((DEBUG_ERROR, "Usage: %a <path/to/config.plist>\n\n", argv[0]));
     return -1;
   }
 
@@ -87,7 +81,7 @@ int ENTRY_POINT(int argc, const char *argv[]) {
   ConfigFileName   = argv[1];
   ConfigFileBuffer = UserReadFile (ConfigFileName, &ConfigFileSize);
   if (ConfigFileBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "读取 %a 失败\n", ConfigFileName));
+    DEBUG ((DEBUG_ERROR, "Failed to read %a\n", ConfigFileName));
     return -1;
   }
 
@@ -101,7 +95,7 @@ int ENTRY_POINT(int argc, const char *argv[]) {
   //
   Status = OcConfigurationInit (&Config, ConfigFileBuffer, ConfigFileSize);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "无效的配置\n"));
+    DEBUG ((DEBUG_ERROR, "Invalid config\n"));
     return -1;
   }
 
@@ -109,18 +103,18 @@ int ENTRY_POINT(int argc, const char *argv[]) {
   if (ErrorCount == 0) {
     DEBUG ((
       DEBUG_ERROR,
-      "检查 %a用了 %llu 毫秒完成\n",
+      "Done checking %a in %llu ms\n",
       ConfigFileName,
       GetCurrentTimestamp () - ExecTimeStart
       ));
   } else {
     DEBUG ((
       DEBUG_ERROR,
-      "检查 %a用了 %llu 毫秒完成, 但它有 %u %a 要修复\n",
+      "Done checking %a in %llu ms, but it has %u %a to be fixed\n",
       ConfigFileName,
       GetCurrentTimestamp () - ExecTimeStart,
       ErrorCount,
-      ErrorCount > 1 ? "错误" : "错误"
+      ErrorCount > 1 ? "errors" : "error"
       ));
   }
 

@@ -130,7 +130,7 @@ ParseSerializedDict (
     NewSchema = LookupConfigSchema (Info->Dict.Schema, Info->Dict.SchemaSize, CurrentKey);
 
     if (NewSchema == NULL) {
-      DEBUG ((DEBUG_WARN, "警告: 发现%a选项在索引%u处，此版本没有这个选项或已移动位置, 位置: <%a>!\n", CurrentKey, Index, Context));
+      DEBUG ((DEBUG_WARN, "警告: 在索引%u处存在%a选项，此版本没有这个选项或已移动位置, 位置: <%a>!\n", CurrentKey, Index, Context));
       continue;
     }
 
