@@ -1,14 +1,11 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
-
   All rights reserved.
-
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
-
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -24,10 +21,8 @@
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Entries.
-
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
-
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -69,10 +64,8 @@ MiscEntriesHasDuplication (
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Tools.
-
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
-
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -111,9 +104,7 @@ MiscToolsHasDuplication (
 
 /**
   Validate if SecureBootModel has allowed value.
-
   @param[in]  SecureBootModel  SecureBootModel retrieved from user config.
-
   @retval     TRUE             If SecureBootModel is valid.
 **/
 STATIC
@@ -140,8 +131,180 @@ ValidateSecureBootModel (
   return FALSE;
 }
 
+STATIC
 UINT32
-CheckMisc (
+CheckMiscBoot (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32            ErrorCount;
+  OC_MISC_CONFIG    *UserMisc;
+  UINT32            ConsoleAttributes;
+  CONST CHAR8       *HibernateMode;
+  UINT32            PickerAttributes;
+  CONST CHAR8       *PickerMode;
+  CONST CHAR8       *PickerVariant;
+
+  ErrorCount        = 0;
+  UserMisc          = &Config->Misc;
+
+  ConsoleAttributes = UserMisc->Boot.ConsoleAttributes;
+  if ((ConsoleAttributes & ~0x7FU) != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->ConsoleAttributes设置了未知的位!\n"));
+    ++ErrorCount;
+  }
+
+  HibernateMode     = OC_BLOB_GET (&UserMisc->Boot.HibernateMode);
+  if (AsciiStrCmp (HibernateMode, "None") != 0
+    && AsciiStrCmp (HibernateMode, "Auto") != 0
+    && AsciiStrCmp (HibernateMode, "RTC") != 0
+    && AsciiStrCmp (HibernateMode, "NVRAM") != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->HibernateMode 不太对 (只能是 None, Auto, RTC, 或 NVRAM)!\n"));
+    ++ErrorCount;
+  }
+
+  PickerAttributes  = UserMisc->Boot.PickerAttributes;
+  if ((PickerAttributes & ~OC_ATTR_ALL_BITS) != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes设置了未知位!\n"));
+    ++ErrorCount;
+  }
+
+  //
+  // FIXME: Is OpenCanopy.efi mandatory if set to External? Or is this just a suggestion?
+  //
+  PickerMode        = OC_BLOB_GET (&UserMisc->Boot.PickerMode);
+  if (AsciiStrCmp (PickerMode, "Builtin") != 0
+    && AsciiStrCmp (PickerMode, "External") != 0
+    && AsciiStrCmp (PickerMode, "Apple") != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不太对 (只能是 Builtin, External, 或 Apple)!\n"));
+    ++ErrorCount;
+  }
+
+  PickerVariant     = OC_BLOB_GET (&UserMisc->Boot.PickerVariant);
+  if (PickerVariant[0] == '\0') {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant不能为空!\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckMiscDebug (
+  IN  OC_GLOBAL_CONFIG  *Config
+  ) 
+{
+  UINT32              ErrorCount;
+  OC_MISC_CONFIG      *UserMisc;
+  UINT64              DisplayLevel;
+  UINT64              AllowedDisplayLevel;
+  UINT64              HaltLevel;
+  UINT64              AllowedHaltLevel;
+  UINT32              Target;
+
+  ErrorCount          = 0;
+  UserMisc            = &Config->Misc;
+
+  //
+  // FIXME: Check whether DisplayLevel only supports values within AllowedDisplayLevel, or all possible levels in DebugLib.h?
+  //
+  DisplayLevel        = UserMisc->Debug.DisplayLevel;
+  AllowedDisplayLevel = DEBUG_WARN | DEBUG_INFO | DEBUG_VERBOSE | DEBUG_ERROR;
+  if ((DisplayLevel & ~AllowedDisplayLevel) != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel设置了未知位！\n"));
+    ++ErrorCount;
+  }
+  HaltLevel           = DisplayLevel;
+  AllowedHaltLevel    = AllowedDisplayLevel;
+  if ((HaltLevel & ~AllowedHaltLevel) != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Security->HaltLevel 设置了未知位！\n"));
+    ++ErrorCount;
+  }
+
+  Target              = UserMisc->Debug.Target;
+  if ((Target & ~OC_LOG_ALL_BITS) != 0) {
+    DEBUG ((DEBUG_WARN, "Misc->Debug->Target 设置了未知位！\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckMiscEntries (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32            ErrorCount;
+  UINT32            Index;
+  OC_MISC_CONFIG    *UserMisc;
+  CONST CHAR8       *Arguments;
+  CONST CHAR8       *Comment;
+  CONST CHAR8       *AsciiName;
+  CONST CHAR16      *UnicodeName;
+  CONST CHAR8       *Path;
+
+  ErrorCount        = 0;
+  UserMisc          = &Config->Misc;
+
+  for (Index = 0; Index < UserMisc->Entries.Count; ++Index) {
+    Arguments       = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Arguments);
+    Comment         = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Comment);
+    AsciiName       = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Name);
+    Path            = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Path);
+
+    //
+    // Sanitise strings.
+    //
+    // NOTE: As Arguments takes identical requirements of Comment,
+    //       we use Comment sanitiser here.
+    //
+    if (!AsciiCommentIsLegal (Arguments)) {
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Arguments contains illegal character!\n", Index));
+      ++ErrorCount;
+    }
+    if (!AsciiCommentIsLegal (Comment)) {
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment contains illegal character!\n", Index));
+      ++ErrorCount;
+    }
+    
+    UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
+    if (UnicodeName != NULL) {
+      if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
+        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name contains illegal character!\n", Index));
+        ++ErrorCount;
+      }
+
+      FreePool ((VOID *) UnicodeName);
+    }
+
+    //
+    // FIXME: Properly sanitise Path.
+    //
+    if (!AsciiCommentIsLegal (Path)) {
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path contains illegal character!\n", Index));
+      ++ErrorCount;
+    }
+  }
+
+  //
+  // Check duplicated entries in Entries.
+  //
+  ErrorCount += FindArrayDuplication (
+    UserMisc->Entries.Values,
+    UserMisc->Entries.Count,
+    sizeof (UserMisc->Entries.Values[0]),
+    MiscEntriesHasDuplication
+    );
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckMiscSecurity (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -150,16 +313,6 @@ CheckMisc (
   OC_KERNEL_CONFIG  *UserKernel;
   OC_MISC_CONFIG    *UserMisc;
   OC_UEFI_CONFIG    *UserUefi;
-  UINT32            ConsoleAttributes;
-  CONST CHAR8       *HibernateMode;
-  UINT32            PickerAttributes;
-  CONST CHAR8       *PickerMode;
-  CONST CHAR8       *PickerVariant;
-  UINT64            DisplayLevel;
-  UINT64            AllowedDisplayLevel;
-  UINT64            HaltLevel;
-  UINT64            AllowedHaltLevel;
-  UINT32            Target;
   BOOLEAN           IsAuthRestartEnabled;
   BOOLEAN           HasVSMCKext;
   CONST CHAR8       *BootProtect;
@@ -170,99 +323,26 @@ CheckMisc (
   UINT32            ScanPolicy;
   UINT32            AllowedScanPolicy;
   CONST CHAR8       *SecureBootModel;
-  CONST CHAR8       *Arguments;
-  CONST CHAR8       *Comment;
-  CONST CHAR8       *AsciiName;
-  CONST CHAR16      *UnicodeName;
-  CONST CHAR8       *Path;
 
-  DEBUG ((DEBUG_VERBOSE, "config loaded into Misc checker!\n"));
+  ErrorCount        = 0;
+  UserKernel        = &Config->Kernel;
+  UserMisc          = &Config->Misc;
+  UserUefi          = &Config->Uefi;
 
-  ErrorCount                     = 0;
-  UserKernel                     = &Config->Kernel;
-  UserMisc                       = &Config->Misc;
-  UserUefi                       = &Config->Uefi;
-  ConsoleAttributes              = UserMisc->Boot.ConsoleAttributes;
-  HibernateMode                  = OC_BLOB_GET (&UserMisc->Boot.HibernateMode);
-  PickerAttributes               = UserMisc->Boot.PickerAttributes;
-  PickerMode                     = OC_BLOB_GET (&UserMisc->Boot.PickerMode);
-  PickerVariant                  = OC_BLOB_GET (&UserMisc->Boot.PickerVariant);
-  DisplayLevel                   = UserMisc->Debug.DisplayLevel;
-  AllowedDisplayLevel            = DEBUG_WARN | DEBUG_INFO | DEBUG_VERBOSE | DEBUG_ERROR;
-  HaltLevel                      = DisplayLevel;
-  AllowedHaltLevel               = AllowedDisplayLevel;
-  Target                         = UserMisc->Debug.Target;
-  IsAuthRestartEnabled           = UserMisc->Security.AuthRestart;
-  HasVSMCKext                    = FALSE;
-  BootProtect                    = OC_BLOB_GET (&UserMisc->Security.BootProtect);
-  IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
-  AsciiDmgLoading                = OC_BLOB_GET (&UserMisc->Security.DmgLoading);
-  ExposeSensitiveData            = UserMisc->Security.ExposeSensitiveData;
-  AsciiVault                     = OC_BLOB_GET (&UserMisc->Security.Vault);
-  ScanPolicy                     = UserMisc->Security.ScanPolicy;
-  AllowedScanPolicy              = OC_SCAN_FILE_SYSTEM_LOCK | OC_SCAN_DEVICE_LOCK | OC_SCAN_DEVICE_BITS | OC_SCAN_FILE_SYSTEM_BITS;
-  SecureBootModel                = OC_BLOB_GET (&UserMisc->Security.SecureBootModel);
-
-  if ((ConsoleAttributes & ~0x7FU) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->ConsoleAttributes设置了未知的位!\n"));
-    ++ErrorCount;
-  }
-
-  if (AsciiStrCmp (HibernateMode, "None") != 0
-    && AsciiStrCmp (HibernateMode, "Auto") != 0
-    && AsciiStrCmp (HibernateMode, "RTC") != 0
-    && AsciiStrCmp (HibernateMode, "NVRAM") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->HibernateMode 不太对 (只能是 None, Auto, RTC, 或 NVRAM)!\n"));
-    ++ErrorCount;
-  }
-
-  if ((PickerAttributes & ~OC_ATTR_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes设置了未知位!\n"));
-    ++ErrorCount;
-  }
-
-  //
-  // FIXME: Is OpenCanopy.efi mandatory if set to External? Or is this just a suggestion?
-  //
-  if (AsciiStrCmp (PickerMode, "Builtin") != 0
-    && AsciiStrCmp (PickerMode, "External") != 0
-    && AsciiStrCmp (PickerMode, "Apple") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不太对 (只能是 Builtin, External, 或 Apple)!\n"));
-    ++ErrorCount;
-  }
-
-  if (PickerVariant[0] == '\0') {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant不能为空!\n"));
-    ++ErrorCount;
-  }
-
-  //
-  // FIXME: Check whether DisplayLevel only supports values within AllowedDisplayLevel, or all possible levels in DebugLib.h?
-  //
-  if ((DisplayLevel & ~AllowedDisplayLevel) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel设置了未知位！\n"));
-    ++ErrorCount;
-  }
-  if ((HaltLevel & ~AllowedHaltLevel) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->HaltLevel 设置了未知位！\n"));
-    ++ErrorCount;
-  }
-
-  if ((Target & ~OC_LOG_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Debug->Target 设置了未知位！\n"));
-    ++ErrorCount;
-  }
-
+  HasVSMCKext = FALSE;
   for (Index = 0; Index < UserKernel->Add.Count; ++Index) {
     if (AsciiStrCmp (OC_BLOB_GET (&UserKernel->Add.Values[Index]->BundlePath), mKextInfo[INDEX_KEXT_VSMC].KextBundlePath) == 0) {
       HasVSMCKext = TRUE;
     }
   }
+  IsAuthRestartEnabled = UserMisc->Security.AuthRestart;
   if (IsAuthRestartEnabled && !HasVSMCKext) {
     DEBUG ((DEBUG_WARN, "Misc->Security->启用了AuthRestart，但未在Kernel->Add中加载VirtualSMC!\n"));
     ++ErrorCount;
   }
 
+  BootProtect                    = OC_BLOB_GET (&UserMisc->Security.BootProtect);
+  IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
   if (AsciiStrCmp (BootProtect, "None") != 0
     && AsciiStrCmp (BootProtect, "Bootstrap") != 0
     && AsciiStrCmp (BootProtect, "BootstrapShort") != 0) {
@@ -279,6 +359,7 @@ CheckMisc (
     //
   }
 
+  AsciiDmgLoading = OC_BLOB_GET (&UserMisc->Security.DmgLoading);
   if (AsciiStrCmp (AsciiDmgLoading, "Disabled") != 0
     && AsciiStrCmp (AsciiDmgLoading, "Signed") != 0
     && AsciiStrCmp (AsciiDmgLoading, "Any") != 0) {
@@ -286,11 +367,13 @@ CheckMisc (
     ++ErrorCount;
   }
 
+  ExposeSensitiveData = UserMisc->Security.ExposeSensitiveData;
   if ((ExposeSensitiveData & ~OCS_EXPOSE_ALL_BITS) != 0) {
     DEBUG ((DEBUG_WARN, "Misc->Security->ExposeSensitiveData 设置了未知位！\n"));
     ++ErrorCount;
   }
 
+  AsciiVault = OC_BLOB_GET (&UserMisc->Security.Vault);
   if (AsciiStrCmp (AsciiVault, "Optional") != 0
     && AsciiStrCmp (AsciiVault, "Basic") != 0
     && AsciiStrCmp (AsciiVault, "Secure") != 0) {
@@ -298,8 +381,10 @@ CheckMisc (
     ++ErrorCount;
   }
 
+  ScanPolicy        = UserMisc->Security.ScanPolicy;
+  AllowedScanPolicy = OC_SCAN_FILE_SYSTEM_LOCK | OC_SCAN_DEVICE_LOCK | OC_SCAN_DEVICE_BITS | OC_SCAN_FILE_SYSTEM_BITS;
   //
-  // ScanPolicy can be zero (failsafe value).
+  // ScanPolicy can be zero (failsafe value), skipping such.
   //
   if (ScanPolicy != 0) {
     if ((ScanPolicy & ~AllowedScanPolicy) != 0) { 
@@ -321,58 +406,38 @@ CheckMisc (
   //
   // Validate SecureBootModel.
   //
+  SecureBootModel = OC_BLOB_GET (&UserMisc->Security.SecureBootModel);
   if (!ValidateSecureBootModel (SecureBootModel)) {
     DEBUG ((DEBUG_WARN, "Misc->Security->SecureBootModel 不太对!\n"));
     ++ErrorCount;
   }
 
-  for (Index = 0; Index < UserMisc->Entries.Count; ++Index) {
-    Arguments    = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Arguments);
-    Comment      = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Comment);
-    AsciiName    = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Name);
-    Path         = OC_BLOB_GET (&UserMisc->Entries.Values[Index]->Path);
+  return ErrorCount;
+}
 
-    //
-    // Sanitise strings.
-    //
-    // NOTE: As Arguments takes identical requirements of Comment,
-    //       we use Comment sanitiser here.
-    //
-    if (!AsciiCommentIsLegal (Arguments)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Arguments 包含非法字符！\n", Index));
-      ++ErrorCount;
-    }
-    if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment 包含非法字符！\n", Index));
-      ++ErrorCount;
-    }
-    
-    UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
-    if (UnicodeName != NULL) {
-      if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
-        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name 包含非法字符！\n", Index));
-        ++ErrorCount;
-      }
+STATIC
+UINT32
+CheckMiscTools (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32            ErrorCount;
+  UINT32            Index;
+  OC_MISC_CONFIG    *UserMisc;
+  CONST CHAR8       *Arguments;
+  CONST CHAR8       *Comment;
+  CONST CHAR8       *AsciiName;
+  CONST CHAR16      *UnicodeName;
+  CONST CHAR8       *Path;
 
-      FreePool ((VOID *) UnicodeName);
-    }
+  ErrorCount        = 0;
+  UserMisc          = &Config->Misc;
 
-    //
-    // FIXME: Properly sanitise Path.
-    //
-    if (!AsciiCommentIsLegal (Path)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path 包含非法字符！\n", Index));
-      ++ErrorCount;
-    }
-  }
-  //
-  // Same thing for Tools.
-  //
   for (Index = 0; Index < UserMisc->Tools.Count; ++Index) {
-    Arguments    = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Arguments);
-    Comment      = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Comment);
-    AsciiName    = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Name);
-    Path         = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Path);
+    Arguments       = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Arguments);
+    Comment         = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Comment);
+    AsciiName       = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Name);
+    Path            = OC_BLOB_GET (&UserMisc->Tools.Values[Index]->Path);
 
     //
     // Sanitise strings.
@@ -409,20 +474,40 @@ CheckMisc (
   }
 
   //
-  // Check duplicated entries in Entries and Tools.
+  // Check duplicated entries in Tools.
   //
-  ErrorCount += FindArrayDuplication (
-    UserMisc->Entries.Values,
-    UserMisc->Entries.Count,
-    sizeof (UserMisc->Entries.Values[0]),
-    MiscEntriesHasDuplication
-    );
   ErrorCount += FindArrayDuplication (
     UserMisc->Tools.Values,
     UserMisc->Tools.Count,
     sizeof (UserMisc->Tools.Values[0]),
     MiscToolsHasDuplication
     );
+
+  return ErrorCount;
+}
+
+UINT32
+CheckMisc (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32  ErrorCount;
+  UINTN   Index;
+  STATIC CONFIG_CHECK MiscCheckers[] = {
+    &CheckMiscBoot,
+    &CheckMiscDebug,
+    &CheckMiscEntries,
+    &CheckMiscSecurity,
+    &CheckMiscTools
+  };
+
+  DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
+
+  ErrorCount = 0;
+
+  for (Index = 0; Index < ARRAY_SIZE (MiscCheckers); ++Index) {
+    ErrorCount += MiscCheckers[Index] (Config);
+  }
 
   return ReportError (__func__, ErrorCount);
 }

@@ -1,14 +1,11 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
-
   All rights reserved.
-
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
-
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -20,10 +17,8 @@
 
 /**
   Callback funtion to verify whether one UEFI driver is duplicated in UEFI->Drivers.
-
   @param[in]  PrimaryDriver    Primary driver to be checked.
   @param[in]  SecondaryDriver  Secondary driver to be checked.
-
   @retval     TRUE             If PrimaryDriver and SecondaryDriver are duplicated.
 **/
 STATIC
@@ -49,10 +44,8 @@ UEFIDriverHasDuplication (
 /**
   Callback funtion to verify whether one UEFI ReservedMemory entry overlaps the other,
   in terms of Address and Size.
-
   @param[in]  PrimaryEntry     Primary entry to be checked.
   @param[in]  SecondaryEntry   Secondary entry to be checked.
-
   @retval     TRUE             If PrimaryEntry and SecondaryEntry have overlapped Address and Size.
 **/
 STATIC
@@ -111,106 +104,93 @@ ValidateReservedMemoryType (
   return FALSE;
 }
 
+STATIC
 UINT32
-CheckUEFI (
+CheckUEFIAPFS (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32                    ErrorCount;
-  UINT32                    Index;
-  UINT32                    IndexOpenUsbKbDxeEfiDriver;
-  UINT32                    IndexPs2KeyboardDxeEfiDriver;
-  OC_UEFI_CONFIG            *UserUefi;
-  OC_MISC_CONFIG            *UserMisc;
-  CONST CHAR8               *Driver;
-  CONST CHAR8               *TextRenderer;
-  CONST CHAR8               *ConsoleMode;
-  CONST CHAR8               *PointerSupportMode;
-  CONST CHAR8               *KeySupportMode;
-  BOOLEAN                   HasOpenRuntimeEfiDriver;
-  BOOLEAN                   HasOpenUsbKbDxeEfiDriver;
-  BOOLEAN                   HasPs2KeyboardDxeEfiDriver;
-  BOOLEAN                   HasHfsEfiDriver;
-  BOOLEAN                   HasAudioDxeEfiDriver;
-  BOOLEAN                   IsConnectDriversEnabled;
-  BOOLEAN                   IsRequestBootVarRoutingEnabled;
-  BOOLEAN                   IsKeySupportEnabled;
-  BOOLEAN                   IsTextRendererSystem;
-  BOOLEAN                   IsClearScreenOnModeSwitchEnabled;
-  BOOLEAN                   IsIgnoreTextInGraphicsEnabled;
-  BOOLEAN                   IsReplaceTabWithSpaceEnabled;
-  BOOLEAN                   IsSanitiseClearScreenEnabled;
-  BOOLEAN                   IsPointerSupportEnabled;
-  CONST CHAR8               *Resolution;
-  UINT32                    UserWidth;
-  UINT32                    UserHeight;
-  UINT32                    UserBpp;
-  BOOLEAN                   UserSetMax;
-  CONST CHAR8               *AsciiAudioDevicePath;
-  CONST CHAR8               *AsciiReservedMemoryType;
-  UINT64                    ReservedMemoryAddress;
-  UINT64                    ReservedMemorySize;
+  UINT32                   ErrorCount;
+  OC_UEFI_CONFIG           *UserUefi;
+  OC_MISC_CONFIG           *UserMisc;
+  BOOLEAN                  IsEnableJumpstartEnabled;
+  UINT32                   ScanPolicy;
 
-  DEBUG ((DEBUG_VERBOSE, "config loaded into UEFI checker!\n"));
-
-  ErrorCount                       = 0;
-  IndexOpenUsbKbDxeEfiDriver       = 0;
-  IndexPs2KeyboardDxeEfiDriver     = 0;
-  UserUefi                         = &Config->Uefi;
-  UserMisc                         = &Config->Misc;
-  HasOpenRuntimeEfiDriver          = FALSE;
-  HasOpenUsbKbDxeEfiDriver         = FALSE;
-  HasPs2KeyboardDxeEfiDriver       = FALSE;
-  HasHfsEfiDriver                  = FALSE;
-  HasAudioDxeEfiDriver             = FALSE;
-  IsConnectDriversEnabled          = UserUefi->ConnectDrivers;
-  IsRequestBootVarRoutingEnabled   = UserUefi->Quirks.RequestBootVarRouting;
-  IsKeySupportEnabled              = UserUefi->Input.KeySupport;
-  IsPointerSupportEnabled          = UserUefi->Input.PointerSupport;
-  PointerSupportMode               = OC_BLOB_GET (&UserUefi->Input.PointerSupportMode);
-  KeySupportMode                   = OC_BLOB_GET (&UserUefi->Input.KeySupportMode);
-  IsClearScreenOnModeSwitchEnabled = UserUefi->Output.ClearScreenOnModeSwitch;
-  IsIgnoreTextInGraphicsEnabled    = UserUefi->Output.IgnoreTextInGraphics;
-  IsReplaceTabWithSpaceEnabled     = UserUefi->Output.ReplaceTabWithSpace;
-  IsSanitiseClearScreenEnabled     = UserUefi->Output.SanitiseClearScreen;
-  TextRenderer                     = OC_BLOB_GET (&UserUefi->Output.TextRenderer);
-  IsTextRendererSystem             = FALSE;
-  ConsoleMode                      = OC_BLOB_GET (&UserUefi->Output.ConsoleMode);
-  Resolution                       = OC_BLOB_GET (&UserUefi->Output.Resolution);
-  AsciiAudioDevicePath             = OC_BLOB_GET (&UserUefi->Audio.AudioDevice);
-
-  //
-  // Sanitise strings.
-  //
-  if (AsciiStrCmp (TextRenderer, "BuiltinGraphics") != 0
-    && AsciiStrCmp (TextRenderer, "BuiltinText") != 0
-    && AsciiStrCmp (TextRenderer, "SystemGraphics") != 0
-    && AsciiStrCmp (TextRenderer, "SystemText") != 0
-    && AsciiStrCmp (TextRenderer, "SystemGeneric") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer 是非法的 (只能是 BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
-    ++ErrorCount;
-  } else if (AsciiStrnCmp (TextRenderer, "System", L_STR_LEN ("System")) == 0) {
-    //
-    // Check whether TextRenderer has System prefix.
-    //
-    IsTextRendererSystem = TRUE;
-  }
+  ErrorCount               = 0;
+  UserUefi                 = &Config->Uefi;
+  UserMisc                 = &Config->Misc;
 
   //
   // If FS restrictions is enabled but APFS FS scanning is disabled, it is an error.
   //
-  if (UserUefi->Apfs.EnableJumpstart
-    && (UserMisc->Security.ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) != 0
-    && (UserMisc->Security.ScanPolicy & OC_SCAN_ALLOW_FS_APFS) == 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->APFS->EnableJumpstart已启用, 但是Misc->Security->ScanPolicy 不允许APFS扫描!\n"));
+  IsEnableJumpstartEnabled = UserUefi->Apfs.EnableJumpstart;
+  ScanPolicy               = UserMisc->Security.ScanPolicy;
+  if (IsEnableJumpstartEnabled
+    && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) != 0
+    && (ScanPolicy & OC_SCAN_ALLOW_FS_APFS) == 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->APFS->EnableJumpstart is enabled, but Misc->Security->ScanPolicy does not allow APFS scanning!\n"));
     ++ErrorCount;
   }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckUEFIAudio (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32                   ErrorCount;
+  OC_UEFI_CONFIG           *UserUefi;
+  CONST CHAR8              *AsciiAudioDevicePath;
+
+  ErrorCount               = 0;
+  UserUefi                 = &Config->Uefi;
+  AsciiAudioDevicePath     = OC_BLOB_GET (&UserUefi->Audio.AudioDevice);
 
   if (AsciiAudioDevicePath[0] != '\0' && !AsciiDevicePathIsLegal (AsciiAudioDevicePath)) {
     DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioDevice不太对!请核对以上信息!\n"));
     ++ErrorCount;
   }
 
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckUEFIDrivers (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32                       ErrorCount;
+  OC_UEFI_CONFIG               *UserUefi;
+  UINT32                       Index;
+  CONST CHAR8                  *Driver;
+  BOOLEAN                      HasOpenRuntimeEfiDriver;
+  BOOLEAN                      HasOpenUsbKbDxeEfiDriver;
+  UINT32                       IndexOpenUsbKbDxeEfiDriver;
+  BOOLEAN                      HasPs2KeyboardDxeEfiDriver;
+  BOOLEAN                      IndexPs2KeyboardDxeEfiDriver;
+  BOOLEAN                      HasHfsEfiDriver;
+  UINT32                       IndexHfsEfiDriver;
+  BOOLEAN                      HasAudioDxeEfiDriver;
+  UINT32                       IndexAudioDxeEfiDriver;
+  BOOLEAN                      IsRequestBootVarRoutingEnabled;
+  BOOLEAN                      IsKeySupportEnabled;
+  BOOLEAN                      IsConnectDriversEnabled;
+
+  ErrorCount                   = 0;
+  UserUefi                     = &Config->Uefi;
+
+  HasOpenRuntimeEfiDriver      = FALSE;
+  HasOpenUsbKbDxeEfiDriver     = FALSE;
+  IndexOpenUsbKbDxeEfiDriver   = 0;
+  HasPs2KeyboardDxeEfiDriver   = FALSE;
+  IndexPs2KeyboardDxeEfiDriver = 0;
+  HasHfsEfiDriver              = FALSE;
+  IndexHfsEfiDriver            = 0;
+  HasAudioDxeEfiDriver         = FALSE;
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
     Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
 
@@ -239,10 +219,12 @@ CheckUEFI (
     // Here only "hfs" (case-insensitive) is matched.
     //
     if (OcAsciiStriStr (Driver, "hfs") != NULL) {
-      HasHfsEfiDriver = TRUE;
+      HasHfsEfiDriver   = TRUE;
+      IndexHfsEfiDriver = Index;
     }
     if (AsciiStrCmp (Driver, "AudioDxe.efi") == 0) {
-      HasAudioDxeEfiDriver = TRUE;
+      HasAudioDxeEfiDriver   = TRUE;
+      IndexAudioDxeEfiDriver = Index;
     }
   }
 
@@ -256,19 +238,7 @@ CheckUEFI (
     UEFIDriverHasDuplication
     );
 
-  if (IsPointerSupportEnabled && AsciiStrCmp (PointerSupportMode, "ASUS") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Input->PointerSupport已启用, 但PointerSupportMode不是ASUS!\n"));
-    ++ErrorCount;
-  }
-
-  if (AsciiStrCmp (KeySupportMode, "Auto") != 0
-    && AsciiStrCmp (KeySupportMode, "V1") != 0
-    && AsciiStrCmp (KeySupportMode, "V2") != 0
-    && AsciiStrCmp (KeySupportMode, "AMI") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Input->KeySupportMode 无效 (只能是 Auto, V1, V2, AMI)!\n"));
-    ++ErrorCount;
-  }
-
+  IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
   if (IsRequestBootVarRoutingEnabled) {
     if (!HasOpenRuntimeEfiDriver) {
       DEBUG ((DEBUG_WARN, "UEFI->Quirks->RequestBootVarRouting已启用, 但是OpenRuntime.efi未在UEFI->Drivers处加载!\n"));
@@ -276,6 +246,7 @@ CheckUEFI (
     }
   }
 
+  IsKeySupportEnabled = UserUefi->Input.KeySupport;
   if (IsKeySupportEnabled) {
     if (HasOpenUsbKbDxeEfiDriver) {
       DEBUG ((DEBUG_WARN, "在UEFI->Drivers[%u]处存在OpenUsbKbDxe.efi 不应该和UEFI->Input->KeySupport一起使用!\n", IndexOpenUsbKbDxeEfiDriver));
@@ -298,30 +269,118 @@ CheckUEFI (
     ++ErrorCount;
   }
 
+  IsConnectDriversEnabled = UserUefi->ConnectDrivers;
   if (!IsConnectDriversEnabled) {
     if (HasHfsEfiDriver) {
-      DEBUG ((DEBUG_WARN, "已加载HFS文件系统驱动程序，但未启用UEFI->ConnectDrivers!\n"));
+      DEBUG ((DEBUG_WARN, "HFS文件系统驱动程序在UEFI->Drivers[%u]中加载,但是没有启用UEFI->ConnectDrivers!\n", IndexHfsEfiDriver));
       ++ErrorCount;
     }
     if (HasAudioDxeEfiDriver) {
-      DEBUG ((DEBUG_WARN, "已加载AudioDevice.efi，但未启用UEFI->ConnectDrivers!\n"));
+      DEBUG ((DEBUG_WARN, "AudioDevice.efi 在UEFI->Drivers[%u]中加载,但是没有启用UEFI->ConnectDrivers!\n", IndexAudioDxeEfiDriver));
       ++ErrorCount;
     }
   }
 
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckUEFIInput (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32          ErrorCount;
+  OC_UEFI_CONFIG  *UserUefi;
+  BOOLEAN         IsPointerSupportEnabled;
+  CONST CHAR8     *PointerSupportMode;
+  CONST CHAR8     *KeySupportMode;
+
+  ErrorCount      = 0;
+  UserUefi        = &Config->Uefi;
+
+  IsPointerSupportEnabled = UserUefi->Input.PointerSupport;
+  PointerSupportMode      = OC_BLOB_GET (&UserUefi->Input.PointerSupportMode);
+  if (IsPointerSupportEnabled && AsciiStrCmp (PointerSupportMode, "ASUS") != 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->Input->启用了PointerSupport，但PointerSupportMode不是ASUS!\n"));
+    ++ErrorCount;
+  }
+
+  KeySupportMode = OC_BLOB_GET (&UserUefi->Input.KeySupportMode);
+  if (AsciiStrCmp (KeySupportMode, "Auto") != 0
+    && AsciiStrCmp (KeySupportMode, "V1") != 0
+    && AsciiStrCmp (KeySupportMode, "V2") != 0
+    && AsciiStrCmp (KeySupportMode, "AMI") != 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->Input->KeySupportMode不合法 (只能是 Auto, V1, V2, AMI)!\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckUEFIOutput (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32               ErrorCount;
+  OC_UEFI_CONFIG       *UserUefi;
+  CONST CHAR8          *TextRenderer;
+  BOOLEAN              IsTextRendererSystem;
+  BOOLEAN              IsClearScreenOnModeSwitchEnabled;
+  BOOLEAN              IsIgnoreTextInGraphicsEnabled;
+  BOOLEAN              IsReplaceTabWithSpaceEnabled;
+  BOOLEAN              IsSanitiseClearScreenEnabled;
+  CONST CHAR8          *ConsoleMode;
+  CONST CHAR8          *Resolution;
+  UINT32               UserWidth;
+  UINT32               UserHeight;
+  UINT32               UserBpp;
+  BOOLEAN              UserSetMax;
+
+  ErrorCount           = 0;
+  UserUefi             = &Config->Uefi;
+  IsTextRendererSystem = FALSE;
+
+  //
+  // Sanitise strings.
+  //
+  TextRenderer = OC_BLOB_GET (&UserUefi->Output.TextRenderer);
+  if (AsciiStrCmp (TextRenderer, "BuiltinGraphics") != 0
+    && AsciiStrCmp (TextRenderer, "BuiltinText") != 0
+    && AsciiStrCmp (TextRenderer, "SystemGraphics") != 0
+    && AsciiStrCmp (TextRenderer, "SystemText") != 0
+    && AsciiStrCmp (TextRenderer, "SystemGeneric") != 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer是非法的 (只能是BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
+    ++ErrorCount;
+  } else if (AsciiStrnCmp (TextRenderer, "System", L_STR_LEN ("System")) == 0) {
+    //
+    // Check whether TextRenderer has System prefix.
+    //
+    IsTextRendererSystem = TRUE;
+  }
+
   if (!IsTextRendererSystem) {
+    IsClearScreenOnModeSwitchEnabled = UserUefi->Output.ClearScreenOnModeSwitch;
     if (IsClearScreenOnModeSwitchEnabled) {
       DEBUG ((DEBUG_WARN, "UEFI->Output->ClearScreenOnModeSwitch在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
+
+    IsIgnoreTextInGraphicsEnabled    = UserUefi->Output.IgnoreTextInGraphics;
     if (IsIgnoreTextInGraphicsEnabled) {
       DEBUG ((DEBUG_WARN, "UEFI->Output->IgnoreTextInGraphics在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
+
+    IsReplaceTabWithSpaceEnabled     = UserUefi->Output.ReplaceTabWithSpace;
     if (IsReplaceTabWithSpaceEnabled) {
       DEBUG ((DEBUG_WARN, "UEFI->Output->ReplaceTabWithSpace在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
+
+    IsSanitiseClearScreenEnabled     = UserUefi->Output.SanitiseClearScreen;
     if (IsSanitiseClearScreenEnabled) {
       DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
       ++ErrorCount;
@@ -331,6 +390,7 @@ CheckUEFI (
   //
   // Parse Output->ConsoleMode by calling OpenCore libraries.
   //
+  ConsoleMode = OC_BLOB_GET (&UserUefi->Output.ConsoleMode);
   OcParseConsoleMode (
     ConsoleMode,
     &UserWidth,
@@ -347,6 +407,7 @@ CheckUEFI (
   //
   // Parse Output->Resolution by calling OpenCore libraries.
   //
+  Resolution = OC_BLOB_GET (&UserUefi->Output.Resolution);
   OcParseScreenResolution (
     Resolution,
     &UserWidth,
@@ -360,6 +421,37 @@ CheckUEFI (
     DEBUG ((DEBUG_WARN, "UEFI->Output->Resolution不太对, 请查看Configurations.pdf!\n"));
     ++ErrorCount;
   }
+
+  return ErrorCount;
+}
+
+//
+// FIXME: Just in case this can be of use...
+//
+STATIC
+UINT32
+CheckUEFIQuirks (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  return 0;
+}
+
+STATIC
+UINT32
+CheckUEFIReservedMemory (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32          ErrorCount;
+  UINT32          Index;
+  OC_UEFI_CONFIG  *UserUefi;
+  CONST CHAR8     *AsciiReservedMemoryType;
+  UINT64          ReservedMemoryAddress;
+  UINT64          ReservedMemorySize;
+
+  ErrorCount      = 0;
+  UserUefi        = &Config->Uefi;
 
   //
   // Validate ReservedMemory[N].
@@ -396,6 +488,34 @@ CheckUEFI (
     sizeof (UserUefi->ReservedMemory.Values[0]),
     UEFIReservedMemoryHasOverlap
     );
+
+  return ErrorCount;
+}
+
+UINT32
+CheckUEFI (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32  ErrorCount;
+  UINTN   Index;
+  STATIC CONFIG_CHECK UEFICheckers[] = {
+    &CheckUEFIAPFS,
+    &CheckUEFIAudio,
+    &CheckUEFIDrivers,
+    &CheckUEFIInput,
+    &CheckUEFIOutput,
+    &CheckUEFIQuirks,
+    &CheckUEFIReservedMemory
+  };
+
+  DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
+
+  ErrorCount = 0;
+  
+  for (Index = 0; Index < ARRAY_SIZE (UEFICheckers); ++Index) {
+    ErrorCount += UEFICheckers[Index] (Config);
+  }
 
   return ReportError (__func__, ErrorCount);
 }

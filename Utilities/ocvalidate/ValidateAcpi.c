@@ -1,14 +1,11 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
-
   All rights reserved.
-
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
-
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -18,10 +15,8 @@
 
 /**
   Callback funtion to verify whether Path is duplicated in ACPI->Add.
-
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
-
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -48,8 +43,9 @@ ACPIAddHasDuplication (
   return StringIsDuplicated ("ACPI->Add", ACPIAddPrimaryPathString, ACPIAddSecondaryPathString);
 }
 
+STATIC
 UINT32
-CheckACPI (
+CheckACPIAdd (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -58,25 +54,15 @@ CheckACPI (
   OC_ACPI_CONFIG  *UserAcpi;
   CONST CHAR8     *Path;
   CONST CHAR8     *Comment;
-  CONST UINT8     *Find;
-  UINT32          FindSize;
-  CONST UINT8     *Replace;
-  UINT32          ReplaceSize;
-  CONST UINT8     *Mask;
-  UINT32          MaskSize;
-  CONST UINT8     *ReplaceMask;
-  UINT32          ReplaceMaskSize;
   BOOLEAN         HasCustomDSDT;
 
-  DEBUG ((DEBUG_VERBOSE, "配置加载到ACPI检查器中!\n"));
-
-  ErrorCount    = 0;
-  UserAcpi      = &Config->Acpi;
-  HasCustomDSDT = FALSE;
+  ErrorCount      = 0;
+  UserAcpi        = &Config->Acpi;
+  HasCustomDSDT   = FALSE;
 
   for (Index = 0; Index < UserAcpi->Add.Count; ++Index) {
-    Path         = OC_BLOB_GET (&UserAcpi->Add.Values[Index]->Path);
-    Comment      = OC_BLOB_GET (&UserAcpi->Add.Values[Index]->Comment);
+    Path          = OC_BLOB_GET (&UserAcpi->Add.Values[Index]->Path);
+    Comment       = OC_BLOB_GET (&UserAcpi->Add.Values[Index]->Comment);
 
     //
     // Sanitise strings.
@@ -111,8 +97,33 @@ CheckACPI (
     ACPIAddHasDuplication
     );
 
+  //
+  // Check for RebaseRegions when using customised DSDT.
+  //
+  if (HasCustomDSDT && !UserAcpi->Quirks.RebaseRegions) {
+    DEBUG ((DEBUG_WARN, "ACPI->Quirks->RebaseRegions is not enabled when customised DSDT table is in use!\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckACPIDelete (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32          ErrorCount;
+  UINT32          Index;
+  OC_ACPI_CONFIG  *UserAcpi;
+  CONST CHAR8     *Comment;
+
+  ErrorCount      = 0;
+  UserAcpi        = &Config->Acpi;
+
   for (Index = 0; Index < UserAcpi->Delete.Count; ++Index) {
-    Comment = OC_BLOB_GET (&UserAcpi->Delete.Values[Index]->Comment);
+    Comment       = OC_BLOB_GET (&UserAcpi->Delete.Values[Index]->Comment);
 
     //
     // Sanitise strings.
@@ -127,6 +138,31 @@ CheckACPI (
     // as serialisation kills it.
     //
   }
+
+  return ErrorCount;
+}
+
+STATIC
+UINT32
+CheckACPIPatch (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32          ErrorCount;
+  UINT32          Index;
+  OC_ACPI_CONFIG  *UserAcpi;
+  CONST CHAR8     *Comment;
+  CONST UINT8     *Find;
+  UINT32          FindSize;
+  CONST UINT8     *Replace;
+  UINT32          ReplaceSize;
+  CONST UINT8     *Mask;
+  UINT32          MaskSize;
+  CONST UINT8     *ReplaceMask;
+  UINT32          ReplaceMaskSize;
+ 
+  ErrorCount      = 0;
+  UserAcpi        = &Config->Acpi;
 
   for (Index = 0; Index < UserAcpi->Patch.Count; ++Index) {
     Comment         = OC_BLOB_GET (&UserAcpi->Patch.Values[Index]->Comment);
@@ -170,12 +206,28 @@ CheckACPI (
       ); 
   }
 
-  //
-  // Check for RebaseRegions when using customised DSDT.
-  //
-  if (HasCustomDSDT && !UserAcpi->Quirks.RebaseRegions) {
-    DEBUG ((DEBUG_WARN, "ACPI->Quirks->使用自定义DSDT表时未启用RebaseRegions!\n"));
-    ++ErrorCount;
+  return ErrorCount;
+}
+
+UINT32
+CheckACPI (
+  IN  OC_GLOBAL_CONFIG  *Config
+  )
+{
+  UINT32  ErrorCount;
+  UINTN   Index;
+  STATIC CONFIG_CHECK ACPICheckers[] = {
+    &CheckACPIAdd,
+    &CheckACPIDelete,
+    &CheckACPIPatch
+  };
+
+  DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
+
+  ErrorCount  = 0;
+
+  for (Index = 0; Index < ARRAY_SIZE (ACPICheckers); ++Index) {
+    ErrorCount += ACPICheckers[Index] (Config);
   }
 
   return ReportError (__func__, ErrorCount);
