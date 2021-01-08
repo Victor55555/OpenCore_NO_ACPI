@@ -360,7 +360,7 @@ CheckUEFIOutput (
     && AsciiStrCmp (TextRenderer, "SystemGraphics") != 0
     && AsciiStrCmp (TextRenderer, "SystemText") != 0
     && AsciiStrCmp (TextRenderer, "SystemGeneric") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer是非法的 (只能是BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
+    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer是无效的 (只能是BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
     ++ErrorCount;
   } else if (AsciiStrnCmp (TextRenderer, "System", L_STR_LEN ("System")) == 0) {
     //
@@ -372,25 +372,25 @@ CheckUEFIOutput (
   if (!IsTextRendererSystem) {
     IsClearScreenOnModeSwitchEnabled = UserUefi->Output.ClearScreenOnModeSwitch;
     if (IsClearScreenOnModeSwitchEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->ClearScreenOnModeSwitch在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->ClearScreenOnModeSwitch没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsIgnoreTextInGraphicsEnabled    = UserUefi->Output.IgnoreTextInGraphics;
     if (IsIgnoreTextInGraphicsEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->IgnoreTextInGraphics在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->IgnoreTextInGraphics没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsReplaceTabWithSpaceEnabled     = UserUefi->Output.ReplaceTabWithSpace;
     if (IsReplaceTabWithSpaceEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->ReplaceTabWithSpace在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->ReplaceTabWithSpace没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsSanitiseClearScreenEnabled     = UserUefi->Output.SanitiseClearScreen;
     if (IsSanitiseClearScreenEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
   }
