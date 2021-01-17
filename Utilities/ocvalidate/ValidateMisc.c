@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -21,8 +24,10 @@
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Entries.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -64,8 +69,10 @@ MiscEntriesHasDuplication (
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Tools.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -104,7 +111,9 @@ MiscToolsHasDuplication (
 
 /**
   Validate if SecureBootModel has allowed value.
+
   @param[in]  SecureBootModel  SecureBootModel retrieved from user config.
+
   @retval     TRUE             If SecureBootModel is valid.
 **/
 STATIC
@@ -139,14 +148,21 @@ CheckMiscBoot (
 {
   UINT32            ErrorCount;
   OC_MISC_CONFIG    *UserMisc;
+  OC_UEFI_CONFIG    *UserUefi;
   UINT32            ConsoleAttributes;
   CONST CHAR8       *HibernateMode;
   UINT32            PickerAttributes;
+  UINT32            Index;
+  CONST CHAR8       *Driver;
+  BOOLEAN           HasOpenCanopyEfiDriver;
   CONST CHAR8       *PickerMode;
   CONST CHAR8       *PickerVariant;
+  BOOLEAN           IsPickerAudioAssistEnabled;
+  BOOLEAN           IsAudioSupportEnabled;
 
   ErrorCount        = 0;
   UserMisc          = &Config->Misc;
+  UserUefi          = &Config->Uefi;
 
   ConsoleAttributes = UserMisc->Boot.ConsoleAttributes;
   if ((ConsoleAttributes & ~0x7FU) != 0) {
@@ -169,20 +185,35 @@ CheckMiscBoot (
     ++ErrorCount;
   }
 
-  //
-  // FIXME: Is OpenCanopy.efi mandatory if set to External? Or is this just a suggestion?
-  //
+  HasOpenCanopyEfiDriver = FALSE;
+  for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
+    Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
+
+    if (AsciiStrCmp (Driver, "OpenCanopy.efi") == 0) {
+      HasOpenCanopyEfiDriver = TRUE;
+    }
+  }
   PickerMode        = OC_BLOB_GET (&UserMisc->Boot.PickerMode);
   if (AsciiStrCmp (PickerMode, "Builtin") != 0
     && AsciiStrCmp (PickerMode, "External") != 0
     && AsciiStrCmp (PickerMode, "Apple") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不太对 (只能是 Builtin, External, 或 Apple)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不正确 (只能是Builtin, External, 或 Apple)!\n"));
+    ++ErrorCount;
+  } else if (HasOpenCanopyEfiDriver && AsciiStrCmp (PickerMode, "External") != 0) {
+    DEBUG ((DEBUG_WARN, "OpenCanopy.efi在UEFI->Drivers中加载，但Misc->Boot->PickerMode未设置为External!\n"));
     ++ErrorCount;
   }
 
   PickerVariant     = OC_BLOB_GET (&UserMisc->Boot.PickerVariant);
   if (PickerVariant[0] == '\0') {
     DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant不能为空!\n"));
+    ++ErrorCount;
+  }
+
+  IsPickerAudioAssistEnabled = UserMisc->Boot.PickerAudioAssist;
+  IsAudioSupportEnabled      = UserUefi->Audio.AudioSupport;
+  if (IsPickerAudioAssistEnabled && !IsAudioSupportEnabled) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAudioAssist已启用，但未完全启用UEFI->Audio->AudioSupport!\n"));
     ++ErrorCount;
   }
 
@@ -262,18 +293,18 @@ CheckMiscEntries (
     //       we use Comment sanitiser here.
     //
     if (!AsciiCommentIsLegal (Arguments)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Arguments contains illegal character!\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->参数包含非法字符!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment contains illegal character!\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment包含非法字符!\n", Index));
       ++ErrorCount;
     }
     
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
-        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name contains illegal character!\n", Index));
+        DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Name包含非法字符!\n", Index));
         ++ErrorCount;
       }
 
@@ -284,7 +315,7 @@ CheckMiscEntries (
     // FIXME: Properly sanitise Path.
     //
     if (!AsciiCommentIsLegal (Path)) {
-      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path contains illegal character!\n", Index));
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Path包含非法字符!\n", Index));
       ++ErrorCount;
     }
   }

@@ -143,15 +143,22 @@ CheckUEFIAudio (
 {
   UINT32                   ErrorCount;
   OC_UEFI_CONFIG           *UserUefi;
+  BOOLEAN                  IsAudioSupportEnabled;
   CONST CHAR8              *AsciiAudioDevicePath;
 
   ErrorCount               = 0;
   UserUefi                 = &Config->Uefi;
-  AsciiAudioDevicePath     = OC_BLOB_GET (&UserUefi->Audio.AudioDevice);
 
-  if (AsciiAudioDevicePath[0] != '\0' && !AsciiDevicePathIsLegal (AsciiAudioDevicePath)) {
-    DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioDevice不太对!请核对以上信息!\n"));
-    ++ErrorCount;
+  IsAudioSupportEnabled    = UserUefi->Audio.AudioSupport;
+  AsciiAudioDevicePath     = OC_BLOB_GET (&UserUefi->Audio.AudioDevice);
+  if (IsAudioSupportEnabled) {
+    if (AsciiAudioDevicePath[0] == '\0') {
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->启用AudioSupport后，AudioDevicePath不能为空!\n"));
+      ++ErrorCount;
+    } else if (!AsciiDevicePathIsLegal (AsciiAudioDevicePath)) {
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioDevice不正确！请检查以上信息!\n"));
+      ++ErrorCount;
+    }
   }
 
   return ErrorCount;
@@ -191,6 +198,7 @@ CheckUEFIDrivers (
   HasHfsEfiDriver              = FALSE;
   IndexHfsEfiDriver            = 0;
   HasAudioDxeEfiDriver         = FALSE;
+  IndexAudioDxeEfiDriver       = 0;
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
     Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
 
@@ -352,7 +360,7 @@ CheckUEFIOutput (
     && AsciiStrCmp (TextRenderer, "SystemGraphics") != 0
     && AsciiStrCmp (TextRenderer, "SystemText") != 0
     && AsciiStrCmp (TextRenderer, "SystemGeneric") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer是非法的 (只能是BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
+    DEBUG ((DEBUG_WARN, "UEFI->Output->TextRenderer是无效的 (只能是BuiltinGraphics, BuiltinText, SystemGraphics, SystemText, 或 SystemGeneric)!\n"));
     ++ErrorCount;
   } else if (AsciiStrnCmp (TextRenderer, "System", L_STR_LEN ("System")) == 0) {
     //
@@ -364,25 +372,25 @@ CheckUEFIOutput (
   if (!IsTextRendererSystem) {
     IsClearScreenOnModeSwitchEnabled = UserUefi->Output.ClearScreenOnModeSwitch;
     if (IsClearScreenOnModeSwitchEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->ClearScreenOnModeSwitch在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->ClearScreenOnModeSwitch没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsIgnoreTextInGraphicsEnabled    = UserUefi->Output.IgnoreTextInGraphics;
     if (IsIgnoreTextInGraphicsEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->IgnoreTextInGraphics在non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->IgnoreTextInGraphics没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsReplaceTabWithSpaceEnabled     = UserUefi->Output.ReplaceTabWithSpace;
     if (IsReplaceTabWithSpaceEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->ReplaceTabWithSpace在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->ReplaceTabWithSpace没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
 
     IsSanitiseClearScreenEnabled     = UserUefi->Output.SanitiseClearScreen;
     if (IsSanitiseClearScreenEnabled) {
-      DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen在 non-System TextRenderer处启用 (当前为 %a)!\n", TextRenderer));
+      DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
   }
