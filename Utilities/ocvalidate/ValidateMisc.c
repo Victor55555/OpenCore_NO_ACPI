@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -21,8 +24,10 @@
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Entries.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -64,8 +69,10 @@ MiscEntriesHasDuplication (
 
 /**
   Callback funtion to verify whether Arguments and Path are duplicated in Misc->Tools.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -104,7 +111,9 @@ MiscToolsHasDuplication (
 
 /**
   Validate if SecureBootModel has allowed value.
+
   @param[in]  SecureBootModel  SecureBootModel retrieved from user config.
+
   @retval     TRUE             If SecureBootModel is valid.
 **/
 STATIC
@@ -188,10 +197,7 @@ CheckMiscBoot (
   if (AsciiStrCmp (PickerMode, "Builtin") != 0
     && AsciiStrCmp (PickerMode, "External") != 0
     && AsciiStrCmp (PickerMode, "Apple") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不太对 (只能是 Builtin, External, 或 Apple)!\n"));
-    ++ErrorCount;
-  } else if (AsciiStrCmp (PickerMode, "External") == 0 && !HasOpenCanopyEfiDriver) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode设置为External，但在UEFI->Drivers中未加载OpenCanopy!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerMode 不正确 (只能是Builtin, External, 或 Apple)!\n"));
     ++ErrorCount;
   } else if (HasOpenCanopyEfiDriver && AsciiStrCmp (PickerMode, "External") != 0) {
     DEBUG ((DEBUG_WARN, "OpenCanopy.efi在UEFI->Drivers中加载，但Misc->Boot->PickerMode未设置为External!\n"));
