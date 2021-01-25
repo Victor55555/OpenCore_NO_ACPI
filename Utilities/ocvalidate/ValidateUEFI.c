@@ -145,18 +145,30 @@ CheckUEFIAudio (
   OC_UEFI_CONFIG           *UserUefi;
   BOOLEAN                  IsAudioSupportEnabled;
   CONST CHAR8              *AsciiAudioDevicePath;
+  CONST CHAR8              *AsciiPlayChime;
 
   ErrorCount               = 0;
   UserUefi                 = &Config->Uefi;
 
   IsAudioSupportEnabled    = UserUefi->Audio.AudioSupport;
   AsciiAudioDevicePath     = OC_BLOB_GET (&UserUefi->Audio.AudioDevice);
+  AsciiPlayChime           = OC_BLOB_GET (&UserUefi->Audio.PlayChime);
   if (IsAudioSupportEnabled) {
     if (AsciiAudioDevicePath[0] == '\0') {
       DEBUG ((DEBUG_WARN, "UEFI->Audio->启用AudioSupport后，AudioDevicePath不能为空!\n"));
       ++ErrorCount;
     } else if (!AsciiDevicePathIsLegal (AsciiAudioDevicePath)) {
       DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioDevice不正确！请检查以上信息!\n"));
+      ++ErrorCount;
+    }
+
+    if (AsciiPlayChime[0] == '\0') {
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime cannot be empty when AudioSupport is enabled!\n"));
+      ++ErrorCount;
+    } else if (AsciiStrCmp (AsciiPlayChime, "Auto") != 0
+      && AsciiStrCmp (AsciiPlayChime, "Enabled") != 0
+      && AsciiStrCmp (AsciiPlayChime, "Disabled") != 0) {
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime is borked (Can only be Auto, Enabled, or Disabled)!\n"));
       ++ErrorCount;
     }
   }
@@ -201,6 +213,10 @@ CheckUEFIDrivers (
   IndexAudioDxeEfiDriver       = 0;
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
     Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
+
+    if (Driver[0] == '#') {
+      continue;
+    }
 
     //
     // Sanitise strings.
