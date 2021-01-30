@@ -273,7 +273,7 @@
 /// KernelSpace quirks.
 ///
 #define OC_KERNEL_QUIRKS_FIELDS(_, __) \
-  _(INT64                       , SetApfsTrimTimeout          ,     , FALSE  , ()) \
+  _(INT64                       , SetApfsTrimTimeout          ,     , -1     , ()) \
   _(BOOLEAN                     , AppleCpuPmCfgLock           ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleXcpmCfgLock            ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleXcpmExtraMsrs          ,     , FALSE  , ()) \
@@ -444,10 +444,10 @@ typedef enum {
 **/
 
 #define OC_PLATFORM_GENERIC_CONFIG_FIELDS(_, __) \
-  _(OC_STRING                   , SystemProductName  ,     , OC_STRING_CONSTR ("MacPro6,1", _, __)        , OC_DESTR (OC_STRING) ) \
-  _(OC_STRING                   , SystemSerialNumber ,     , OC_STRING_CONSTR ("OPENCORE_SN1", _, __)     , OC_DESTR (OC_STRING) ) \
+  _(OC_STRING                   , SystemProductName  ,     , OC_STRING_CONSTR ("", _, __)                 , OC_DESTR (OC_STRING) ) \
+  _(OC_STRING                   , SystemSerialNumber ,     , OC_STRING_CONSTR ("", _, __)                 , OC_DESTR (OC_STRING) ) \
   _(OC_STRING                   , SystemUuid         ,     , OC_STRING_CONSTR ("", _, __)                 , OC_DESTR (OC_STRING) ) \
-  _(OC_STRING                   , Mlb                ,     , OC_STRING_CONSTR ("OPENCORE_MLB_SN11", _, __), OC_DESTR (OC_STRING) ) \
+  _(OC_STRING                   , Mlb                ,     , OC_STRING_CONSTR ("", _, __)                 , OC_DESTR (OC_STRING) ) \
   _(OC_STRING                   , SystemMemoryStatus ,     , OC_STRING_CONSTR ("Auto", _, __)             , OC_DESTR (OC_STRING) ) \
   _(UINT16                      , ProcessorType      ,     , 0                                            , () )                   \
   _(UINT8                       , Rom                , [6] , {0}                                          , () )                   \
@@ -653,6 +653,7 @@ typedef enum {
 #define OC_UEFI_QUIRKS_FIELDS(_, __) \
   _(UINT32                      , ExitBootServicesDelay       ,     , 0      , ()) \
   _(UINT32                      , TscSyncTimeout              ,     , 0      , ()) \
+  _(BOOLEAN                     , DisableSecurityPolicy       ,     , FALSE  , ()) \
   _(BOOLEAN                     , IgnoreInvalidFlexRatio      ,     , FALSE  , ()) \
   _(BOOLEAN                     , ReleaseUsbOwnership         ,     , FALSE  , ()) \
   _(BOOLEAN                     , RequestBootVarRouting       ,     , FALSE  , ()) \
