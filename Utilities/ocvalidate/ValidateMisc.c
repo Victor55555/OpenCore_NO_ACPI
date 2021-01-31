@@ -343,11 +343,8 @@ CheckMiscSecurity (
   UINT32            Index;
   OC_KERNEL_CONFIG  *UserKernel;
   OC_MISC_CONFIG    *UserMisc;
-  OC_UEFI_CONFIG    *UserUefi;
   BOOLEAN           IsAuthRestartEnabled;
   BOOLEAN           HasVSMCKext;
-  CONST CHAR8       *BootProtect;
-  BOOLEAN           IsRequestBootVarRoutingEnabled;
   CONST CHAR8       *AsciiDmgLoading;
   UINT32            ExposeSensitiveData;
   CONST CHAR8       *AsciiVault;
@@ -358,7 +355,6 @@ CheckMiscSecurity (
   ErrorCount        = 0;
   UserKernel        = &Config->Kernel;
   UserMisc          = &Config->Misc;
-  UserUefi          = &Config->Uefi;
 
   HasVSMCKext = FALSE;
   for (Index = 0; Index < UserKernel->Add.Count; ++Index) {
@@ -370,24 +366,6 @@ CheckMiscSecurity (
   if (IsAuthRestartEnabled && !HasVSMCKext) {
     DEBUG ((DEBUG_WARN, "Misc->Security->启用了AuthRestart，但未在Kernel->Add中加载VirtualSMC!\n"));
     ++ErrorCount;
-  }
-
-  BootProtect                    = OC_BLOB_GET (&UserMisc->Security.BootProtect);
-  IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
-  if (AsciiStrCmp (BootProtect, "None") != 0
-    && AsciiStrCmp (BootProtect, "Bootstrap") != 0
-    && AsciiStrCmp (BootProtect, "BootstrapShort") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect 不太对 (只能是 None, Bootstrap, 或 BootstrapShort)!\n"));
-    ++ErrorCount;
-  } else if (AsciiStrCmp (BootProtect, "Bootstrap") == 0
-    || AsciiStrCmp (BootProtect, "BootstrapShort") == 0) {
-    if (!IsRequestBootVarRoutingEnabled) {
-      DEBUG ((DEBUG_WARN, "Misc->Security->BootProtect 设置为 %a 需要启用 UEFI->Quirks->RequestBootVarRouting!\n", BootProtect));
-      ++ErrorCount;
-    }
-    //
-    // NOTE: RequestBootVarRouting requires OpenRuntime.efi, which will be checked in UEFI checker.
-    //
   }
 
   AsciiDmgLoading = OC_BLOB_GET (&UserMisc->Security.DmgLoading);
@@ -423,7 +401,7 @@ CheckMiscSecurity (
       ++ErrorCount;
     }
 
-    if ((ScanPolicy & OC_SCAN_FILE_SYSTEM_BITS) != 0 && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) == 0) {
+    if ((ScanPolicy & OC_SCAN_FILE_SYSTEM_BITS) != 0 && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) == 0) {   
       DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy需要扫描文件系统, 但是OC_SCAN_FILE_SYSTEM_LOCK (bit 0)未设置!\n"));
       ++ErrorCount;
     }
