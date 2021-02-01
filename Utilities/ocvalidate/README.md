@@ -56,6 +56,7 @@ Utility to validate whether a `config.plist` matches requirements and convention
 - Entry[N]->Identifier: At least one dot (`.`) should exist, because any identifier looks like a domain sequence (`vendor.product`).
 #### Quirks
 - `CustomSMBIOSGuid` requires `PlatformInfo->UpdateSMBIOSMode` set to `Custom`.
+- `SetApfsTrimTimeout` cannot be a value that is greater than `MAX_UINT32`, or less than `-1`.
 #### Scheme
 - KernelArch: Only `Auto`, `i386`, `i386-user32`, or `x86_64` are accepted.
 - KernelCache: Only `Auto`, `Cacheless`, `Mkext`, or `Prelinked` are accepted.
@@ -68,6 +69,7 @@ Utility to validate whether a `config.plist` matches requirements and convention
 - PickerMode: Only `Builtin`, `External`, or `Apple` are accepted.
 - `PickerAudioAssist` requires `AudioSupport` in `UEFI->Audio` to be enabled.
 - LauncherOption: Only `Disabled`, `Full`, or `Short` are accepted.
+- `LauncherPath` cannot be empty string.
 #### Security
 - AuthRestart: If enabled, `VirtualSMC.kext` should be present in `Kernel->Add`.
 - DmgLoading: Only `Disabled`, `Signed`, or `Any` are accepted.

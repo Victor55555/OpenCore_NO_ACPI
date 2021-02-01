@@ -593,6 +593,7 @@ CheckKernelQuirks (
   OC_PLATFORM_CONFIG  *UserPlatformInfo;
   BOOLEAN             IsCustomSMBIOSGuidEnabled;
   CONST CHAR8         *UpdateSMBIOSMode;
+  INT64               SetApfsTrimTimeout;
 
   ErrorCount          = 0;
   UserKernel          = &Config->Kernel;
@@ -604,7 +605,14 @@ CheckKernelQuirks (
   IsCustomSMBIOSGuidEnabled = UserKernel->Quirks.CustomSmbiosGuid;
   UpdateSMBIOSMode          = OC_BLOB_GET (&UserPlatformInfo->UpdateSmbiosMode);
   if (IsCustomSMBIOSGuidEnabled && AsciiStrCmp (UpdateSMBIOSMode, "Custom") != 0) {
-    DEBUG ((DEBUG_WARN, "Kernel->Quirks->CustomSMBIOSGuid is enabled, but PlatformInfo->UpdateSMBIOSMode is not set to Custom!\n"));
+    DEBUG ((DEBUG_WARN, "Kernel->Quirks->CustomSMBIOSGuid 已启用, 但是PlatformInfo->UpdateSMBIOSMode未设置为Custom!\n"));
+    ++ErrorCount;
+  }
+
+  SetApfsTrimTimeout = UserKernel->Quirks.SetApfsTrimTimeout;
+  if (SetApfsTrimTimeout  > MAX_UINT32
+    || SetApfsTrimTimeout < -1) {
+    DEBUG ((DEBUG_WARN, "Kernel->Quirks->SetApfsTrimTimeout 是无效值 %d!\n", SetApfsTrimTimeout));
     ++ErrorCount;
   }
 
