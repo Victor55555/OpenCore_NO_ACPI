@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -17,14 +20,11 @@
 #include <Library/OcAppleKernelLib.h>
 
 /**
-<<<<<<< HEAD
-  Callback funtion to verify whether BundlePath is duplicated in Kernel->Add.
-=======
   Callback function to verify whether BundlePath is duplicated in Kernel->Add.
 
->>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -52,14 +52,11 @@ KernelAddHasDuplication (
 }
 
 /**
-<<<<<<< HEAD
-  Callback funtion to verify whether Identifier is duplicated in Kernel->Block.
-=======
   Callback function to verify whether Identifier is duplicated in Kernel->Block.
 
->>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -87,14 +84,11 @@ KernelBlockHasDuplication (
 }
 
 /**
-<<<<<<< HEAD
-  Callback funtion to verify whether BundlePath is duplicated in Kernel->Force.
-=======
   Callback function to verify whether BundlePath is duplicated in Kernel->Force.
 
->>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -380,10 +374,6 @@ CheckKernelEmulate (
     ++ErrorCount;
   }
 
-<<<<<<< HEAD
-  if (!DataHasProperMasking (UserKernel->Emulate.Cpuid1Data, UserKernel->Emulate.Cpuid1Mask, sizeof (UserKernel->Emulate.Cpuid1Data))) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data要求Cpuid1Mask对替换的位有效!\n"));
-=======
   Result = DataHasProperMasking (
     UserKernel->Emulate.Cpuid1Data,
     UserKernel->Emulate.Cpuid1Mask,
@@ -392,7 +382,6 @@ CheckKernelEmulate (
 
   if (!Result) {
     DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data 要求Cpuid1Mask对替换的位有效!\n"));
->>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
     ++ErrorCount;
   }
 

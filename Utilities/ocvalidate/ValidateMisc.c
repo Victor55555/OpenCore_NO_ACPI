@@ -60,7 +60,7 @@ MiscEntriesHasDuplication (
 
   if (AsciiStrCmp (MiscEntriesPrimaryArgumentsString, MiscEntriesSecondaryArgumentsString) == 0
     && AsciiStrCmp (MiscEntriesPrimaryPathString, MiscEntriesSecondaryPathString) == 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Entries->Arguments: %a is duplicated ", MiscEntriesPrimaryPathString));
+    DEBUG ((DEBUG_WARN, "Misc->Entries->Arguments: %a 是重复的 ", MiscEntriesPrimaryPathString));
     return TRUE;
   }
 
@@ -168,7 +168,7 @@ CheckBlessOverride (
     for (Index2 = 0; Index2 < ARRAY_SIZE (DisallowedBlessOverrideValues); ++Index2) {
       if (AsciiStrCmp (BlessOverrideEntry, DisallowedBlessOverrideValues[Index2]) == 0
         || AsciiStrCmp (BlessOverrideEntry, &DisallowedBlessOverrideValues[Index2][1]) == 0) {
-        DEBUG ((DEBUG_WARN, "Misc->BlessOverride: %a is redundant!\n", BlessOverrideEntry));
+        DEBUG ((DEBUG_WARN, "Misc->BlessOverride: %a 是多余的!\n", BlessOverrideEntry));
         ++ErrorCount;
       }
     }
@@ -260,7 +260,7 @@ CheckMiscBoot (
   if (AsciiStrCmp (LauncherOption, "Disabled") != 0
     && AsciiStrCmp (LauncherOption, "Full") != 0
     && AsciiStrCmp (LauncherOption, "Short") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->LauncherOption is borked (Can only be Disabled, Full, or Short)!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->LauncherOption 是错误的 (只能是 Disabled, Full, 或 Short)!\n"));
     ++ErrorCount;
   }
 
