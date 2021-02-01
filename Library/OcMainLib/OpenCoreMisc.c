@@ -619,30 +619,39 @@ RegisterLauncherOption (
   IN BOOLEAN       ShortForm
   )
 {
-  CHAR16  *BootstrapPath;
-  UINTN   BootstrapSize;
+  CHAR16        *BootstrapPath;
+  UINTN         BootstrapSize;
+  CONST CHAR16  *MatchSuffix;
 
   if (AsciiStrCmp (LauncherPath, "Default") == 0) {
-    BootstrapSize = StrSize (RootPath) + StrSize (OPEN_CORE_BOOTSTRAP_PATH);
+    BootstrapSize = StrSize (RootPath) + StrSize (OPEN_CORE_APP_PATH);
     BootstrapPath = AllocatePool (BootstrapSize);
     if (BootstrapPath == NULL) {
       return 0;
     }
-    UnicodeSPrint (BootstrapPath, BootstrapSize, L"%s\\%s", RootPath, OPEN_CORE_BOOTSTRAP_PATH);
+    UnicodeSPrint (BootstrapPath, BootstrapSize, L"%s\\%s", RootPath, OPEN_CORE_APP_PATH);
+    MatchSuffix = OPEN_CORE_APP_PATH;
   } else {
     BootstrapPath = AsciiStrCopyToUnicode (LauncherPath, 0);
     if (BootstrapPath == NULL) {
       return 0;
     }
+    MatchSuffix = BootstrapPath;
   }
 
+  //
+  // MatchSuffix allows us to reduce option duplication when switching between
+  // OpenCore versions. Using OpenCore.efi (OPEN_CORE_APP_PATH) will overwrite
+  // any option with this path (e.g. OC\OpenCore.efi and OC2\OpenCore.efi).
+  // For custom paths no deduplication happens.
+  //
   OcRegisterBootstrapBootOption (
     L"OpenCore",
     LoadHandle,
     BootstrapPath,
     ShortForm,
-    OPEN_CORE_BOOTSTRAP_PATH,
-    L_STR_LEN (OPEN_CORE_BOOTSTRAP_PATH)
+    MatchSuffix,
+    StrLen (MatchSuffix)
     );
   FreePool (BootstrapPath);
 

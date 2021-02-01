@@ -16,7 +16,12 @@
 #include <Library/OcConsoleLib.h>
 
 /**
+<<<<<<< HEAD
   Callback funtion to verify whether one UEFI driver is duplicated in UEFI->Drivers.
+=======
+  Callback function to verify whether one UEFI driver is duplicated in UEFI->Drivers.
+
+>>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryDriver    Primary driver to be checked.
   @param[in]  SecondaryDriver  Secondary driver to be checked.
   @retval     TRUE             If PrimaryDriver and SecondaryDriver are duplicated.
@@ -42,7 +47,7 @@ UEFIDriverHasDuplication (
 }
 
 /**
-  Callback funtion to verify whether one UEFI ReservedMemory entry overlaps the other,
+  Callback function to verify whether one UEFI ReservedMemory entry overlaps the other,
   in terms of Address and Size.
   @param[in]  PrimaryEntry     Primary entry to be checked.
   @param[in]  SecondaryEntry   Secondary entry to be checked.
@@ -88,8 +93,8 @@ ValidateReservedMemoryType (
   IN  CONST CHAR8  *Type
   )
 {
-  UINTN  Index;
-  CONST CHAR8  *AllowedType[] = {
+  UINTN               Index;
+  STATIC CONST CHAR8  *AllowedType[] = {
     "Reserved",          "LoaderCode",    "LoaderData",     "BootServiceCode",         "BootServiceData",
     "RuntimeCode",       "RuntimeData",   "Available",      "Persistent",              "UnusableMemory",
     "ACPIReclaimMemory", "ACPIMemoryNVS", "MemoryMappedIO", "MemoryMappedIOPortSpace", "PalCode"
@@ -128,7 +133,7 @@ CheckUEFIAPFS (
   if (IsEnableJumpstartEnabled
     && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) != 0
     && (ScanPolicy & OC_SCAN_ALLOW_FS_APFS) == 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->APFS->EnableJumpstart is enabled, but Misc->Security->ScanPolicy does not allow APFS scanning!\n"));
+    DEBUG ((DEBUG_WARN, "UEFI->APFS->EnableJumpstart 已启用, 但在 Misc->Security->ScanPolicy 未允许进行APFS扫描!\n"));
     ++ErrorCount;
   }
 
@@ -163,12 +168,12 @@ CheckUEFIAudio (
     }
 
     if (AsciiPlayChime[0] == '\0') {
-      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime cannot be empty when AudioSupport is enabled!\n"));
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime 启用AudioSupport后不能为空!\n"));
       ++ErrorCount;
     } else if (AsciiStrCmp (AsciiPlayChime, "Auto") != 0
       && AsciiStrCmp (AsciiPlayChime, "Enabled") != 0
       && AsciiStrCmp (AsciiPlayChime, "Disabled") != 0) {
-      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime is borked (Can only be Auto, Enabled, or Disabled)!\n"));
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->PlayChime 是错误的 (只能是 Auto, Enabled, 或 Disabled)!\n"));
       ++ErrorCount;
     }
   }
@@ -521,9 +526,9 @@ CheckUEFI (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32  ErrorCount;
-  UINTN   Index;
-  STATIC CONFIG_CHECK UEFICheckers[] = {
+  UINT32               ErrorCount;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  UEFICheckers[] = {
     &CheckUEFIAPFS,
     &CheckUEFIAudio,
     &CheckUEFIDrivers,

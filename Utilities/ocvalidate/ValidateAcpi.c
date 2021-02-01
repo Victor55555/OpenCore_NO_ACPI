@@ -14,7 +14,12 @@
 #include "OcValidateLib.h"
 
 /**
+<<<<<<< HEAD
   Callback funtion to verify whether Path is duplicated in ACPI->Add.
+=======
+  Callback function to verify whether Path is duplicated in ACPI->Add.
+
+>>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
@@ -200,15 +205,15 @@ CheckACPI (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32  ErrorCount;
-  UINTN   Index;
-  STATIC CONFIG_CHECK ACPICheckers[] = {
+  UINT32               ErrorCount;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  ACPICheckers[] = {
     &CheckACPIAdd,
     &CheckACPIDelete,
     &CheckACPIPatch
   };
 
-  DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
+  DEBUG ((DEBUG_VERBOSE, "配置加载到 %a!\n", __func__));
 
   ErrorCount  = 0;
 
