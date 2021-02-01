@@ -728,10 +728,8 @@ OcLoadUefiSupport (
   //
   // Setup Apple bootloader specific UEFI features.
   //
+  OcLoadBooterUefiSupport (Config);
 
-  if (Config->Booter.Quirks.EnableForAll) {
-      OcLoadBooterUefiSupport (Config);
-    }
   if (Config->Uefi.Quirks.IgnoreInvalidFlexRatio) {
     OcCpuCorrectFlexRatio (CpuInfo);
   }

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+
 buildutil() {
   UTILS=(
     "AppleEfiSignTool"
@@ -31,9 +31,9 @@ buildutil() {
   pushd "${selfdir}/Utilities" || exit 1
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
-    echo "构建 ${util}..."
+    echo "Building ${util}..."
     make clean || exit 1
-    make -j "$cores" &>/dev/null || exit 1
+    make -j "$cores" || exit 1
     #
     # FIXME: Do not build RsaTool for Win32 without OpenSSL.
     #
@@ -42,7 +42,7 @@ buildutil() {
     fi
 
     if [ "$(which i686-w64-mingw32-gcc)" != "" ]; then
-      echo "为windows构建 ${util}..."
+      echo "Building ${util} for Windows..."
       UDK_ARCH=Ia32 CC=i686-w64-mingw32-gcc STRIP=i686-w64-mingw32-strip DIST=Windows make clean || exit 1
       UDK_ARCH=Ia32 CC=i686-w64-mingw32-gcc STRIP=i686-w64-mingw32-strip DIST=Windows make -j "$cores" || exit 1
     fi
@@ -53,14 +53,14 @@ buildutil() {
 
 package() {
   if [ ! -d "$1" ]; then
-    echo "丢失包目录$1"
+    echo "Missing package directory $1"
     exit 1
   fi
 
   local ver
   ver=$(grep OPEN_CORE_VERSION ./Include/Acidanthera/Library/OcMainLib.h | sed 's/.*"\(.*\)".*/\1/' | grep -E '^[0-9.]+$')
   if [ "$ver" = "" ]; then
-    echo "无效版本 $ver"
+    echo "Invalid version $ver"
     ver="UNKNOWN"
   fi
 
@@ -136,7 +136,6 @@ package() {
 
     # Special case: OpenShell.efi
     cp "${arch}/Shell.efi" "${dstdir}/${arch}/EFI/OC/Tools/OpenShell.efi" || exit 1
-    cp -r "${selfdir}/Resources/" "${dstdir}/${arch}/EFI/OC/Resources"/ || exit 1
 
     efiDrivers=(
       "HiiDatabase.efi"
@@ -209,10 +208,10 @@ package() {
     booter="$(pwd)/../../OpenDuetPkg/${tgt}/${arch}/boot"
 
     if [ -f "${booter}" ]; then
-      echo "从 ${booter} 拷贝OpenDuetPkg启动文件..."
+      echo "Copying OpenDuetPkg boot file from ${booter}..."
       cp "${booter}" "${dstdir}/Utilities/LegacyBoot/boot${arch}" || exit 1
     else
-      echo "在${booter}找不到OpenDuetPkg!"
+      echo "Failed to find OpenDuetPkg at ${booter}!"
     fi
   done
 
@@ -239,7 +238,7 @@ package() {
   cp "${selfdir}/Utilities/ocvalidate/README.md" "${dstdir}/Utilities/ocvalidate"/ || exit 1
 
   pushd "${dstdir}" || exit 1
-  zip -qr -FS ../"OpenCore-Mod-${ver}-${2}.zip" ./* || exit 1
+  zip -qr -FS ../"OpenCore-${ver}-${2}.zip" ./* || exit 1
   popd || exit 1
   rm -rf "${dstdir}" || exit 1
 
@@ -258,12 +257,7 @@ NO_ARCHIVES=0
 export SELFPKG
 export NO_ARCHIVES
 
-src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild.sh) && eval "$src" || exit 1
+src=$(curl -Lfs https://gitee.com/btwise/ocbuild/raw/master/efibuild-org.sh) && eval "$src" || exit 1
+
 cd Library/OcConfigurationLib || exit 1
-./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
-echo "编译成功!"
-echo "----------------------------------------------------------------"
-echo "运行检查架构脚本......"
-./CheckSchema.py OcConfigurationLib.c >/dev/null || exit 1
-echo "架构检查完成！"
-echo "编译成功!" && open $BUILDDIR/Binaries
+./CheckSchema.py OcConfigurationLib.c || exit 1
