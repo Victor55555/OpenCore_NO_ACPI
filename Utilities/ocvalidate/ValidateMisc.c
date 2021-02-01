@@ -266,7 +266,7 @@ CheckMiscBoot (
   }
   LauncherPath = OC_BLOB_GET (&Config->Misc.Boot.LauncherPath);
   if (LauncherPath[0] == '\0') {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->LauncherPath cannot be empty!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->LauncherPath 不能为空!\n"));
     ++ErrorCount;
   }
 
