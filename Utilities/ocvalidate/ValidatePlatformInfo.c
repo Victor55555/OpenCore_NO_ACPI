@@ -22,8 +22,8 @@ ValidateProcessorType (
   IN  UINT16  ProcessorType
   )
 {
-  UINTN  Index;
-  UINT8  AllowedProcessorType[] = {
+  UINTN               Index;
+  STATIC CONST UINT8  AllowedProcessorType[] = {
     AppleProcessorMajorCore,
     AppleProcessorMajorCore2,
     AppleProcessorMajorXeonPenryn,
@@ -98,7 +98,7 @@ CheckPlatformInfoGeneric (
 
   ProcessorType       = UserPlatformInfo->Generic.ProcessorType;
   if (!ValidateProcessorType (ProcessorType)) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->ProcessorType is borked!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->ProcessorType 是错误的!\n"));
     ++ErrorCount;
   }
 
@@ -114,12 +114,12 @@ CheckPlatformInfo (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32              ErrorCount;
-  OC_PLATFORM_CONFIG  *UserPlatformInfo;
-  BOOLEAN             IsAutomaticEnabled;
-  CONST CHAR8         *UpdateSMBIOSMode;
-  UINTN               Index;
-  STATIC CONFIG_CHECK PlatformInfoCheckers[] = {
+  UINT32               ErrorCount;
+  OC_PLATFORM_CONFIG   *UserPlatformInfo;
+  BOOLEAN              IsAutomaticEnabled;
+  CONST CHAR8          *UpdateSMBIOSMode;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  PlatformInfoCheckers[] = {
     &CheckPlatformInfoGeneric
   };
 
@@ -133,7 +133,7 @@ CheckPlatformInfo (
     && AsciiStrCmp (UpdateSMBIOSMode, "Create") != 0
     && AsciiStrCmp (UpdateSMBIOSMode, "Overwrite") != 0
     && AsciiStrCmp (UpdateSMBIOSMode, "Custom") != 0) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->UpdateSMBIOSMode is borked (Can only be TryOverwrite, Create, Overwrite, or Custom)!\n"));
+    DEBUG ((DEBUG_WARN, "PlatformInfo->UpdateSMBIOSMode 是错误的 (只能是TryOverwrite, Create, Overwrite, 或 Custom)!\n"));
     ++ErrorCount;
   }
   

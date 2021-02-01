@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -17,9 +20,11 @@
 #include <Library/OcAppleKernelLib.h>
 
 /**
-  Callback funtion to verify whether BundlePath is duplicated in Kernel->Add.
+  Callback function to verify whether BundlePath is duplicated in Kernel->Add.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -47,9 +52,11 @@ KernelAddHasDuplication (
 }
 
 /**
-  Callback funtion to verify whether Identifier is duplicated in Kernel->Block.
+  Callback function to verify whether Identifier is duplicated in Kernel->Block.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -77,9 +84,11 @@ KernelBlockHasDuplication (
 }
 
 /**
-  Callback funtion to verify whether BundlePath is duplicated in Kernel->Force.
+  Callback function to verify whether BundlePath is duplicated in Kernel->Force.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
+
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
 **/
 STATIC
@@ -346,6 +355,7 @@ CheckKernelEmulate (
   OC_KERNEL_CONFIG    *UserKernel;
   CONST CHAR8         *MaxKernel;
   CONST CHAR8         *MinKernel;
+  BOOLEAN             Result;
 
   ErrorCount          = 0;
   UserKernel          = &Config->Kernel; 
@@ -364,8 +374,14 @@ CheckKernelEmulate (
     ++ErrorCount;
   }
 
-  if (!DataHasProperMasking (UserKernel->Emulate.Cpuid1Data, UserKernel->Emulate.Cpuid1Mask, sizeof (UserKernel->Emulate.Cpuid1Data))) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data要求Cpuid1Mask对替换的位有效!\n"));
+  Result = DataHasProperMasking (
+    UserKernel->Emulate.Cpuid1Data,
+    UserKernel->Emulate.Cpuid1Mask,
+    sizeof (UserKernel->Emulate.Cpuid1Data)
+    );
+
+  if (!Result) {
+    DEBUG ((DEBUG_WARN, "Kernel->Emulate->Cpuid1Data 要求Cpuid1Mask对替换的位有效!\n"));
     ++ErrorCount;
   }
 
@@ -635,9 +651,9 @@ CheckKernel (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32  ErrorCount;
-  UINTN   Index;
-  STATIC CONFIG_CHECK KernelCheckers[] = {
+  UINT32               ErrorCount;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  KernelCheckers[] = {
     &CheckKernelAdd,
     &CheckKernelBlock,
     &CheckKernelEmulate,

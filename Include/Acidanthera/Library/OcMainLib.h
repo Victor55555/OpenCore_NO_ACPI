@@ -48,9 +48,7 @@
 
 #define OPEN_CORE_ROOT_PATH        L"EFI\\OC"
 
-#define OPEN_CORE_DRIVER_PATH      L"OpenCore.efi"
-
-#define OPEN_CORE_BOOTSTRAP_PATH   L"Bootstrap\\Bootstrap.efi"
+#define OPEN_CORE_APP_PATH         L"OpenCore.efi"
 
 #define OPEN_CORE_CONFIG_PATH      L"config.plist"
 

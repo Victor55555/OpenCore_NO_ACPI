@@ -27,15 +27,19 @@ CheckBooterMmioWhitelist (
   BOOLEAN           ShouldEnableDevirtualiseMmio;
   BOOLEAN           IsDevirtualiseMmioEnabled;
 
-  ErrorCount                      = 0;
-  UserBooter                      = &Config->Booter;
-  IsMmioWhitelistEnabled          = FALSE;
-  ShouldEnableDevirtualiseMmio    = FALSE;
-  IsDevirtualiseMmioEnabled       = UserBooter->Quirks.DevirtualiseMmio;
+  ErrorCount                   = 0;
+  UserBooter                   = &Config->Booter;
+  IsDevirtualiseMmioEnabled    = UserBooter->Quirks.DevirtualiseMmio;
 
+  IsMmioWhitelistEnabled       = FALSE;
+  ShouldEnableDevirtualiseMmio = FALSE;
   for (Index = 0; Index < UserBooter->MmioWhitelist.Count; ++Index) {
     Comment                = OC_BLOB_GET (&UserBooter->MmioWhitelist.Values[Index]->Comment);
     IsMmioWhitelistEnabled = UserBooter->MmioWhitelist.Values[Index]->Enabled;
+    //
+    // DevirtualiseMmio should be enabled if at least one entry is enabled.
+    //
+    ShouldEnableDevirtualiseMmio = IsMmioWhitelistEnabled;
 
     //
     // Sanitise strings.
@@ -44,14 +48,10 @@ CheckBooterMmioWhitelist (
       DEBUG ((DEBUG_WARN, "Booter->MmioWhitelist[%u]-Comment中包含非法字符!\n", Index));
       ++ErrorCount;
     }
-
-    if (IsMmioWhitelistEnabled) {
-      ShouldEnableDevirtualiseMmio = TRUE;
-    }
   }
 
   if (ShouldEnableDevirtualiseMmio && !IsDevirtualiseMmioEnabled) {
-    DEBUG ((DEBUG_WARN, "There are enabled entries under Booter->MmioWhitelist, but DevirtualiseMmio is not enabled!\n"));
+    DEBUG ((DEBUG_WARN, "在Booter->MmioWhitelist下有启用的条目, 但是未启用DevirtualiseMmio!\n"));
     ++ErrorCount;
   }
 
@@ -211,9 +211,9 @@ CheckBooter (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32  ErrorCount;
-  UINTN   Index;
-  STATIC CONFIG_CHECK BooterCheckers[] = {
+  UINT32               ErrorCount;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  BooterCheckers[] = {
     &CheckBooterMmioWhitelist,
     &CheckBooterPatch,
     &CheckBooterQuirks

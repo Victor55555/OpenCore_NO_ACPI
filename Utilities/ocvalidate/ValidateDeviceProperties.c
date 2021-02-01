@@ -14,7 +14,12 @@
 #include "OcValidateLib.h"
 
 /**
+<<<<<<< HEAD
   Callback funtion to verify whether one entry is duplicated in DeviceProperties->Add.
+=======
+  Callback function to verify whether one entry is duplicated in DeviceProperties->Add.
+
+>>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
@@ -40,7 +45,12 @@ DevPropsAddHasDuplication (
 }
 
 /**
+<<<<<<< HEAD
   Callback funtion to verify whether one entry is duplicated in DeviceProperties->Delete.
+=======
+  Callback function to verify whether one entry is duplicated in DeviceProperties->Delete.
+
+>>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
@@ -83,15 +93,14 @@ CheckDevicePropertiesAdd (
   UserDevProp = &Config->DeviceProperties;
 
   for (DeviceIndex = 0; DeviceIndex < UserDevProp->Add.Count; ++DeviceIndex) {
-    AsciiDevicePath   = OC_BLOB_GET (UserDevProp->Add.Keys[DeviceIndex]);
+    AsciiDevicePath = OC_BLOB_GET (UserDevProp->Add.Keys[DeviceIndex]);
     
     if (!AsciiDevicePathIsLegal (AsciiDevicePath)) {
       DEBUG ((DEBUG_WARN, "DeviceProperties->Add[%u]->DevicePath不对! 请检查以上信息!\n", DeviceIndex));
       ++ErrorCount;
     }
 
-    PropertyMap       = UserDevProp->Add.Values[DeviceIndex];
-    
+    PropertyMap = UserDevProp->Add.Values[DeviceIndex];
     for (PropertyIndex = 0; PropertyIndex < PropertyMap->Count; ++PropertyIndex) {
       AsciiProperty = OC_BLOB_GET (PropertyMap->Keys[PropertyIndex]);
 
@@ -146,11 +155,11 @@ CheckDevicePropertiesDelete (
   CONST CHAR8               *AsciiDevicePath;
   CONST CHAR8               *AsciiProperty;
 
-  ErrorCount  = 0;
+  ErrorCount = 0;
   UserDevProp = &Config->DeviceProperties;
 
   for (DeviceIndex = 0; DeviceIndex < UserDevProp->Delete.Count; ++DeviceIndex) {
-    AsciiDevicePath   = OC_BLOB_GET (UserDevProp->Delete.Keys[DeviceIndex]);
+    AsciiDevicePath = OC_BLOB_GET (UserDevProp->Delete.Keys[DeviceIndex]);
     
     if (!AsciiDevicePathIsLegal (AsciiDevicePath)) {
       DEBUG ((DEBUG_WARN, "DeviceProperties->Delete[%u]->DevicePath不对! 请检查以上信息!\n", DeviceIndex));
@@ -203,9 +212,9 @@ CheckDeviceProperties (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32  ErrorCount;
-  UINTN   Index;
-  STATIC CONFIG_CHECK DevicePropertiesCheckers[] = {
+  UINT32               ErrorCount;
+  UINTN                Index;
+  STATIC CONFIG_CHECK  DevicePropertiesCheckers[] = {
     &CheckDevicePropertiesAdd,
     &CheckDevicePropertiesDelete
   };
