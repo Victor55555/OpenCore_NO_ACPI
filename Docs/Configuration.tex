@@ -881,7 +881,7 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -896,7 +896,7 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Path}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: File paths meant to be loaded as ACPI tables.
   Example values include \texttt{DSDT.aml}, \texttt{SubDir/SSDT-8.aml},
   \texttt{SSDT-USBX.aml}, etc.
@@ -923,7 +923,7 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -969,7 +969,7 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -991,24 +991,22 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Find}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Data to find. Must equal to \texttt{Replace} in size.
 
 \item
   \texttt{Limit}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: \texttt{0}\\
-  \textbf{Description}: Maximum number of bytes to search for. Can be set to
-  \texttt{0} to look through the whole ACPI table.
+  \textbf{Failsafe}: 0 (Search entire ACPI table)\\
+  \textbf{Description}: Maximum number of bytes to search for.
 
 \item
   \texttt{Mask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during find comparison.
-  Allows fuzzy search by ignoring not masked (set to zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Replace} in size
-  otherwise.
+  Allows fuzzy search by ignoring not masked (set to zero) bits.
+  Must be equal to \texttt{Replace} in size if set.
 
 \item
   \texttt{OemTableId}\\
@@ -1020,17 +1018,16 @@ of the suggested solutions will vary from case to case.
 \item
   \texttt{Replace}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Replacement data of one or more bytes.
 
 \item
   \texttt{ReplaceMask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during replacement.
-  Allows fuzzy replacement by updating masked (set to non-zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Replace} in size
-  otherwise.
+  Allows fuzzy replacement by updating masked (set to non-zero) bits.
+  Must be equal to \texttt{Replace} in size if set.
 
 \item
   \texttt{Skip}\\
@@ -1298,7 +1295,7 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -1323,7 +1320,7 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -1345,13 +1342,13 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 \item
   \texttt{Find}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Data to find. This must equal to \texttt{Replace} in size.
 
 \item
   \texttt{Identifier}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: \texttt{Apple} for macOS booter (generally \texttt{boot.efi});
   or a name with suffix (e.g. \texttt{bootmgfw.efi}) for a specific booter;
   or \texttt{Any} / empty string (failsafe) to match any booter.
@@ -1359,33 +1356,30 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 \item
   \texttt{Limit}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: \texttt{0}\\
-  \textbf{Description}: Maximum number of bytes to search for. Can be set to
-  \texttt{0} to look through the whole booter.
+  \textbf{Failsafe}: 0 (Search the entire booter)\\
+  \textbf{Description}: Maximum number of bytes to search for.
 
 \item
   \texttt{Mask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during find comparison.
-  Allows fuzzy search by ignoring not masked (set to zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Find} in size
-  otherwise.
+  Allows fuzzy search by ignoring not masked (set to zero) bits.
+  Must equal to \texttt{Find} in size if set.
 
 \item
   \texttt{Replace}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Replacement data of one or more bytes.
 
 \item
   \texttt{ReplaceMask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during replacement.
-  Allows fuzzy replacement by updating masked (set to non-zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Replace} in size
-  otherwise.
+  Allows fuzzy replacement by updating masked (set to non-zero) bits.
+  Must be equal to \texttt{Replace} in size if set.
 
 \item
   \texttt{Skip}\\
@@ -1427,7 +1421,7 @@ To view their current state use \texttt{pmset -g} command in Terminal.
 
   \emph{Note}: While this quirk is required to run older macOS versions
   on platforms with used lower memory it is not compatible with some
-  hardware and macOS 11. In this case one may try to use
+  hardware and macOS 11. In such cases, consider using
   \texttt{EnableSafeModeSlide} instead.
 
 \item
@@ -1928,14 +1922,14 @@ blocking.
 \item
   \texttt{BundlePath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext bundle path (e.g. \texttt{Lilu.kext}
   or \texttt{MyKext.kext/Contents/PlugIns/MySubKext.kext}).
 
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -1950,14 +1944,14 @@ blocking.
 \item
   \texttt{ExecutablePath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext executable path relative to bundle
   (e.g. \texttt{Contents/MacOS/Lilu}).
 
 \item
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Adds kernel driver on specified macOS version or older.
 
   \hypertarget{kernmatch}Kernel version can be obtained with \texttt{uname -r} command,
@@ -2000,7 +1994,7 @@ blocking.
 \item
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Adds kernel driver on specified macOS version or newer.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2008,7 +2002,7 @@ blocking.
 \item
   \texttt{PlistPath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext \texttt{Info.plist} path relative to bundle
   (e.g. \texttt{Contents/Info.plist}).
 
@@ -2026,7 +2020,7 @@ blocking.
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -2041,14 +2035,14 @@ blocking.
 \item
   \texttt{Identifier}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext bundle identifier
     (e.g. \texttt{com.apple.driver.AppleTyMCEDriver}).
 
 \item
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Blocks kernel driver on specified macOS version or older.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2056,7 +2050,7 @@ blocking.
 \item
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Blocks kernel driver on specified macOS version or newer.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2142,7 +2136,7 @@ blocking.
 \item
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Emulates CPUID and applies \texttt{DummyPowerManagement} on specified macOS version or older.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2150,7 +2144,7 @@ blocking.
 \item
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Emulates CPUID and applies \texttt{DummyPowerManagement} on specified macOS version or newer.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2169,14 +2163,14 @@ blocking.
 \item
   \texttt{BundlePath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext bundle path (e.g.
   \texttt{System\textbackslash Library \textbackslash Extensions \textbackslash IONetworkingFamily.kext}).
 
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -2191,14 +2185,14 @@ blocking.
 \item
   \texttt{ExecutablePath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext executable path relative to bundle
   (e.g. \texttt{Contents/MacOS/IONetworkingFamily}).
 
 \item
   \texttt{Identifier}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext identifier to perform presence checking
   before adding (e.g. \texttt{com.apple.iokit.IONetworkingFamily}).
   Only drivers which identifiers are not be found in the cache will be added.
@@ -2206,7 +2200,7 @@ blocking.
 \item
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Adds kernel driver on specified macOS version or older.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{Add MaxKernel} description} for matching logic.
@@ -2214,7 +2208,7 @@ blocking.
 \item
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Adds kernel driver on specified macOS version or newer.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{Add MaxKernel} description} for matching logic.
@@ -2222,7 +2216,7 @@ blocking.
 \item
   \texttt{PlistPath}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext \texttt{Info.plist} path relative to bundle
   (e.g. \texttt{Contents/Info.plist}).
 
@@ -2241,15 +2235,15 @@ blocking.
 \item
   \texttt{Base}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Selects symbol-matched base for patch lookup (or immediate
-  replacement) by obtaining the address of provided symbol name. Can be set to
-  empty string to be ignored.
+  replacement) by obtaining the address of provided symbol name. Set to an empty string
+  to ignore.
 
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -2271,38 +2265,35 @@ blocking.
 \item
   \texttt{Find}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
-  \textbf{Description}: Data to find. Can be set to empty for immediate
-  replacement at \texttt{Base}. Must equal to \texttt{Replace} in size
-  otherwise.
+  \textbf{Failsafe}: Empty (Immediate replacement at \texttt{Base})\\
+  \textbf{Description}: Data to find. Must be equal to \texttt{Replace}
+  in size if set.
 
 \item
   \texttt{Identifier}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Kext bundle identifier (e.g. \texttt{com.apple.driver.AppleHDA})
   or \texttt{kernel} for kernel patch.
 
 \item
   \texttt{Limit}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: \texttt{0}\\
-  \textbf{Description}: Maximum number of bytes to search for. Can be set to
-  \texttt{0} to look through the whole kext or kernel.
+  \textbf{Failsafe}: 0 (Search entire kext or kernel)\\
+  \textbf{Description}: Maximum number of bytes to search for.
 
 \item
   \texttt{Mask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during find comparison.
-  Allows fuzzy search by ignoring not masked (set to zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Replace} in size
-  otherwise.
+  Allows fuzzy search by ignoring not masked (set to zero) bits.
+  Must equal to \texttt{Replace} in size if set.
 
 \item
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Patches data on specified macOS version or older.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2310,7 +2301,7 @@ blocking.
 \item
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Patches data on specified macOS version or newer.
 
   \emph{Note}: Refer to \hyperlink{kernmatch}{\texttt{Add} \texttt{MaxKernel} description} for matching logic.
@@ -2318,17 +2309,16 @@ blocking.
 \item
   \texttt{Replace}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Replacement data of one or more bytes.
 
 \item
   \texttt{ReplaceMask}\\
   \textbf{Type}: \texttt{plist\ data}\\
-  \textbf{Failsafe}: Empty data\\
+  \textbf{Failsafe}: Empty (Ignored)\\
   \textbf{Description}: Data bitwise mask used during replacement.
-  Allows fuzzy replacement by updating masked (set to non-zero) bits. Can be
-  set to empty data to be ignored. Must equal to \texttt{Replace} in size
-  otherwise.
+  Allows fuzzy replacement by updating masked (set to non-zero) bits.
+  Must equal to \texttt{Replace} in size if set.
 
 \item
   \texttt{Skip}\\
@@ -2583,8 +2573,8 @@ blocking.
 
   One way to workaround the problem is to increase the timeout to a very
   high value, which at the cost of slow boot times (extra minutes)
-  will ensure that all the blocks are trimmed. For this one can set
-  this option to a high value, e.g. \texttt{4294967295}.
+  will ensure that all the blocks are trimmed. Set this option to a high value,
+  such as \texttt{4294967295}, to ensure all the blocks are trimmed.
 
   Another way is to utilise over-provisioning if it is supported or create
   a dedicated unmapped partition where the reserve blocks can be found
@@ -3968,7 +3958,7 @@ rm vault.pub
 \item
   \texttt{Arguments}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used as boot arguments (load options)
   of the specified entry.
 
@@ -3982,7 +3972,7 @@ rm vault.pub
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -3997,13 +3987,13 @@ rm vault.pub
 \item
   \texttt{Name}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Human readable entry name displayed in boot picker.
 
 \item
   \texttt{Path}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Entry location depending on entry type.
 
   \begin{itemize}
@@ -4566,6 +4556,13 @@ be used. Version with macOS specific enhancements can be downloaded from
   \textbf{Description}: Update Data Hub fields. These fields are read
   from \texttt{Generic} or \texttt{DataHub} sections depending on
   \texttt{Automatic} value.
+
+  \emph{Note}: The implementation of the Data Hub protocol in EFI firmware on
+  essentially all systems, including Apple hardware, means that existing Data Hub
+  entries cannot be overridden, while new entries are added to the end with
+  macOS ignoring them. You can work around this by reinstalling the Data Hub
+  protocol using the \texttt{ProtocolOverrides} section. Refer to the \texttt{DataHub}
+  protocol override description for details.
 \item
   \texttt{UpdateNVRAM}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
@@ -4770,27 +4767,27 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{SystemProductName}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified or not installed\\
+  \textbf{Failsafe}: Empty (OEM specified or not installed)\\
   \textbf{Description}: Refer to SMBIOS \texttt{SystemProductName}.
 \item
   \texttt{SystemSerialNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified or not installed\\
+  \textbf{Failsafe}: Empty (OEM specified or not installed)\\
   \textbf{Description}: Refer to SMBIOS \texttt{SystemSerialNumber}.
 \item
   \texttt{SystemUUID}\\
   \textbf{Type}: \texttt{plist\ string}, GUID\\
-  \textbf{Failsafe}: OEM specified or not installed\\
+  \textbf{Failsafe}: Empty (OEM specified or not installed)\\
   \textbf{Description}: Refer to SMBIOS \texttt{SystemUUID}.
 \item
   \texttt{MLB}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified or not installed\\
+  \textbf{Failsafe}: Empty (OEM specified or not installed)\\
   \textbf{Description}: Refer to SMBIOS \texttt{BoardSerialNumber}.
 \item
   \texttt{ROM}\\
   \textbf{Type}: \texttt{plist\ data}, 6 bytes\\
-  \textbf{Failsafe}: OEM specified or not installed\\
+  \textbf{Failsafe}: Empty (OEM specified or not installed)\\
   \textbf{Description}: Refer to
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:ROM}.
 
@@ -4802,35 +4799,35 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{PlatformName}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{name} in
   \texttt{gEfiMiscSubClassGuid}. Value found on Macs is
   \texttt{platform} in ASCII.
 \item
   \texttt{SystemProductName}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{Model} in
   \texttt{gEfiMiscSubClassGuid}. Value found on Macs is equal to SMBIOS
   \texttt{SystemProductName} in Unicode.
 \item
   \texttt{SystemSerialNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{SystemSerialNumber} in
   \texttt{gEfiMiscSubClassGuid}. Value found on Macs is equal to SMBIOS
   \texttt{SystemSerialNumber} in Unicode.
 \item
   \texttt{SystemUUID}\\
   \textbf{Type}: \texttt{plist\ string}, GUID\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{system-id} in
   \texttt{gEfiMiscSubClassGuid}. Value found on Macs is equal to SMBIOS
   \texttt{SystemUUID} (with swapped byte order).
 \item
   \texttt{BoardProduct}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{board-id} in
   \texttt{gEfiMiscSubClassGuid}. Value found on Macs is equal to SMBIOS
   \texttt{BoardProduct} in ASCII.
@@ -4934,7 +4931,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{DevicePathsSupported}\\
   \textbf{Type}: \texttt{plist\ integer}, 32-bit\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: 0 (Not installed)\\
   \textbf{Description}: Sets \texttt{DevicePathsSupported} in
   \texttt{gEfiMiscSubClassGuid}. Must be set to \texttt{1} for
   AppleACPIPlatform.kext to append SATA device paths to
@@ -4943,7 +4940,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{SmcRevision}\\
   \textbf{Type}: \texttt{plist\ data}, 6 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{REV} in
   \texttt{gEfiMiscSubClassGuid}. Custom property read by
   \texttt{VirtualSMC} or \texttt{FakeSMC} to generate SMC \texttt{REV}
@@ -4951,7 +4948,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{SmcBranch}\\
   \textbf{Type}: \texttt{plist\ data}, 8 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{RBr} in
   \texttt{gEfiMiscSubClassGuid}. Custom property read by
   \texttt{VirtualSMC} or \texttt{FakeSMC} to generate SMC \texttt{RBr}
@@ -4959,7 +4956,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{SmcPlatform}\\
   \textbf{Type}: \texttt{plist\ data}, 8 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Sets \texttt{RPlt} in
   \texttt{gEfiMiscSubClassGuid}. Custom property read by
   \texttt{VirtualSMC} or \texttt{FakeSMC} to generate SMC \texttt{RPlt}
@@ -5189,14 +5186,14 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{BID}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Specifies the value of NVRAM variable
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:HW\_BID}.
 
 \item
   \texttt{ROM}\\
   \textbf{Type}: \texttt{plist\ data}, 6 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Specifies the values of NVRAM variables
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:HW\_ROM} and
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:ROM}.
@@ -5204,7 +5201,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{MLB}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Specifies the values of NVRAM variables
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:HW\_MLB} and
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:MLB}.
@@ -5212,7 +5209,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{FirmwareFeatures}\\
   \textbf{Type}: \texttt{plist\ data}, 8 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: This variable comes in pair with \texttt{FirmwareFeaturesMask}.
   Specifies the values of NVRAM variables:
   \begin{itemize}
@@ -5224,7 +5221,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{FirmwareFeaturesMask}\\
   \textbf{Type}: \texttt{plist\ data}, 8 bytes\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: This variable comes in pair with \texttt{FirmwareFeatures}.
   Specifies the values of NVRAM variables:
   \begin{itemize}
@@ -5236,7 +5233,7 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{SystemUUID}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Not installed\\
+  \textbf{Failsafe}: Empty (Not installed)\\
   \textbf{Description}: Specifies the value of NVRAM variable
   \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:system-id}
   for boot services only. Value found on Macs is equal to SMBIOS
@@ -5250,14 +5247,14 @@ be used. Version with macOS specific enhancements can be downloaded from
 \item
   \texttt{BIOSVendor}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: BIOS Information (Type 0) --- Vendor\\
   \textbf{Description}: BIOS Vendor. All rules of
   \texttt{SystemManufacturer} do apply.
 \item
   \texttt{BIOSVersion}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: BIOS Information (Type 0) --- BIOS Version\\
   \textbf{Description}: Firmware version. This value gets updated and
   takes part in update delivery configuration and macOS version
@@ -5287,14 +5284,14 @@ Apple ROM Version
 \item
   \texttt{BIOSReleaseDate}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: BIOS Information (Type 0) --- BIOS Release Date\\
   \textbf{Description}: Firmware release date. Similar to
   \texttt{BIOSVersion}. May look like \texttt{12/08/2017}.
 \item
   \texttt{SystemManufacturer}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- Manufacturer\\
   \textbf{Description}: OEM manufacturer of the particular board. Shall
   not be specified unless strictly required. Should \emph{not} contain
@@ -5306,7 +5303,7 @@ Apple ROM Version
 \item
   \texttt{SystemProductName}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1), Product Name\\
   \textbf{Description}: Preferred Mac model used to mark the device as
   supported by the operating system. This value must be specified by any
@@ -5323,14 +5320,14 @@ Apple ROM Version
 \item
   \texttt{SystemVersion}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- Version\\
   \textbf{Description}: Product iteration version number. May look like
   \texttt{1.1}.
 \item
   \texttt{SystemSerialNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- Serial Number\\
   \textbf{Description}: Product serial number in defined format. Known
   formats are described in
@@ -5338,7 +5335,7 @@ Apple ROM Version
 \item
   \texttt{SystemUUID}\\
   \textbf{Type}: \texttt{plist\ string}, GUID\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- UUID\\
   \textbf{Description}: A UUID is an identifier that is designed to be
   unique across both time and space. It requires no central registration
@@ -5346,7 +5343,7 @@ Apple ROM Version
 \item
   \texttt{SystemSKUNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- SKU Number\\
   \textbf{Description}: Mac Board ID (\texttt{board-id}). May look like
   \texttt{Mac-7BA5B2D9E42DDD94} or \texttt{Mac-F221BEC8} in older
@@ -5354,13 +5351,13 @@ Apple ROM Version
 \item
   \texttt{SystemFamily}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Information (Type 1) --- Family\\
   \textbf{Description}: Family name. May look like \texttt{iMac\ Pro}.
 \item
   \texttt{BoardManufacturer}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) -
   Manufacturer\\
   \textbf{Description}: Board manufacturer. All rules of
@@ -5368,7 +5365,7 @@ Apple ROM Version
 \item
   \texttt{BoardProduct}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) -
   Product\\
   \textbf{Description}: Mac Board ID (\texttt{board-id}). May look like
@@ -5377,7 +5374,7 @@ Apple ROM Version
 \item
   \texttt{BoardVersion}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) -
   Version\\
   \textbf{Description}: Board version number. Varies, may match
@@ -5385,7 +5382,7 @@ Apple ROM Version
 \item
   \texttt{BoardSerialNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) --- Serial
   Number\\
   \textbf{Description}: Board serial number in defined format. Known
@@ -5394,7 +5391,7 @@ Apple ROM Version
 \item
   \texttt{BoardAssetTag}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) --- Asset
   Tag\\
   \textbf{Description}: Asset tag number. Varies, may be empty or
@@ -5402,7 +5399,7 @@ Apple ROM Version
 \item
   \texttt{BoardType}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: 0 (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) --- Board
   Type\\
   \textbf{Description}: Either \texttt{0xA} (Motherboard (includes
@@ -5411,7 +5408,7 @@ Apple ROM Version
 \item
   \texttt{BoardLocationInChassis}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: Baseboard (or Module) Information (Type 2) --- Location
   in Chassis\\
   \textbf{Description}: Varies, may be empty or
@@ -5419,33 +5416,33 @@ Apple ROM Version
 \item
   \texttt{ChassisManufacturer}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Enclosure or Chassis (Type 3) --- Manufacturer\\
   \textbf{Description}: Board manufacturer. All rules of
   \texttt{SystemManufacturer} do apply.
 \item
   \texttt{ChassisType}\\
   \textbf{Type}: \texttt{plist\ integer}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: 0 (OEM specified)\\
   \textbf{SMBIOS}: System Enclosure or Chassis (Type 3) --- Type\\
   \textbf{Description}: Chassis type, refer to Table 17 --- System
   Enclosure or Chassis Types for more details.
 \item
   \texttt{ChassisVersion}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Enclosure or Chassis (Type 3) --- Version\\
   \textbf{Description}: Should match \texttt{BoardProduct}.
 \item
   \texttt{ChassisSerialNumber}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Enclosure or Chassis (Type 3) --- Version\\
   \textbf{Description}: Should match \texttt{SystemSerialNumber}.
 \item
   \texttt{ChassisAssetTag}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: OEM specified\\
+  \textbf{Failsafe}: Empty (OEM specified)\\
   \textbf{SMBIOS}: System Enclosure or Chassis (Type 3) --- Asset Tag
   Number\\
   \textbf{Description}: Chassis type name. Varies, could be empty or
@@ -5991,7 +5988,7 @@ functioning. Feature highlights:
 \item
   \texttt{AudioDevice}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Device path of the specified audio controller for audio support.
 
   Normally this contains builtin analog audio controller (\texttt{HDEF}) device path,
@@ -6201,7 +6198,7 @@ functioning. Feature highlights:
 \item
   \texttt{PointerSupportMode}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Set OEM protocol used for internal pointer driver.
 
   Currently the only supported variant is \texttt{ASUS}, using specialised protocol available
@@ -6291,21 +6288,20 @@ functioning. Feature highlights:
 \item
   \texttt{ConsoleMode}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Sets console output mode as specified
   with the \texttt{WxH} (e.g. \texttt{80x24}) formatted string.
 
-  Set to empty string not to change console mode. Set to \texttt{Max}
-  to try to use largest available console mode. Currently
-  \texttt{Builtin} text renderer supports only one console mode, so
-  this option is ignored.
+  Set to an empty string to maintain current console mode. Set to \texttt{Max}
+  to attempt using the largest available console mode. This option is currently
+  ignored as the \texttt{Builtin} text renderer only supports one console mode.
 
   \emph{Note}: This field is best left empty on most types of firmware.
 
 \item
   \texttt{Resolution}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Sets console output screen resolution.
 
   \begin{itemize}
@@ -6313,8 +6309,8 @@ functioning. Feature highlights:
   \item Set to \texttt{WxH@Bpp} (e.g. \texttt{1920x1080@32}) or \texttt{WxH}
   (e.g. \texttt{1920x1080}) formatted string to request custom resolution
   from GOP if available.
-  \item Set to empty string not to change screen resolution.
-  \item Set to \texttt{Max} to try to use largest available screen resolution.
+  \item Set to an empty string to maintain the current screen resolution.
+  \item Set to \texttt{Max} to attempt using the largest available screen resolution.
   \end{itemize}
 
   On HiDPI screens \texttt{APPLE\_VENDOR\_VARIABLE\_GUID} \texttt{UIScale}
@@ -6423,7 +6419,7 @@ functioning. Feature highlights:
 
   \emph{Note}: This option only applies to \texttt{System} renderer.
    On all known affected systems \texttt{ConsoleMode} had to be set to
-   empty string for this to work.
+   an empty string for this to work.
 
 \item
   \texttt{UgaPassThrough}\\
@@ -6559,15 +6555,21 @@ functioning. Feature highlights:
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Reinstalls Data Hub protocol with a builtin version.
-  This will delete all previous properties if the protocol was already installed.
+
+  \emph{Note}: This will discard all previous entries if the protocol was already
+  installed, so all properties required for safe operation of the system must be
+  specified in your configuration.
 
 \item
   \texttt{DeviceProperties}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Reinstalls Device Property protocol with a builtin
-  version. This will delete all previous properties if it was already installed.
-  This may be used to ensure full compatibility on VMs or legacy Macs.
+  version. This may be used to ensure full compatibility on VMs or legacy Macs.
+
+  \emph{Note}: This will discard all previous entries if the protocol was already
+  installed, so all properties required for safe operation of the system must be
+  specified in your configuration.
 
 \item
   \texttt{FirmwareVolume}\\
@@ -6587,16 +6589,16 @@ functioning. Feature highlights:
   \textbf{Description}: Forcibly reinstalls Hash Services protocols with builtin
   versions. Should be set to \texttt{true} to ensure File Vault 2 compatibility
   on platforms providing broken SHA-1 hashing. Can be diagnosed by invalid
-  cursor size with \texttt{UIScale} set to \texttt{02}, in general platforms
-  prior to APTIO V (Haswell and older) are affected.
+  cursor size with \texttt{UIScale} set to \texttt{02}. Platforms earlier
+  than APTIO V (Haswell and older) are generally affected.
 
 \item
   \texttt{OSInfo}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Forcibly reinstalls OS Info protocol with builtin
-  versions. This protocol is generally used to receive notifications from macOS
-  bootloader, by the firmware or by other applications.
+  versions. This protocol is generally used by the firmware, or by other
+  applications, to receive notifications from the macOS bootloader.
 
 \item
   \texttt{UnicodeCollation}\\
@@ -6741,7 +6743,7 @@ functioning. Feature highlights:
 \item
   \texttt{Comment}\\
   \textbf{Type}: \texttt{plist\ string}\\
-  \textbf{Failsafe}: Empty string\\
+  \textbf{Failsafe}: Empty\\
   \textbf{Description}: Arbitrary ASCII string used to provide human readable
   reference for the entry. It is implementation defined whether this value is
   used.
@@ -6799,12 +6801,11 @@ older macOS operating systems.
 
 While newer operating systems can be downloaded over the internet,
 older operating systems did not have installation media for every minor
-release, so to get a compatible distribution one may have to download
-a device-specific image and mod it if necessary. To get the list of
-the bundled device-specific builds for legacy operating systems
-one can visit this archived Apple Support
-\href{https://web.archive.org/web/20170705003629/https://support.apple.com/en-us/HT204319}{article}.
-Since it is not always accurate, the latest versions are listed below.
+release. For compatible distributions of such, download a device-specific
+image and modify it if necessary. Visit this archived Apple Support
+\href{https://web.archive.org/web/20170705003629/https://support.apple.com/en-us/HT204319}{article}
+for a list of the bundled device-specific builds for legacy operating systems.
+However, as this may not always be accurate, the latest versions are listed below.
 
 \subsubsection{macOS 10.8 and 10.9}\label{legacy108}
 
