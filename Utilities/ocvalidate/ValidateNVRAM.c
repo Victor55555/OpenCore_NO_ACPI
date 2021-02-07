@@ -135,7 +135,7 @@ ValidateNvramKeyByGuid (
                                                          )) {
               DEBUG ((
                 DEBUG_WARN,
-                "NVRAM->Add->%g->%a 为无效值!\n",
+                "NVRAM->Add->%g->%a 是一个非法值!\n",
                 &Guid,
                 OC_BLOB_GET (VariableMap->Keys[VariableIndex])
                 ));
@@ -171,7 +171,7 @@ CheckNvramAdd (
     AsciiGuid = OC_BLOB_GET (UserNvram->Add.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->Add[%u] 有一个错误的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->Add[%u] 有个错误的GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
@@ -243,7 +243,7 @@ CheckNvramDelete (
     AsciiGuid = OC_BLOB_GET (UserNvram->Delete.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->Delete[%u] 是一个错误的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->Delete[%u] 有一个错误的GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
@@ -308,7 +308,7 @@ CheckNvramSchema (
     AsciiGuid = OC_BLOB_GET (UserNvram->Legacy.Keys[GuidIndex]);
 
     if (!AsciiGuidIsLegal (AsciiGuid)) {
-      DEBUG ((DEBUG_WARN, "NVRAM->LegacySchema[%u] 是一个错误的GUID!\n", GuidIndex));
+      DEBUG ((DEBUG_WARN, "NVRAM->LegacySchema[%u] 有一个错误的GUID!\n", GuidIndex));
       ++ErrorCount;
     }
 
