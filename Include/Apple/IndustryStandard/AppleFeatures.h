@@ -275,7 +275,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 #define EB_FEATURE_BOOT_IS_NOT_ROOT             0x00000100U
 //
-// Boot (or wake) with File Vault 2 enabled.
+// Boot (or wake) with FileVault 2 enabled.
 //
 #define EB_FEATURE_HAS_FILE_VAULT2_CONFIG       0x00000200U
 #define EB_FEATURE_X                            0x00000400U
@@ -309,7 +309,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define EB_FEATURE_HAS_APPLE_SECURE_BOOT        0x00200000U
 //
 // Apple Trusted Boot enabled configuration (detected via proto & policy).
-// Some unfinished(?) variant of Secure Boot found in preview firmwares.
+// Some unfinished(?) variant of Secure Boot found in preview firmware.
 // 24B73556-2197-4702-82A8-3E1337DAFBF3 GUID.
 //
 #define EB_FEATURE_HAS_APPLE_TRUSTED_BOOT       0x01000000U

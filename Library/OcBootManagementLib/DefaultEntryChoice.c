@@ -928,8 +928,8 @@ InternalGetBoostrapOptionData (
       CurrLoadOption,
       *LoadOptionSize
       );
-    if (CurrLoadOption == NULL) {
-      FreePool (CurrLoadOption);
+    if (CurrDevicePath == NULL) {
+      FreePool (CurrDevicePath);
       continue;
     }
 
@@ -1077,7 +1077,7 @@ InternalRegisterBootstrapBootOption (
     DEBUG_INFO,
     "OCB: %a existing option at Boot%04x, %a\n",
     CurrOptionExists ? "Have" : "No",
-    BootOrder[1],
+    BootOrder != NULL ? BootOrder[1] : 0,
     CurrOptionValid ? "valid" : "invalid"
     ));
 

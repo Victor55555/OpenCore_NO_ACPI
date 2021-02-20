@@ -21,6 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Library/OcCpuLib.h>
 #include <Library/OcFileLib.h>
+#include <Library/OcMacInfoLib.h>
 #include <IndustryStandard/AppleSmBios.h>
 #include <Guid/OcSmBios.h>
 
@@ -86,8 +87,9 @@ typedef struct OC_SMBIOS_DATA_ {
   //
   // Type 16
   //
-  UINT16          MemoryDevicesCount;
+  BOOLEAN         HasCustomMemory;
   CONST UINT8     *MemoryErrorCorrection;
+  UINT16          MemoryDevicesCount;
   CONST UINT64    *MemoryMaxCapacity;
   //
   // Type 17
@@ -212,36 +214,93 @@ OcSmbiosTableFree (
   IN OUT OC_SMBIOS_TABLE  *Table
   );
 
+/**
+  Create new SMBIOS based on specified overrides.
+
+  @param[in,out] SmbiosTable  SMBIOS Table handle.
+  @param[in]     Data         SMBIOS overrides.
+  @param[in]     Mode         SMBIOS update mode.
+  @param[in]     CpuInfo      CPU information.
+
+  @retval EFI_SUCCESS on success.
+**/
 EFI_STATUS
 OcSmbiosCreate (
   IN OUT OC_SMBIOS_TABLE        *SmbiosTable,
   IN     OC_SMBIOS_DATA         *Data,
   IN     OC_SMBIOS_UPDATE_MODE  Mode,
-  IN     OC_CPU_INFO            *CpuInfo,
-  IN     BOOLEAN                UseCustomMemory
+  IN     OC_CPU_INFO            *CpuInfo
   );
 
+/**
+  Extract OEM information from SMBIOS to different places.
+  Note, for MLB and ROM NVRAM values take precedence.
+
+  @param[in,out] SmbiosTable         SMBIOS Table handle.
+  @param[out]    ProductName         Export SMBIOS Type 1 product name,
+                                     requiring OC_OEM_NAME_MAX bytes.
+  @param[out]    SerialNumber        Export SMBIOS Type 1 product serial,
+                                     requiring OC_OEM_SERIAL_MAX bytes.
+  @param[out]    SystemUuid          Export SMBIOS Type 1 system UUID.
+                                     UUID is always returned in RAW format.
+  @param[out]    Mlb                 Export SMBIOS Type 2 board serial,
+                                     requiring OC_OEM_SERIAL_MAX bytes.
+  @param[out]    Rom                 Export ROM serial, requiring
+                                     OC_OEM_ROM_MAX bytes.
+  @param[out]    UuidIsRawEncoded    Pass FALSE to assume SMBIOS stores
+                                     SystemUuid in Little Endian format
+                                     and needs byte-swap.
+  @param[in]     UseVariableStorage  Export OEM information to NVRAM.
+**/
 VOID
-OcSmbiosExposeOemInfo (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
+OcSmbiosExtractOemInfo (
+  IN  OC_SMBIOS_TABLE   *SmbiosTable,
+  OUT CHAR8             *ProductName        OPTIONAL,
+  OUT CHAR8             *SerialNumber       OPTIONAL,
+  OUT EFI_GUID          *SystemUuid         OPTIONAL,
+  OUT CHAR8             *Mlb                OPTIONAL,
+  OUT UINT8             *Rom                OPTIONAL,
+  IN  BOOLEAN           UuidIsRawEncoded,
+  IN  BOOLEAN           UseVariableStorage
   );
 
+/**
+  Convert SMC revision from SMC REV key format (6-byte)
+  to SMBIOS ASCII format (16-byte, APPLE_SMBIOS_SMC_VERSION_SIZE).
+
+  @param[in]  SmcRevision  SMC revision in REV key format.
+  @param[out] SmcVersion   SMC revision in SMBIOS format.  
+**/
 VOID
 OcSmbiosGetSmcVersion (
   IN  CONST UINT8  *SmcRevision,
   OUT UINT8        *SmcVersion
   );
 
-CHAR8*
-OcSmbiosGetManufacturer (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
+/**
+  Choose update mode based on default representation.
+  Always returns valid update mode, by falling back
+  to Create when unknown mode was found. Known modes are:
+  TryOverwrite, Create, Overwrite, Custom.
+
+  @param[in] UpdateMode in ASCII format.
+
+  @returns SMBIS update mode in enum format.
+**/
+OC_SMBIOS_UPDATE_MODE
+OcSmbiosGetUpdateMode (
+  IN CONST CHAR8  *UpdateMode
   );
 
-CHAR8*
-OcSmbiosGetProductName (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
-  );
+/**
+  Dump current SMBIOS data into specified directory
+  under EntryV#.bin/DataV#.bin names, where # is
+  SMBIOS version: 1, 3, or both.
 
+  @param[in] Root  Directory to dump SMBIOS data.
+
+  @retval EFI_SUCCESS on success.
+**/
 EFI_STATUS
 OcSmbiosDump (
   IN EFI_FILE_PROTOCOL  *Root

@@ -28,14 +28,14 @@
 **/
 #define SECONDS_TO_MICROSECONDS(x) ((x)*1000000)
 
-INT32
+BOOLEAN
 FindPattern (
   IN CONST UINT8   *Pattern,
   IN CONST UINT8   *PatternMask OPTIONAL,
   IN CONST UINT32  PatternSize,
   IN CONST UINT8   *Data,
   IN UINT32        DataSize,
-  IN INT32         DataOff
+  IN UINT32        *DataOff
   );
 
 UINT32
@@ -92,6 +92,18 @@ OcHandleProtocolFallback (
   IN  EFI_HANDLE  Handle,
   IN  EFI_GUID    *Protocol,
   OUT VOID        **Interface
+  );
+
+/**
+  Count instances found under a specific protocol.
+
+  @param[in]  Protocol      Protocol to search for.
+
+  @return     Number of instances found.
+**/
+UINTN
+OcCountProtocolInstances (
+  IN EFI_GUID  *Protocol
   );
 
 /**
@@ -174,7 +186,7 @@ MultThenDivU64x64x32 (
   bit of PcdDebugProperyMask is set, then this macro evaluates the integer
   expression specified by Expression.  If the value of Expression differs from ExpectedValue, then
   DebugPrint() is called passing in the source filename, source line number,
-  Expression, it's value and ExpectedValue; then ASSERT(FALSE) is called to
+  Expression, its value and ExpectedValue; then ASSERT(FALSE) is called to
   cause a breakpoint, deadloop or no-op depending on PcdDebugProperyMask.
 
   @param  Expression  Integer expression (should be convertible to INTN).

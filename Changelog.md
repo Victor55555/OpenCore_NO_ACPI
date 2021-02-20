@@ -2,6 +2,13 @@ OpenCore Changelog
 ==================
 #### v0.6.7
 - Fixed ocvalidate return code to be non-zero when issues are found
+- Added `OEM` values to `PlatformInfo` in `Automatic` mode
+- Improved CPU frequency calculation on Haswell and earlier
+- Fixed issues when applying certain patches
+- Added `SSN` (and `HW_SSN`) variable support
+- Added onscreen early logging in DEBUG builds for legacy firmware
+- Added workaround for firmware not specifying DeviceHandle at bootstrap
+- Added support for R/O page tables in `SetupVirtualMap` quirk
 
 #### v0.6.6
 - Added keyboard and pointer entry scroll support in OpenCanopy
@@ -64,11 +71,11 @@ OpenCore Changelog
 - Fixed CPU frequency calculation on AMD 19h family
 - Updated recovery_urls
 - Fixed `DisableSingleUser` quirk when Apple Secure Boot is enabled
-- Added `BootstrapShort` to workaround buggy Insyde firmwares
+- Added `BootstrapShort` to workaround buggy Insyde firmware
 - Changed `Bootstrap(Short)` to choose dynamic entry (requires NVRAM reset)
 - Avoided `Boot` prefix in `RequestBootVarRouting` to workaround AMI issues
 - Added bootloader patch support in `Booter` `Patch` section
-- Fixed startup hang on firmwares allowong reentrance for timer functions
+- Fixed startup hang on firmware that permit timer function re-entrance
 - Made pointer control optional for OpenCanopy via `PickerAttributes`
 - Added support for `StartupMute` variable in `PlayChime`
 - Added support for per-volume icons for APFS on Preboot
