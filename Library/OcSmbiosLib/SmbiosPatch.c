@@ -16,6 +16,7 @@
 
 #include <Protocol/PciRootBridgeIo.h>
 
+#include <Guid/AppleVariable.h>
 #include <Guid/OcVariable.h>
 #include <Guid/SmBios.h>
 
@@ -1783,13 +1784,37 @@ OcSmbiosGetSmcVersion (
   }
 }
 
+OC_SMBIOS_UPDATE_MODE
+OcSmbiosGetUpdateMode (
+  IN CONST CHAR8  *UpdateMode
+  )
+{
+  if (AsciiStrCmp (UpdateMode, "TryOverwrite") == 0) {
+    return OcSmbiosUpdateTryOverwrite;
+  }
+
+  if (AsciiStrCmp (UpdateMode, "Create") == 0) {
+    return OcSmbiosUpdateCreate;
+  }
+
+  if (AsciiStrCmp (UpdateMode, "Overwrite") == 0) {
+    return OcSmbiosUpdateOverwrite;
+  }
+
+  if (AsciiStrCmp (UpdateMode, "Custom") == 0) {
+    return OcSmbiosUpdateCustom;
+  }
+
+  DEBUG ((DEBUG_INFO, "OCSMB: Invalid SMBIOS update mode %a\n", UpdateMode));
+  return OcSmbiosUpdateCreate;
+}
+
 EFI_STATUS
 OcSmbiosCreate (
   IN OUT OC_SMBIOS_TABLE        *SmbiosTable,
   IN     OC_SMBIOS_DATA         *Data,
   IN     OC_SMBIOS_UPDATE_MODE  Mode,
-  IN     OC_CPU_INFO            *CpuInfo,
-  IN     BOOLEAN                UseCustomMemory
+  IN     OC_CPU_INFO            *CpuInfo
   )
 {
   EFI_STATUS                      Status;
@@ -1837,7 +1862,7 @@ OcSmbiosCreate (
   // Create new memory tables if custom memory is desired.
   // Otherwise we'll patch the existing memory information.
   //
-  if (UseCustomMemory) {
+  if (Data->HasCustomMemory) {
     CreateMemoryArray (
       SmbiosTable,
       Data,
@@ -1979,107 +2004,217 @@ OcSmbiosCreate (
 }
 
 VOID
-OcSmbiosExposeOemInfo (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
+OcSmbiosExtractOemInfo (
+  IN  OC_SMBIOS_TABLE   *SmbiosTable,
+  OUT CHAR8             *ProductName        OPTIONAL,
+  OUT CHAR8             *SerialNumber       OPTIONAL,
+  OUT EFI_GUID          *SystemUuid         OPTIONAL,
+  OUT CHAR8             *Mlb                OPTIONAL,
+  OUT UINT8             *Rom                OPTIONAL,
+  IN  BOOLEAN           UuidIsRawEncoded,
+  IN  BOOLEAN           UseVariableStorage
   )
 {
   EFI_STATUS                      Status;
+  CONST CHAR8                     *SmProductName;
+  CONST CHAR8                     *SmManufacturer;
+  CONST CHAR8                     *SmBoard;
+  CONST CHAR8                     *SmTmp;
+  UINTN                           Index;
+  UINTN                           TmpSize;
+  UINT32                          MinCount;
+  UINT32                          MaxCount;
+  UINT8                           *UuidWalker;
   APPLE_SMBIOS_STRUCTURE_POINTER  Original;
-  CHAR8                           *Value;
-  UINTN                           Length;
+
+  SmProductName  = NULL;
+  SmManufacturer = NULL;
+  SmBoard        = NULL;
 
   Original = SmbiosGetOriginalStructure (SMBIOS_TYPE_SYSTEM_INFORMATION, 1);
+  if (Original.Raw != NULL) {
+    if (SMBIOS_ACCESSIBLE (Original, Standard.Type1->ProductName)) {
+      SmProductName = SmbiosGetString (Original, Original.Standard.Type1->ProductName);
+      if (SmProductName != NULL && ProductName != NULL) {
+        Status = AsciiStrCpyS (ProductName, OC_OEM_NAME_MAX, SmProductName);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_INFO, "OCSMB: Failed to copy SMBIOS product name %a\n", SmProductName));
+        }
+      }
+    }
 
-  if (Original.Raw != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type1->ProductName)) {
-    Value = SmbiosGetString (Original, Original.Standard.Type1->ProductName);
-    if (Value != NULL) {
-      Length = AsciiStrLen (Value);
+    if (SerialNumber != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type1->SerialNumber)) {
+      SmTmp = SmbiosGetString (Original, Original.Standard.Type1->SerialNumber);
+      if (SmTmp != NULL) {
+        Status = AsciiStrCpyS (SerialNumber, OC_OEM_SERIAL_MAX, SmTmp);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_INFO, "OCSMB: Failed to copy SMBIOS product serial %a\n", SmTmp));
+        }
+      }
+    }
+
+    if (SystemUuid != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type1->Uuid)) {
+      MinCount = 0;
+      MaxCount = 0;
+      UuidWalker = (UINT8 *) &Original.Standard.Type1->Uuid;
+      for (Index = 0; Index < sizeof (Original.Standard.Type1->Uuid); ++Index) {
+        if (UuidWalker[Index] == 0x00) {
+          ++MinCount;
+        } else if (UuidWalker[Index] == 0xFF) {
+          ++MaxCount;
+        }
+      }
+
+      if (MinCount < 4 && MaxCount < 4) {
+        CopyGuid (SystemUuid, &Original.Standard.Type1->Uuid);
+        //
+        // Convert LE to RAW (assuming SMBIOS stores in LE format).
+        //
+        if (!UuidIsRawEncoded) {
+          SystemUuid->Data1 = SwapBytes32 (SystemUuid->Data1);
+          SystemUuid->Data2 = SwapBytes16 (SystemUuid->Data2);
+          SystemUuid->Data3 = SwapBytes16 (SystemUuid->Data3);
+        }
+      } else {
+        DEBUG ((
+          DEBUG_WARN,
+          "OCSMB: Ignoring UUID %g due to low entropy\n",
+          &Original.Standard.Type1->Uuid
+          ));
+      }
+    }
+  }
+
+  Original = SmbiosGetOriginalStructure (SMBIOS_TYPE_BASEBOARD_INFORMATION, 1);
+  if (Original.Raw != NULL) {
+    if (SMBIOS_ACCESSIBLE (Original, Standard.Type2->Manufacturer)) {
+      SmManufacturer = SmbiosGetString (Original, Original.Standard.Type2->Manufacturer);
+    }
+    if (SMBIOS_ACCESSIBLE (Original, Standard.Type2->ProductName)) {
+      SmBoard = SmbiosGetString (Original, Original.Standard.Type2->ProductName);
+    }
+    if (Mlb != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type2->SerialNumber)) {
+      SmTmp = SmbiosGetString (Original, Original.Standard.Type2->SerialNumber);
+      if (SmTmp != NULL) {
+        Status = AsciiStrCpyS (Mlb, OC_OEM_SERIAL_MAX, SmTmp);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_INFO, "OCSMB: Failed to copy SMBIOS board serial %a\n", SmTmp));
+        }
+      }
+    }
+  }
+
+  if (Mlb != NULL) {
+    TmpSize = OC_OEM_SERIAL_MAX - 1;
+    Status = gRT->GetVariable (
+      L"MLB",
+      &gAppleVendorVariableGuid,
+      NULL,
+      &TmpSize,
+      Mlb
+      );
+    if (!EFI_ERROR (Status)) {
+      ZeroMem (Mlb + TmpSize, OC_OEM_SERIAL_MAX - TmpSize);
+      DEBUG ((DEBUG_INFO, "OCSMB: MLB from NVRAM took precedence: %a\n", Mlb));
+    }
+  }
+
+  if (SerialNumber != NULL) {
+    TmpSize = OC_OEM_SERIAL_MAX - 1;
+    Status = gRT->GetVariable (
+      L"SSN",
+      &gAppleVendorVariableGuid,
+      NULL,
+      &TmpSize,
+      SerialNumber
+      );
+    if (!EFI_ERROR (Status)) {
+      ZeroMem (SerialNumber + TmpSize, OC_OEM_SERIAL_MAX - TmpSize);
+      DEBUG ((DEBUG_INFO, "OCSMB: SSN from NVRAM took precedence: %a\n", SerialNumber));
+    }
+  }
+
+  if (Rom != NULL) {
+    TmpSize = OC_OEM_ROM_MAX;
+    Status = gRT->GetVariable (
+      L"ROM",
+      &gAppleVendorVariableGuid,
+      NULL,
+      &TmpSize,
+      Rom
+      );
+    if (!EFI_ERROR (Status) && TmpSize != OC_OEM_ROM_MAX) {
+      ZeroMem (Rom, OC_OEM_ROM_MAX);
+    }
+  }
+
+  if (SystemUuid != NULL) {
+    TmpSize = sizeof (EFI_GUID);
+    Status = gRT->GetVariable (
+      L"system-id",
+      &gAppleVendorVariableGuid,
+      NULL,
+      &TmpSize,
+      SystemUuid
+      );
+    if (!EFI_ERROR (Status) && TmpSize == sizeof (EFI_GUID)) {
+      DEBUG ((DEBUG_INFO, "OCSMB: UUID from NVRAM took precedence: %g\n", SystemUuid));
+    } else if (TmpSize != sizeof (EFI_GUID)) {
+      ZeroMem (SystemUuid, sizeof (EFI_GUID));
+    }
+  }
+
+  DEBUG ((
+    DEBUG_INFO,
+    "OCSMB: Current SMBIOS %a (%a made by %a)\n",
+    SmProductName,
+    SmBoard,
+    SmManufacturer
+    ));
+
+  if (ProductName != NULL && SmProductName != NULL) {
+    Status = AsciiStrCpyS (ProductName, OC_OEM_NAME_MAX, SmProductName);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_INFO, "OCSMB: Failed to copy SMBIOS product name %a\n", SmProductName));
+    }
+  }
+
+  if (UseVariableStorage) {
+    if (SmProductName != NULL) {
       Status = gRT->SetVariable (
         OC_OEM_PRODUCT_VARIABLE_NAME,
         &gOcVendorVariableGuid,
         EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-        Length,
-        Value
+        AsciiStrLen (SmProductName),
+        (VOID *) SmProductName
         );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_INFO, "OCSMB: Cannot write OEM product\n"));
       }
-    } else {
-      DEBUG ((DEBUG_INFO, "OCSMB: Cannot find OEM product\n"));
     }
-  } else {
-    DEBUG ((DEBUG_INFO, "OCSMB: Cannot access OEM Type1\n"));
-  }
 
-  Original = SmbiosGetOriginalStructure (SMBIOS_TYPE_BASEBOARD_INFORMATION, 1);
-
-  if (Original.Raw != NULL
-    && SMBIOS_ACCESSIBLE (Original, Standard.Type2->Manufacturer)
-    && SMBIOS_ACCESSIBLE (Original, Standard.Type2->ProductName)) {
-    Value = SmbiosGetString (Original, Original.Standard.Type2->Manufacturer);
-    if (Value != NULL) {
-      Length = AsciiStrLen (Value);
+    if (SmManufacturer != NULL && SmBoard != NULL) {
       Status = gRT->SetVariable (
         OC_OEM_VENDOR_VARIABLE_NAME,
         &gOcVendorVariableGuid,
         EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-        Length,
-        Value
+        AsciiStrLen (SmManufacturer),
+        (VOID *) SmManufacturer
         );
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_INFO, "OCSMB: Cannot write OEM vendor\n"));
+        DEBUG ((DEBUG_INFO, "OCSMB: Cannot write OEM board manufacturer - %r\n", Status));
       }
-    } else {
-      DEBUG ((DEBUG_INFO, "OCSMB: Cannot find OEM vendor\n"));
-    }
 
-    Value = SmbiosGetString (Original, Original.Standard.Type2->ProductName);
-    if (Value != NULL) {
-      Length = AsciiStrLen (Value);
       Status = gRT->SetVariable (
         OC_OEM_BOARD_VARIABLE_NAME,
         &gOcVendorVariableGuid,
         EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-        Length,
-        Value
+        AsciiStrLen (SmBoard),
+        (VOID *) SmBoard
         );
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_INFO, "OCSMB: Cannot write OEM board\n"));
+        DEBUG ((DEBUG_INFO, "OCSMB: Cannot write OEM board - %r\n", Status));
       }
-    } else {
-      DEBUG ((DEBUG_INFO, "OCSMB: Cannot find OEM board\n"));
     }
-  } else {
-    DEBUG ((DEBUG_INFO, "OCSMB: Cannot access OEM Type2\n"));
   }
-}
-
-CHAR8*
-OcSmbiosGetManufacturer (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
-  )
-{
-  APPLE_SMBIOS_STRUCTURE_POINTER  Original;
-
-  Original = SmbiosGetOriginalStructure (SMBIOS_TYPE_SYSTEM_INFORMATION, 1);
-  if (Original.Raw != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type1->Manufacturer)) {
-    return SmbiosGetString (Original, Original.Standard.Type1->Manufacturer);
-  }
-
-  return NULL;
-}
-
-CHAR8*
-OcSmbiosGetProductName (
-  IN OC_SMBIOS_TABLE   *SmbiosTable
-  )
-{
-  APPLE_SMBIOS_STRUCTURE_POINTER  Original;
-
-  Original = SmbiosGetOriginalStructure (SMBIOS_TYPE_SYSTEM_INFORMATION, 1);
-  if (Original.Raw != NULL && SMBIOS_ACCESSIBLE (Original, Standard.Type1->ProductName)) {
-    return SmbiosGetString (Original, Original.Standard.Type1->ProductName);
-  }
-
-  return NULL;
 }

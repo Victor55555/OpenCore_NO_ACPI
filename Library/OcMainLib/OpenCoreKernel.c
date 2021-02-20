@@ -628,6 +628,8 @@ OcKernelInjectKext (
       Kext->ImageData,
       Kext->ImageDataSize
       );
+  } else {
+    Status = EFI_UNSUPPORTED;
   }
 
   DEBUG ((
@@ -715,6 +717,8 @@ OcKernelInjectKexts (
       );
     
     Status = PrelinkedInjectComplete (Context);
+  } else {
+    Status = EFI_UNSUPPORTED;
   }
 
   if (EFI_ERROR (Status)) {
