@@ -110,6 +110,9 @@ int ENTRY_POINT(int argc, const char *argv[]) {
     DEBUG ((DEBUG_ERROR, "无效的配置\n"));
     return -1;
   }
+  if (ErrorCount > 0) {
+    DEBUG ((DEBUG_ERROR, "配置检查发现%u个%a!\n", ErrorCount, ErrorCount > 1 ? "错误" : "错误"));
+  }
 
   //
   // Print a newline that splits errors between OcConfigurationInit and config checkers.

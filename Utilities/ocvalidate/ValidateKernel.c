@@ -134,6 +134,7 @@ CheckKernelAdd (
   CONST CHAR8       *MaxKernel;
   CONST CHAR8       *MinKernel;
   CONST CHAR8       *PlistPath;
+  BOOLEAN           IsLiluUsed;
   BOOLEAN           IsDisableLinkeditJettisonEnabled;
   UINTN             IndexKextInfo;
   UINTN             IndexKextPrecedence;
@@ -218,9 +219,10 @@ CheckKernelAdd (
           // Special check for Lilu and Quirks->DisableLinkeditJettison.
           //
           if (IndexKextInfo == INDEX_KEXT_LILU) {
+            IsLiluUsed = UserKernel->Add.Values[Index]->Enabled;
             IsDisableLinkeditJettisonEnabled = UserKernel->Quirks.DisableLinkeditJettison;
-            if (!IsDisableLinkeditJettisonEnabled) {
-              DEBUG ((DEBUG_WARN, "Lilu.kext在Kernel->Add[%u]处加载, 但在Kernel->Quirks位置未启用DisableLinkeditJettison!\n", Index));
+            if (IsLiluUsed && !IsDisableLinkeditJettisonEnabled) {
+              DEBUG ((DEBUG_WARN, "Lilu.kext在Kernel->Add[%u]处加载, 但是在Kernel->Quirks处未启用DisableLinkeditJettison!\n", Index));
               ++ErrorCount;
             }
           }
