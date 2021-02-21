@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -91,8 +94,10 @@ CheckPlatformInfoGeneric (
   }
 
   AsciiSystemUUID     = OC_BLOB_GET (&UserPlatformInfo->Generic.SystemUuid);
-  if (AsciiSystemUUID[0] != '\0' && !AsciiGuidIsLegal (AsciiSystemUUID)) {
-    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemUUID 不对!\n"));
+  if (AsciiSystemUUID[0] != '\0'
+    && AsciiStrCmp (AsciiSystemUUID, "OEM") != 0
+    && !AsciiGuidIsLegal (AsciiSystemUUID)) {
+    DEBUG ((DEBUG_WARN, "PlatformInfo->Generic->SystemUUID不正确 (只能为空、指定OEM字符串或有效的UUID)!\n"));
     ++ErrorCount;
   }
 

@@ -361,7 +361,7 @@ ValidatePatch (
   if (!FindSizeCanBeZero && FindSize != ReplaceSize) {
     DEBUG ((
       DEBUG_WARN,
-      "%a[%u] 查找和替换内容不同 (%u vs %u)!\n",
+      "%a[%u] 查找和替换内容不同 (%u 和 %u)!\n",
       PatchSection,
       PatchIndex,
       FindSize,
@@ -377,7 +377,7 @@ ValidatePatch (
     if (MaskSize != FindSize) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u] 已设置 mask ，但其大小与find处不同 (%u vs %u)!\n",
+        "%a[%u] 已设置 mask ，但其大小与find处不同 (%u 和 %u)!\n",
         PatchSection,
         PatchIndex,
         MaskSize,
@@ -405,7 +405,7 @@ ValidatePatch (
     if (ReplaceMaskSize != ReplaceSize) {
       DEBUG ((
         DEBUG_WARN,
-        "%a[%u] 设置了ReplaceMask，但其大小与Replace不同 (%u vs %u)!\n",
+        "%a[%u] 设置了ReplaceMask，但其大小与Replace不同 (%u 和 %u)!\n",
         PatchSection,
         PatchIndex,
         ReplaceMaskSize,
@@ -457,7 +457,7 @@ FindArrayDuplication (
         //
         // DupChecker prints what is duplicated, and here the index is printed.
         //
-        DEBUG ((DEBUG_WARN, "在索引 %u 和 %u 处!\n", Index, Index2));
+        DEBUG ((DEBUG_WARN, "在索引%u和%u处!\n", Index, Index2));
         ++ErrorCount;
       }
     }
@@ -491,7 +491,7 @@ ReportError (
   )
 {
   if (ErrorCount != 0) {
-    DEBUG ((DEBUG_WARN, "%a 返回 %u %a!\n", FuncName, ErrorCount, ErrorCount > 1 ? "错误" : "错误"));
+    DEBUG ((DEBUG_WARN, "%a 返回%u处%a!\n", FuncName, ErrorCount, ErrorCount > 1 ? "错误" : "错误"));
   } else {
     DEBUG ((DEBUG_VERBOSE, "%a 未返回错误!\n", FuncName));
   }
