@@ -511,7 +511,8 @@ OcInstallPermissiveSecurityPolicy (
 
 VOID
 OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
+  IN OC_GLOBAL_CONFIG  *Config,
+  IN OC_CPU_INFO       *CpuInfo
   )
 {
   OC_ABC_SETTINGS        AbcSettings;
@@ -656,7 +657,7 @@ OcLoadBooterUefiSupport (
   AbcSettings.ExitBootServicesHandlers = mOcExitBootServicesHandlers;
   AbcSettings.ExitBootServicesHandlerContexts = mOcExitBootServicesContexts;
 
-  OcAbcInitialize (&AbcSettings);
+  OcAbcInitialize (&AbcSettings, CpuInfo);
 }
 
 VOID
@@ -730,8 +731,9 @@ OcLoadUefiSupport (
   //
   //OcLoadBooterUefiSupport (Config);
   if (Config->Booter.Quirks.EnableForAll) {
-    OcLoadBooterUefiSupport (Config);
+  OcLoadBooterUefiSupport (Config, CpuInfo);
   }
+
   if (Config->Uefi.Quirks.IgnoreInvalidFlexRatio) {
     OcCpuCorrectFlexRatio (CpuInfo);
   }
