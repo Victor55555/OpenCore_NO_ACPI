@@ -204,8 +204,8 @@ typedef struct OC_ABC_SETTINGS_ {
 **/
 EFI_STATUS
 OcAbcInitialize (
-  IN OC_ABC_SETTINGS  *Settings,
-  IN OC_CPU_INFO      *CpuInfo
+  IN OC_ABC_SETTINGS  *Settings
+//   IN OC_CPU_INFO      *CpuInfo
   );
 
 #endif // OC_AFTER_BOOT_COMPAT_LIB_H

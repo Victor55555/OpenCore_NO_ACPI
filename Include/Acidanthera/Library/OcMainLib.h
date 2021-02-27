@@ -361,7 +361,7 @@ OcPlatformIs64BitSupported (
   IN UINT32     KernelVersion
   );
 
-  VOID
+VOID
 OcLoadBooterUefiSupport (
   IN OC_GLOBAL_CONFIG  *Config
   );
