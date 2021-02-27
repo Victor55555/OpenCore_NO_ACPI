@@ -5,6 +5,7 @@ buildutil() {
     "AppleEfiSignTool"
     "EfiResTool"
     "LogoutHook"
+    "acdtinfo"
     "disklabel"
     "icnspack"
     "macserial"
@@ -217,6 +218,7 @@ package() {
   done
 
   utils=(
+    "acdtinfo"
     "macserial"
     "ocvalidate"
     "disklabel"
