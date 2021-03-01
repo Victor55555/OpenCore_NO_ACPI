@@ -361,8 +361,4 @@ OcPlatformIs64BitSupported (
   IN UINT32     KernelVersion
   );
 
-VOID
-OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
-  );
 #endif // OC_MAIN_LIB
