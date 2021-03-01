@@ -34,6 +34,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/OcConsoleLib.h>
 #include <Library/OcCpuLib.h>
 #include <Library/OcDataHubLib.h>
+#include <Library/OcDeviceMiscLib.h>
 #include <Library/OcDevicePropertyLib.h>
 #include <Library/OcDriverConnectionLib.h>
 #include <Library/OcFirmwareVolumeLib.h>
@@ -482,6 +483,10 @@ OcLoadUefiAudioSupport (
   OC_AUDIO_PROTOCOL                *OcAudio;
   UINT8                            VolumeLevel;
   BOOLEAN                          Muted;
+
+  if (Config->Uefi.Audio.ResetTrafficClass) {
+    ResetAudioTrafficClass ();
+  }
 
   if (!Config->Uefi.Audio.AudioSupport) {
     DEBUG ((DEBUG_INFO, "OC: Requested not to use audio\n"));

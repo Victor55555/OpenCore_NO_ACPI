@@ -19,6 +19,11 @@ OpenCore Changelog
 - Added `acdtinfo` utility to lookup certain products
 - Fixed `FSBFrequency` calculation with fractional multiplier
 - Fixed showing core count for some AMD CPUs
+- Added `ResetTrafficClass` to reset TCSEL to T0 on legacy HDA
+- Fixed default boot entry selection without timeout for builtin picker
+- Added ocpasswordgen utility to generate OpenCore password data
+- Added `ActivateHpetSupport` quirk to activate HPET support
+- Fixed `opencore-version` reporting the incorrect version in rare cases
 
 #### v0.6.6
 - Added keyboard and pointer entry scroll support in OpenCanopy
