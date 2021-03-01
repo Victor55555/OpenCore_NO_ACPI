@@ -9,6 +9,7 @@ buildutil() {
     "disklabel"
     "icnspack"
     "macserial"
+    "ocpasswordgen"
     "ocvalidate"
     "TestBmf"
     "TestDiskImage"
@@ -220,6 +221,7 @@ package() {
   utils=(
     "acdtinfo"
     "macserial"
+    "ocpasswordgen"
     "ocvalidate"
     "disklabel"
     "icnspack"

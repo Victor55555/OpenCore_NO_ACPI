@@ -665,6 +665,7 @@ mUefiDriversSchema = OC_SCHEMA_STRING (NULL);
 STATIC
 OC_SCHEMA
 mUefiQuirksSchema[] = {
+  OC_SCHEMA_BOOLEAN_IN ("ActivateHpetSupport",    OC_GLOBAL_CONFIG, Uefi.Quirks.ActivateHpetSupport),
   OC_SCHEMA_BOOLEAN_IN ("DisableSecurityPolicy",  OC_GLOBAL_CONFIG, Uefi.Quirks.DisableSecurityPolicy),
   OC_SCHEMA_INTEGER_IN ("ExitBootServicesDelay",  OC_GLOBAL_CONFIG, Uefi.Quirks.ExitBootServicesDelay),
   OC_SCHEMA_BOOLEAN_IN ("IgnoreInvalidFlexRatio", OC_GLOBAL_CONFIG, Uefi.Quirks.IgnoreInvalidFlexRatio),
@@ -717,6 +718,7 @@ mUefiAudioSchema[] = {
   OC_SCHEMA_BOOLEAN_IN ("AudioSupport",       OC_GLOBAL_CONFIG, Uefi.Audio.AudioSupport),
   OC_SCHEMA_INTEGER_IN ("MinimumVolume",      OC_GLOBAL_CONFIG, Uefi.Audio.MinimumVolume),
   OC_SCHEMA_STRING_IN  ("PlayChime",          OC_GLOBAL_CONFIG, Uefi.Audio.PlayChime),
+  OC_SCHEMA_BOOLEAN_IN ("ResetTrafficClass",  OC_GLOBAL_CONFIG, Uefi.Audio.ResetTrafficClass),
   OC_SCHEMA_INTEGER_IN ("SetupDelay",         OC_GLOBAL_CONFIG, Uefi.Audio.SetupDelay),
   OC_SCHEMA_INTEGER_IN ("VolumeAmplifier",    OC_GLOBAL_CONFIG, Uefi.Audio.VolumeAmplifier),
 };
