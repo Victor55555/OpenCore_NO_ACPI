@@ -209,12 +209,20 @@ GuiDrawToBuffer (
 
 VOID
 GuiDrawToBufferFill (
-  IN     CONST GUI_IMAGE      *Image,
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     UINT32               PosX,
-  IN     UINT32               PosY,
-  IN     UINT32               Width,
-  IN     UINT32               Height
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *Colour,
+  IN OUT GUI_DRAWING_CONTEXT                  *DrawContext,
+  IN     UINT32                               PosX,
+  IN     UINT32                               PosY,
+  IN     UINT32                               Width,
+  IN     UINT32                               Height
+  );
+
+VOID
+GuiRequestDraw (
+  IN UINT32  PosX,
+  IN UINT32  PosY,
+  IN UINT32  Width,
+  IN UINT32  Height
   );
 
 VOID
@@ -224,14 +232,6 @@ GuiRequestDrawCrop (
   IN     INT64                Y,
   IN     UINT32               Width,
   IN     UINT32               Height
-  );
-
-VOID
-GuiRedrawObject (
-  IN OUT GUI_OBJ              *Obj,
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     INT64                BaseX,
-  IN     INT64                BaseY
   );
 
 VOID
