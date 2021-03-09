@@ -30,10 +30,10 @@
 #include "Views/BootPicker.h"
 
 typedef struct {
-  UINT32 MinX;
-  UINT32 MinY;
-  UINT32 MaxX;
-  UINT32 MaxY;
+  UINT32 X;
+  UINT32 Y;
+  UINT32 Width;
+  UINT32 Height;
 } GUI_DRAW_REQUEST;
 
 //
@@ -290,7 +290,7 @@ GuiDrawToBufferFill (
   ASSERT (Width > 0);
   ASSERT (Height > 0);
   //
-  // Screen cropping happens in GuiDrawScreen().
+  // Screen cropping happens in GuiRequestDrawCrop().
   //
   ASSERT (DrawContext->Screen->Width  >= PosX);
   ASSERT (DrawContext->Screen->Height >= PosY);
@@ -387,7 +387,7 @@ GuiDrawToBuffer (
   PosX = (UINT32) (BaseX + OffsetX);
   PosY = (UINT32) (BaseY + OffsetY);
   //
-  // Screen cropping happens in GuiDrawScreen().
+  // Screen cropping happens in GuiRequestDrawCrop().
   //
   ASSERT (DrawContext->Screen->Width  >= PosX);
   ASSERT (DrawContext->Screen->Height >= PosY);
@@ -475,39 +475,24 @@ GuiRequestDraw (
   IN UINT32  Height
   )
 {
-  GUI_DRAW_REQUEST ThisReq;
-  UINTN            Index;
+  UINTN  Index;
 
-  UINT32           ThisArea;
+  UINT32 ThisArea;
+  UINT32 ThisMaxX;
+  UINT32 ThisMaxY;
 
-  UINT32           ReqWidth;
-  UINT32           ReqHeight;
-  UINT32           ReqArea;
+  UINT32 ReqMaxX;
+  UINT32 ReqMaxY;
+  UINT32 ReqArea;
 
-  UINT32           CombMinX;
-  UINT32           CombMaxX;
-  UINT32           CombMinY;
-  UINT32           CombMaxY;
-  UINT32           CombWidth;
-  UINT32           CombHeight;
-  UINT32           CombArea;
+  UINT32 CombX;
+  UINT32 CombY;
+  UINT32 CombWidth;
+  UINT32 CombHeight;
+  UINT32 CombArea;
 
-  UINT32           OverMinX;
-  UINT32           OverMaxX;
-  UINT32           OverMinY;
-  UINT32           OverMaxY;
-  UINT32           OverArea;
-  UINT32           OverWidth;
-  UINT32           OverHeight;
-
-  UINT32           ActualArea;
-  //
-  // Update the coordinates of the smallest rectangle covering all changes.
-  //
-  ThisReq.MinX = PosX;
-  ThisReq.MinY = PosY;
-  ThisReq.MaxX = PosX + Width  - 1;
-  ThisReq.MaxY = PosY + Height - 1;
+  ThisMaxX = PosX + Width  - 1;
+  ThisMaxY = PosY + Height - 1;
 
   ThisArea = Width * Height;
 
@@ -516,63 +501,47 @@ GuiRequestDraw (
     // Calculate several dimensions to determine whether to merge the two
     // draw requests for improved flushing performance.
     //
-    ReqWidth  = mDrawRequests[Index].MaxX - mDrawRequests[Index].MinX + 1;
-    ReqHeight = mDrawRequests[Index].MaxY - mDrawRequests[Index].MinY + 1;
-    ReqArea   = ReqWidth * ReqHeight;
+    ReqMaxX = mDrawRequests[Index].X + mDrawRequests[Index].Width - 1;
+    ReqMaxY = mDrawRequests[Index].Y + mDrawRequests[Index].Height - 1;
+    ReqArea = mDrawRequests[Index].Width * mDrawRequests[Index].Height;
 
-    if (mDrawRequests[Index].MinX < ThisReq.MinX) {
-      CombMinX = mDrawRequests[Index].MinX;
-      OverMinX = ThisReq.MinX;
+    if (mDrawRequests[Index].X < PosX) {
+      CombX = mDrawRequests[Index].X;
     } else {
-      CombMinX = ThisReq.MinX;
-      OverMinX = mDrawRequests[Index].MinX;
+      CombX = PosX;
     }
 
-    if (mDrawRequests[Index].MaxX > ThisReq.MaxX) {
-      CombMaxX = mDrawRequests[Index].MaxX;
-      OverMaxX = ThisReq.MaxX;
+    if (ReqMaxX > ThisMaxX) {
+      CombWidth = ReqMaxX - CombX + 1;
     } else {
-      CombMaxX = ThisReq.MaxX;
-      OverMaxX = mDrawRequests[Index].MaxX;
+      CombWidth = ThisMaxX - CombX + 1;
     }
 
-    if (mDrawRequests[Index].MinY < ThisReq.MinY) {
-      CombMinY = mDrawRequests[Index].MinY;
-      OverMinY = ThisReq.MinY;
+    if (mDrawRequests[Index].Y < PosY) {
+      CombY = mDrawRequests[Index].Y;
     } else {
-      CombMinY = ThisReq.MinY;
-      OverMinY = mDrawRequests[Index].MinY;
+      CombY = PosY;
     }
 
-    if (mDrawRequests[Index].MaxY > ThisReq.MaxY) {
-      CombMaxY = mDrawRequests[Index].MaxY;
-      OverMaxY = ThisReq.MaxY;
+    if (ReqMaxY > ThisMaxY) {
+      CombHeight = ReqMaxY - CombY + 1;
     } else {
-      CombMaxY = ThisReq.MaxY;
-      OverMaxY = mDrawRequests[Index].MaxY;
+      CombHeight = ThisMaxY - CombY + 1;
     }
 
-    CombWidth  = CombMaxX - CombMinX + 1;
-    CombHeight = CombMaxY - CombMinY + 1;
-    CombArea   = CombWidth * CombHeight;
-
-    OverArea = 0;
-    if (OverMinX <= OverMaxX && OverMinY <= OverMaxY) {
-      OverWidth  = OverMaxX - OverMinX + 1;
-      OverHeight = OverMaxY - OverMinY + 1;
-      OverArea   = OverWidth * OverHeight;
-    }
-
-    ActualArea = ThisArea + ReqArea - OverArea;
+    CombArea = CombWidth * CombHeight;
     //
-    // Two requests are merged when their combined actual draw area is at
-    // least 3/4 of the area needed to draw both at once.
+    // Two requests are merged when the overarching rectangle is not bigger than
+    // the two separate rectangles (not accounting for the overlap, as it would
+    // be drawn twice).
     //
-    if (4 * ActualArea >= 3 * CombArea) {
-      mDrawRequests[Index].MinX = CombMinX;
-      mDrawRequests[Index].MaxX = CombMaxX;
-      mDrawRequests[Index].MinY = CombMinY;
-      mDrawRequests[Index].MaxY = CombMaxY;
+    // TODO: Profile a good constant factor?
+    //
+    if (ThisArea + ReqArea >= CombArea) {
+      mDrawRequests[Index].X = CombX;
+      mDrawRequests[Index].Y = CombY;
+      mDrawRequests[Index].Width = CombWidth;
+      mDrawRequests[Index].Height = CombHeight;
       return;
     }
   }
@@ -582,12 +551,15 @@ GuiRequestDraw (
     return;
   }
 
-  CopyMem (&mDrawRequests[mNumValidDrawReqs], &ThisReq, sizeof (ThisReq));
+  mDrawRequests[mNumValidDrawReqs].X = PosX;
+  mDrawRequests[mNumValidDrawReqs].Y = PosY;
+  mDrawRequests[mNumValidDrawReqs].Width = Width;
+  mDrawRequests[mNumValidDrawReqs].Height = Height;
   ++mNumValidDrawReqs;
 }
 
 VOID
-GuiDrawScreen (
+GuiRequestDrawCrop (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                X,
   IN     INT64                Y,
@@ -602,52 +574,33 @@ GuiDrawScreen (
 
   ASSERT (DrawContext != NULL);
   ASSERT (DrawContext->Screen != NULL);
+
+  EffWidth  = Width;
+  EffHeight = Height;
   //
   // Only draw the onscreen parts.
   //
   if (X >= 0) {
     PosX = (UINT32)X;
   } else {
-    if (X + Width <= 0) {
-      return;
-    }
-
-    Width = (UINT32)(X + Width);
-    PosX  = 0;
+    EffWidth += X;
+    PosX      = 0;
   }
 
   if (Y >= 0) {
     PosY = (UINT32)Y;
   } else {
-    if (Y + Height <= 0) {
-      return;
-    }
-
-    Height = (UINT32)(Y + Height);
-    PosY   = 0;
+    EffHeight += Y;
+    PosY       = 0;
   }
 
-  EffWidth  = MIN (Width,  (INT64) DrawContext->Screen->Width  - PosX);
-  EffHeight = MIN (Height, (INT64) DrawContext->Screen->Height - PosY);
+  EffWidth  = MIN (EffWidth,  (INT64) DrawContext->Screen->Width  - PosX);
+  EffHeight = MIN (EffHeight, (INT64) DrawContext->Screen->Height - PosY);
 
   if (EffWidth <= 0 || EffHeight <= 0) {
     return;
   }
 
-  ASSERT (DrawContext->Screen->OffsetX == 0);
-  ASSERT (DrawContext->Screen->OffsetY == 0);
-  ASSERT (DrawContext->Screen->Draw != NULL);
-  DrawContext->Screen->Draw (
-                         DrawContext->Screen,
-                         DrawContext,
-                         DrawContext->GuiContext,
-                         0,
-                         0,
-                         PosX,
-                         PosY,
-                         (UINT32) EffWidth,
-                         (UINT32) EffHeight
-                         );
   GuiRequestDraw (PosX, PosY, (UINT32) EffWidth, (UINT32) EffHeight);
 }
 
@@ -662,7 +615,7 @@ GuiRedrawObject (
   ASSERT (This != NULL);
   ASSERT (DrawContext != NULL);
 
-  GuiDrawScreen (
+  GuiRequestDrawCrop (
     DrawContext,
     BaseX,
     BaseY,
@@ -672,7 +625,7 @@ GuiRedrawObject (
 }
 
 VOID
-GuiRedrawPointer (
+GuiOverlayPointer (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   )
 {
@@ -775,7 +728,6 @@ GuiFlushScreen (
 {
   EFI_TPL OldTpl;
 
-  UINTN   NumValidDrawReqs;
   UINTN   Index;
 
   UINT64  EndTsc;
@@ -785,24 +737,21 @@ GuiFlushScreen (
 
   ASSERT (DrawContext != NULL);
   ASSERT (DrawContext->Screen != NULL);
-
-  if (mPointerContext != NULL) {
-    GuiRedrawPointer (DrawContext);
-  }
-
-  NumValidDrawReqs = mNumValidDrawReqs;
-  ASSERT (NumValidDrawReqs <= ARRAY_SIZE (mDrawRequests));
-
-  mNumValidDrawReqs = 0;
-
-  for (Index = 0; Index < NumValidDrawReqs; ++Index) {
-    ASSERT (mDrawRequests[Index].MaxX >= mDrawRequests[Index].MinX);
-    ASSERT (mDrawRequests[Index].MaxY >= mDrawRequests[Index].MinY);
-    //
-    // Set MaxX/Y to Width and Height as the requests are invalidated anyway.
-    //
-    mDrawRequests[Index].MaxX -= mDrawRequests[Index].MinX - 1;
-    mDrawRequests[Index].MaxY -= mDrawRequests[Index].MinY - 1;
+  ASSERT (DrawContext->Screen->OffsetX == 0);
+  ASSERT (DrawContext->Screen->OffsetY == 0);
+  ASSERT (DrawContext->Screen->Draw != NULL);
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
+    DrawContext->Screen->Draw (
+      DrawContext->Screen,
+      DrawContext,
+      DrawContext->GuiContext,
+      0,
+      0,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].Width,
+      mDrawRequests[Index].Height
+      );
   }
   //
   // Raise the TPL to not interrupt timing or flushing.
@@ -816,20 +765,21 @@ GuiFlushScreen (
     EndTsc = InternalCpuDelayTsc (mDeltaTscTarget - DeltaTsc);
   }
 
-  for (Index = 0; Index < NumValidDrawReqs; ++Index) {
-    //
-    // Due to above's loop, MaxX/Y correspond to Width and Height here.
-    //
+  if (mPointerContext != NULL) {
+    GuiOverlayPointer (DrawContext);
+  }
+
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
     GuiOutputBlt (
       mOutputContext,
       mScreenBuffer,
       EfiBltBufferToVideo,
-      mDrawRequests[Index].MinX,
-      mDrawRequests[Index].MinY,
-      mDrawRequests[Index].MinX,
-      mDrawRequests[Index].MinY,
-      mDrawRequests[Index].MaxX,
-      mDrawRequests[Index].MaxY,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].Width,
+      mDrawRequests[Index].Height,
       mScreenBufferDelta
       );
   }
@@ -838,6 +788,8 @@ GuiFlushScreen (
     EnableInterrupts ();
   }
   gBS->RestoreTPL (OldTpl);
+
+  mNumValidDrawReqs = 0;
   //
   // Explicitly include BLT time in the timing calculation.
   // FIXME: GOP takes inconsistently long depending on dimensions.
@@ -855,7 +807,7 @@ GuiRedrawAndFlushScreen (
 
   mStartTsc = AsmReadTsc ();
 
-  GuiRedrawObject (DrawContext->Screen, DrawContext, 0, 0);
+  GuiRequestDraw (0, 0, DrawContext->Screen->Width, DrawContext->Screen->Height);
   GuiFlushScreen (DrawContext);
 }
 
@@ -1081,7 +1033,7 @@ GuiDrawLoop (
       // Restore the rectangle previously covered by the cursor.
       // The new cursor is drawn right before flushing the screen.
       //
-      GuiDrawScreen (
+      GuiRequestDrawCrop (
         DrawContext,
         mCursorOldX,
         mCursorOldY,
