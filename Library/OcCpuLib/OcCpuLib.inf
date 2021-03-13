@@ -39,9 +39,13 @@
   UefiRuntimeServicesTableLib
 
 [Guids]
+  gAppleFsbFrequencyPlatformInfoGuid
+  gAppleFsbFrequencyListPlatformInfoGuid
+  gAppleFsbFrequencyPlatformInfoIndexHobGuid
   gOcVendorVariableGuid
 
 [Protocols]
+  gApplePlatformInfoDatabaseProtocolGuid
   gEfiMpServiceProtocolGuid
   gFrameworkEfiMpServiceProtocolGuid
 

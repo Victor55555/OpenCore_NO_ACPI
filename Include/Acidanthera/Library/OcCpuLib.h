@@ -139,6 +139,12 @@ typedef struct {
   UINT64                      TscAdjust;
 
   //
+  // The CPU frequency derived from Apple Platform Info.
+  // 0 if Apple Platform Info is not present.
+  //
+  UINT64                      CPUFrequencyFromApple;
+
+  //
   // The CPU frequency derived from the CPUID VMWare Timing leaf.
   // 0 if VMWare Timing leaf is not present.
   //
@@ -203,6 +209,19 @@ OcCpuCorrectTscSync (
 UINT32
 OcCpuModelToAppleFamily (
   IN CPUID_VERSION_INFO_EAX  VersionEax
+  );
+
+/**
+  Converts calculated CPU frequency in Hz to rounded
+  value in MHz.
+
+  @param[in] Frequency  CPU frequency in Hz.
+
+  @return Rounded CPU frequency in MHz.
+**/
+UINT16
+OcCpuFrequencyToDisplayFrequency (
+  IN UINT64  Frequency
   );
 
 /**
