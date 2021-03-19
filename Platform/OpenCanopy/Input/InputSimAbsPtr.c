@@ -77,7 +77,7 @@ InternalAppleEventNotification (
 
     NewX = Information->PointerPosition.Horizontal;
 
-    NewCoord = (INT64) Context->CurState.X + ((INT64) NewX - Context->RawX);
+    NewCoord = (INT64) Context->CurState.X + 2 * ((INT64) NewX - Context->RawX);
     if (NewCoord < 0) {
       NewCoord = 0;
     } else if (NewCoord > Context->MaxX) {
@@ -89,7 +89,7 @@ InternalAppleEventNotification (
 
     NewY = Information->PointerPosition.Vertical;
 
-    NewCoord = (INT64) Context->CurState.Y + ((INT64) NewY - Context->RawY);
+    NewCoord = (INT64) Context->CurState.Y + 2 * ((INT64) NewY - Context->RawY);
     if (NewCoord < 0) {
       NewCoord = 0;
     } else if (NewCoord > Context->MaxY) {
@@ -262,9 +262,11 @@ GuiPointerConstruct (
   if (!EFI_ERROR (Status)) {
     if (Context.AppleEvent->Revision >= APPLE_EVENT_PROTOCOL_REVISION) {
       OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
-
+      //
+      // Do not register 'Click' as its behaviour does not follow OS behaviour.
+      //
       Status = Context.AppleEvent->RegisterHandler (
-        APPLE_ALL_MOUSE_EVENTS,
+        APPLE_ALL_MOUSE_EVENTS & ~APPLE_EVENT_TYPE_MOUSE_CLICK,
         InternalAppleEventNotification,
         &Context.AppleEventHandle,
         &Context
