@@ -4,6 +4,7 @@ OpenCore Changelog
 - Switched to VS2019 toolchain for Windows builds
 - Reduced legacy boot install interaction effort
 - Increased OpenCanopy rendering performance
+- Added OpenCanopy Shut Down and Restart buttons
 - Reduced OpenCanopy mouse pointer input lag
 - Fixed that cursor bounds could be different from OpenCanopy's
 - Improved builtin picker rendering performance
@@ -21,6 +22,8 @@ OpenCore Changelog
 - Fixed ACPI table magic corruption during patching
 - Fixed unnatural OpenCanopy and FileVault 2 cursor movement
 - Fixed OpenCanopy interrupt handling causing missed events and lag
+- Improved OpenCanopy double-click detection 
+- Reduced OpenCanopy touch input lag and improved usability
 
 #### v0.6.7
 - Fixed ocvalidate return code to be non-zero when issues are found
