@@ -41,6 +41,7 @@ typedef struct OC_HOTKEY_CONTEXT_ OC_HOTKEY_CONTEXT;
 #define OC_MENU_RESET_NVRAM_ENTRY    L"Reset NVRAM"
 #define OC_MENU_UEFI_SHELL_ENTRY     L"UEFI Shell"
 #define OC_MENU_PASSWORD_REQUEST     L"Password: "
+#define OC_MENU_PASSWORD_PROCESSING  L"Verifying password..."
 #define OC_MENU_PASSWORD_RETRY_LIMIT L"Password retry limit exceeded."
 #define OC_MENU_CHOOSE_OS            L"Choose the Operating System: "
 #define OC_MENU_SHOW_AUXILIARY       L"Show Auxiliary"
@@ -48,6 +49,8 @@ typedef struct OC_HOTKEY_CONTEXT_ OC_HOTKEY_CONTEXT;
 #define OC_MENU_TIMEOUT              L"Timeout"
 #define OC_MENU_OK                   L"OK"
 #define OC_MENU_EXTERNAL             L" (external)"
+#define OC_MENU_SHUTDOWN             L"Shutting Down"
+#define OC_MENU_RESTART              L"Restarting"
 
 /**
   Paths allowed to be accessible by the interfaces.
@@ -696,6 +699,13 @@ typedef struct {
   OC_KB_DEBUG_SHOW                   Show;
 } OC_KB_DEBUG_CALLBACKS;
 
+typedef struct {
+  OC_PRIVILEGE_LEVEL CurrentLevel;
+  CONST UINT8        *Salt;
+  UINT32             SaltSize;
+  CONST UINT8        *Hash;
+} OC_PRIVILEGE_CONTEXT;
+
 /**
   Boot picker context describing picker behaviour.
 **/
@@ -772,7 +782,7 @@ struct OC_PICKER_CONTEXT_ {
   //
   // Context to pass to RequestPrivilege, optional.
   //
-  VOID                       *PrivilegeContext;
+  OC_PRIVILEGE_CONTEXT       *PrivilegeContext;
   //
   // Additional suffix to include by the interface.
   //
@@ -1042,13 +1052,6 @@ OcSetDefaultBootEntry (
   IN OC_PICKER_CONTEXT  *Context,
   IN OC_BOOT_ENTRY      *Entry
   );
-
-typedef struct {
-  OC_PRIVILEGE_LEVEL CurrentLevel;
-  CONST UINT8        *Salt;
-  UINT32             SaltSize;
-  CONST UINT8        *Hash;
-} OC_PRIVILEGE_CONTEXT;
 
 /**
   Show simple password prompt and return verification status.
