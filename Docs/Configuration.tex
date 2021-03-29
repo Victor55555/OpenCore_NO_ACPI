@@ -531,9 +531,9 @@ Available entries include:
 \item
   \texttt{Resources} \\
   Directory used for storing media resources such as audio files
-  for screen reader support. See the \hyperref[uefiaudioprops]{\texttt{UEFI Audio Properties}}
+  for screen reader support. Refer to the \hyperref[uefiaudioprops]{\texttt{UEFI Audio Properties}}
   section for more details. This directory also contains image files
-  for graphical user interface. See the \hyperref[ueficanopy]{OpenCanopy} section for more details.
+  for graphical user interface. Refer to the \hyperref[ueficanopy]{OpenCanopy} section for more details.
 \item
   \texttt{Tools} \\
   Directory used for storing supplemental tools.
@@ -656,6 +656,7 @@ Add \texttt{.clang\_complete} file with similar content to the UDK root:
 -I/UefiPackages/OpenCorePkg/Include/Generic
 -I/UefiPackages/OpenCorePkg/Include/Intel
 -I/UefiPackages/OpenCorePkg/Include/Microsoft
+-I/UefiPackages/OpenCorePkg/Include/Nvidia
 -I/UefiPackages/OpenCorePkg/Include/VMware
 -I/UefiPackages/OvmfPkg/Include
 -I/UefiPackages/UefiCpuPkg/Include
@@ -853,8 +854,8 @@ quality of the suggested solutions will be variable.
   \textbf{Description}: Load selected tables from the \texttt{OC/ACPI}
   directory.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each add entry.
-  See the \hyperref[acpipropsadd]{Add Properties} section below.
+  To be filled with \texttt{plist\ dict} values, describing each add entry.
+  Refer to the \hyperref[acpipropsadd]{Add Properties} section below.
 
 \item
   \texttt{Delete}\\
@@ -862,8 +863,8 @@ quality of the suggested solutions will be variable.
   \textbf{Failsafe}: Empty\\
   \textbf{Description}: Remove selected tables from the ACPI stack.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each delete entry.
-  See the \hyperref[acpipropsdelete]{Delete Properties} section below.
+  To be filled with \texttt{plist\ dict} values, describing each delete entry.
+  Refer to the \hyperref[acpipropsdelete]{Delete Properties} section below.
 
 \item
   \texttt{Patch}\\
@@ -872,8 +873,8 @@ quality of the suggested solutions will be variable.
   \textbf{Description}: Perform binary patches in ACPI tables before
   table addition or removal.
 
-  Designed to be filled with \texttt{plist\ dictionary} values describing each
-  patch entry. See the \hyperref[acpipropspatch]{Patch Properties} section below.
+  To be filled with \texttt{plist\ dictionary} values describing each patch entry.
+  Refer to the \hyperref[acpipropspatch]{Patch Properties} section below.
 
 \item
   \texttt{Quirks}\\
@@ -1230,10 +1231,7 @@ should be met before starting:
   It is not necessary unless the system cannot be booted at all or
   \texttt{No slide values are usable! Use custom slide!} message can be seen in the log.
 \item \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) disabled in
-  firmware settings if present. Consider
-\href{https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt}{patching it}
-  if no option is available (for advanced users only). See
-\hyperref[kernelpropsquirks]{ControlMsrE2}
+  firmware settings if present. See \hyperref[kernelpropsquirks]{ControlMsrE2}
   notes for more details.
 \item \texttt{CSM} (Compatibility Support Module) disabled in firmware settings
   if present. On NVIDIA 6xx/AMD 2xx or older, GOP ROM may have to be flashed first. Use
@@ -1272,10 +1270,10 @@ To view their current state, use the \texttt{pmset -g} command in Terminal.
 \item
   \texttt{MmioWhitelist}\\
   \textbf{Type}: \texttt{plist\ array}\\
-  \textbf{Description}: Designed to be filled with \texttt{plist\ dict} values,
+  \textbf{Description}: To be filled with \texttt{plist\ dict} values,
   describing addresses critical for particular firmware functioning when
   \texttt{DevirtualiseMmio} quirk is in use.
-  See the \hyperref[booterpropsmmio]{MmioWhitelist Properties} section below.
+  Refer to the \hyperref[booterpropsmmio]{MmioWhitelist Properties} section below.
 
 \item
   \texttt{Patch}\\
@@ -1283,8 +1281,8 @@ To view their current state, use the \texttt{pmset -g} command in Terminal.
   \textbf{Failsafe}: Empty\\
   \textbf{Description}: Perform binary patches in booter.
 
-  Designed to be filled with \texttt{plist\ dictionary} values, describing each
-  patch. See the \hyperref[booterpropspatch]{Patch Properties} section below.
+  To be filled with \texttt{plist\ dictionary} values, describing each
+  patch. Refer to the \hyperref[booterpropspatch]{Patch Properties} section below.
 
 \item
   \texttt{Quirks}\\
@@ -1791,7 +1789,7 @@ The first stage applies very early but exclusively to the devices present in ACP
 The second stage applies to all devices much later after the PCI configuration
 and may repeat the first stage if the device was not present in ACPI.
 
-For all kernel drivers that may inspect the \texttt{IODeviceTree} plane without probing,
+For all kernel extensions that may inspect the \texttt{IODeviceTree} plane without probing,
 such as \texttt{Lilu} and its plugins (e.g. \texttt{WhateverGreen}), it is especially
 important to ensure device presence in the ACPI tables. A failure to do so may result
 \textbf{in erratic behaviour} caused by ignoring the injected device properties
@@ -1806,12 +1804,13 @@ as they were not constructed at the first stage. See \texttt{SSDT-IMEI.dsl} and
   \textbf{Type}: \texttt{plist\ dict}\\
   \textbf{Description}: Sets device properties from a map (\texttt{plist\ dict})
   of device paths to a map (\texttt{plist\ dict}) of variable names and their values
-  in \texttt{plist\ multidata} format. Device paths must be provided in canonic string
-  format (e.g. \texttt{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)}). Properties will only
-  be set if not present and not deleted.
+  in \texttt{plist\ multidata} format.
 
-  \emph{Note}: Currently properties may only be (formerly) added by the original driver,
-  so unless a separate driver was installed, there is no reason to delete the variables.
+  \emph{Note 1}: Device paths must be provided in canonic string format
+  (e.g. \texttt{PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)}).
+
+  \emph{Note 2}: Existing properties will not be changed unless deleted
+  in the \texttt{DeviceProperties\ Delete} section.
 
 \item
   \texttt{Delete}\\
@@ -1819,6 +1818,10 @@ as they were not constructed at the first stage. See \texttt{SSDT-IMEI.dsl} and
   \textbf{Description}: Removes device properties from a map (\texttt{plist\ dict})
   of device paths to an array (\texttt{plist\ array}) of variable names in
   \texttt{plist\ string} format.
+
+  \emph{Note}: Currently, existing properties may only exist on firmware
+  with DeviceProperties drivers (e.g. Apple). Hence, there is typically
+  no reason to delete variables unless a new driver has been installed.
 
 \end{enumerate}
 
@@ -1869,28 +1872,30 @@ blocking.
   \texttt{Add}\\
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Load selected kernel drivers from \texttt{OC/Kexts} directory.
+  \textbf{Description}: Load selected kernel extensions (kexts) from the \texttt{OC/Kexts} directory.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each driver.
-  See the \hyperref[kernelpropsadd]{Add Properties} section below. Kernel driver load
-  order follows the item order in the array, thus the dependencies should be written
-  prior to their consumers.
+  To be filled with \texttt{plist\ dict} values, describing each kext. Refer to
+  the \hyperref[kernelpropsadd]{Add Properties} section below.
 
-  To track the dependency order, inspect the \texttt{OSBundleLibraries} key
-  in the \texttt{Info.plist} of the kext. Any kext mentioned in the
-  \texttt{OSBundleLibraries} of the other kext must precede this kext.
+  \emph{Note 1}: The load order is based on the order in which the kexts appear in
+  the array. Hence, dependencies must appear before kexts that depend on them.
 
-  \emph{Note}: Kexts may have inner kexts (\texttt{Plug-Ins}) in their bundle. Each
-  inner kext must be added separately.
+  \emph{Note 2}: To track the dependency order, inspect the \texttt{OSBundleLibraries}
+  key in the \texttt{Info.plist} file of the kext being added. Any kext included
+  in the \texttt{OSBundleLibraries} key is a dependency that must precede
+  the kext being added.
+
+  \emph{Note 3}: Kexts may have inner kexts (\texttt{Plugins}) included
+  in the bundle and each such plugin must be added separately.
 
 \item
   \texttt{Block}\\
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Remove selected kernel drivers from prelinked kernel.
+  \textbf{Description}: Remove selected kernel extensions (kexts) from the prelinked kernel.
 
-  Designed to be filled with \texttt{plist\ dictionary} values, describing each
-  blocked driver. See the \hyperref[kernelpropsblock]{Block Properties} section below.
+  To be filled with \texttt{plist\ dictionary} values, describing each blocked kext.
+  Refer to the \hyperref[kernelpropsblock]{Block Properties} section below.
 
 \item
   \texttt{Emulate}\\
@@ -1902,21 +1907,24 @@ blocking.
   \texttt{Force}\\
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Load kernel drivers from system volume if they are not cached.
+  \textbf{Description}: Load kernel extensions (kexts) from the system volume if they are not cached.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each driver.
-  See the \hyperref[kernelpropsforce]{Force Properties} section below.
-  This section resolves the problem of injecting drivers that depend on other
-  drivers, which are not cached otherwise. The issue typically affects older
+  To be filled with \texttt{plist\ dict} values, describing each kext.
+  Refer to the \hyperref[kernelpropsforce]{Force Properties} section below.
+  This section resolves the problem of injecting kexts that depend on other
+  kexts, which are not otherwise cached. The issue typically affects older
   operating systems, where various dependency kexts, such as \texttt{IOAudioFamily}
   or \texttt{IONetworkingFamily} may not be present in the kernel cache by default.
-  The kernel driver load order follows the item order in the array, thus the dependencies
-  should be written prior to their consumers. \texttt{Force} happens before
-  \texttt{Add}.
 
-  \emph{Note}: The signature of the ``forced'' kernel drivers is not checked anyhow,
-  making the use of this feature extremely dangerous and undesired for secure boot.
-  This feature may not work on encrypted partitions in newer operating systems.
+  \emph{Note 1}: The load order is based on the order in which the kexts appear in
+  the array. Hence, dependencies must appear before kexts that depend on them.
+
+  \emph{Note 2}: \texttt{Force} happens before \texttt{Add}.
+
+  \emph{Note 3}: The signature of the ``forced'' kext is not checked in any way.
+  This makes using this feature extremely dangerous and undesirable for secure boot.
+
+  \emph{Note 4}: This feature may not work on encrypted partitions in newer operating systems.
 
 \item
   \texttt{Patch}\\
@@ -1925,8 +1933,8 @@ blocking.
   \textbf{Description}: Perform binary patches in kernel and drivers prior to
   driver addition and removal.
 
-  Designed to be filled with \texttt{plist\ dictionary} values, describing each
-  patch. See the \hyperref[kernelpropspatch]{Patch Properties} section below.
+  To be filled with \texttt{plist\ dictionary} values, describing each patch.
+  Refer to the \hyperref[kernelpropspatch]{Patch Properties} section below.
 
 \item
   \texttt{Quirks}\\
@@ -1970,8 +1978,7 @@ blocking.
   \texttt{Enabled}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Description}: This kernel driver will not be added unless set to
-  \texttt{true}.
+  \textbf{Description}: Set to \texttt{true} to add this kernel extension.
 
 \item
   \texttt{ExecutablePath}\\
@@ -1984,7 +1991,7 @@ blocking.
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Adds kernel driver on specified macOS version or older.
+  \textbf{Description}: Adds kernel extension on specified macOS version or older.
 
   \hypertarget{kernmatch}Kernel version can be obtained with \texttt{uname -r} command,
   and should look like 3 numbers separated by dots, for example \texttt{18.7.0} is the
@@ -2027,7 +2034,7 @@ blocking.
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Adds kernel driver on specified macOS version or newer.
+  \textbf{Description}: Adds kernel extension on specified macOS version or newer.
 
   \emph{Note}: Refer to the \hyperlink{kernmatch}{\texttt{Add\ MaxKernel} description} for matching logic.
 
@@ -2060,8 +2067,7 @@ blocking.
   \texttt{Enabled}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Description}: This kernel driver will not be blocked unless set to
-  \texttt{true}.
+  \textbf{Description}: Set to \texttt{true} to block this kernel extension.
 
 \item
   \texttt{Identifier}\\
@@ -2074,7 +2080,7 @@ blocking.
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Blocks kernel driver on specified macOS version or older.
+  \textbf{Description}: Blocks kernel extension on specified macOS version or older.
 
   \emph{Note}: Refer to the \hyperlink{kernmatch}{\texttt{Add\ MaxKernel} description} for matching logic.
 
@@ -2082,7 +2088,7 @@ blocking.
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Blocks kernel driver on specified macOS version or newer.
+  \textbf{Description}: Blocks kernel extension on specified macOS version or newer.
 
   \emph{Note}: Refer to the \hyperlink{kernmatch}{\texttt{Add\ MaxKernel} description} for matching logic.
 
@@ -2209,8 +2215,8 @@ blocking.
   \texttt{Enabled}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Description}: This kernel driver will not be added when not present
-  unless set to \texttt{true}.
+  \textbf{Description}: Set to \texttt{true} to load this kernel extension from the
+  system volume when not present in the kernel cache.
 
 \item
   \texttt{ExecutablePath}\\
@@ -2231,7 +2237,7 @@ blocking.
   \texttt{MaxKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Adds kernel driver on specified macOS version or older.
+  \textbf{Description}: Adds kernel extension on specified macOS version or older.
 
   \emph{Note}: Refer to the \hyperlink{kernmatch}{\texttt{Add\ MaxKernel} description} for matching logic.
 
@@ -2239,7 +2245,7 @@ blocking.
   \texttt{MinKernel}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Adds kernel driver on specified macOS version or newer.
+  \textbf{Description}: Adds kernel extension on specified macOS version or newer.
 
   \emph{Note}: Refer to the \hyperlink{kernmatch}{\texttt{Add\ MaxKernel} description} for matching logic.
 
@@ -2370,13 +2376,14 @@ blocking.
   MSR modification in AppleIntelCPUPowerManagement.kext, commonly causing early
   kernel panic, when it is locked from writing.
 
-  Some types of firmware lock the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register and the bundled
-  \texttt{ControlMsrE2} tool can be used to check its state and enable it on selected platforms with
-  that option hidden. Note that some types of firmware only have this register locked on some cores.
+  Some types of firmware lock the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR
+  register and the bundled \texttt{ControlMsrE2} tool can be used to check its
+  state. Note that some types of firmware only have this register locked on some
+  cores. As modern firmware provide a \texttt{CFG Lock} setting that allows
+  configuring the \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register lock, this
+  option should be avoided whenever possible.
 
-  As modern firmware provide a \texttt{CFG Lock} setting that allows configuring the
-  \texttt{PKG\_CST\_CONFIG\_CONTROL} MSR register lock, this option should be avoided
-  whenever possible. On APTIO firmware that do not provide a \texttt{CFG Lock}
+  On APTIO firmware that do not provide a \texttt{CFG Lock}
   setting in the GUI, it is possible to access the option directly:
 
   \begin{enumerate}
@@ -2400,6 +2407,15 @@ blocking.
 
   \textbf{Warning}: Variable offsets are unique not only to each motherboard but even to its firmware
   version. Never ever try to use an offset without checking.
+
+  On selected platforms, the \texttt{ControlMsrE2} tool can also change such
+  hidden options. Pass desired argument: \texttt{lock}, \texttt{unlock} for
+  \texttt{CFG Lock}. Or pass \texttt{interactive} to find and modify other
+  hidden options.
+
+  As a last resort, consider
+  \href{https://github.com/LongSoft/UEFITool/blob/master/UEFIPatch/patches.txt}{patching the BIOS}
+  (for advanced users only).
 
 \item
   \texttt{AppleXcpmCfgLock}\\
@@ -2934,7 +2950,7 @@ the default boot entry choice will remain changed until the next manual reconfig
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Description}: Add custom scanning paths through the bless model.
 
-  Designed to be filled with \texttt{plist\ string} entries containing
+  To be filled with \texttt{plist\ string} entries containing
   absolute UEFI paths to customised bootloaders such as
   \texttt{\textbackslash EFI\textbackslash debian\textbackslash grubx64.efi}
   for the Debian bootloader. This allows non-standard boot paths to be automatically
@@ -2954,8 +2970,8 @@ the default boot entry choice will remain changed until the next manual reconfig
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Description}: Add boot entries to OpenCore picker.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each load entry.
-  See the \hyperref[miscentryprops]{Entry Properties} section below.
+  To be filled with \texttt{plist\ dict} values, describing each load entry.
+  Refer to the \hyperref[miscentryprops]{Entry Properties} section below.
 
 \item
   \texttt{Security}\\
@@ -2968,8 +2984,8 @@ the default boot entry choice will remain changed until the next manual reconfig
   \textbf{Type}: \texttt{plist\ array}\\
   \textbf{Description}: Add tool entries to the OpenCore picker.
 
-  Designed to be filled with \texttt{plist\ dict} values, describing each load entry.
-  See the \hyperref[miscentryprops]{Entry Properties} section below.
+  To be filled with \texttt{plist\ dict} values, describing each load entry.
+  Refer to the \hyperref[miscentryprops]{Entry Properties} section below.
 
   \emph{Note}: Certain UEFI tools, such as UEFI Shell, can be very dangerous and
   \textbf{MUST NOT} appear in production configurations, paticularly in vaulted
@@ -3107,7 +3123,7 @@ the default boot entry choice will remain changed until the next manual reconfig
 
   \emph{Note 2}: While NVRAM resets executed from OpenCore would not typically erase the boot option
   created in \texttt{Bootstrap}, executing NVRAM resets prior to loading OpenCore will erase the boot
-  option. Therefore, for significant implementation updates, such as was the case with OpenCore 0.6.4, 
+  option. Therefore, for significant implementation updates, such as was the case with OpenCore 0.6.4,
   an NVRAM reset should be executed with \texttt{Bootstrap} disabled, after which it can be re-enabled.
 
 \item
@@ -3331,10 +3347,16 @@ the default boot entry choice will remain changed until the next manual reconfig
   \emph{Note 1}: The \texttt{KeySupport}, \texttt{OpenUsbKbDxe}, or similar drivers are required for key
   handling. However, not all of the key handling functions can be implemented on several types of firmware.
 
-  \emph{Note 2}: In addition to \texttt{OPT}, OpenCore supports using the \texttt{Escape} key to display
-  the OpenCore picker when \texttt{ShowPicker} is disabled. This key exists for the \texttt{Apple} picker
-  mode as well as for firmware that fail to report held \texttt{OPT} keys on PS/2 keyboards, requiring
-  multiple presses of the \texttt{Escape} key to access the OpenCore picker.
+  \emph{Note 2}: In addition to \texttt{OPT}, OpenCore supports using both the \texttt{Escape}
+  and \texttt{Zero} keys to enter the OpenCore picker when \texttt{ShowPicker} is disabled.
+  \texttt{Escape} exists to support co-existence with the Apple picker (including OpenCore \texttt{Apple}
+  picker mode) and to support firmware that fails to report held \texttt{OPT} key, as on some PS/2 keyboards.
+  In addition, \texttt{Zero} is provided to support systems on which \texttt{Escape} is already assigned to
+  some other pre-boot firmware feature. In systems which do not require \texttt{KeySupport}, pressing and
+  holding one of these keys from after power on until the picker appears should always be successful. The
+  same should apply when using \texttt{KeySupport} mode if it is correctly configured for the system, i.e.
+  with a long enough \texttt{KeyForgetThreshold}. If pressing and holding the key is not successful to reliably
+  enter the picker, multiple repeated keypresses may be tried instead.
 
   \emph{Note 3}: On Macs with problematic GOP, it may be difficult to access the Apple picker.
   The \texttt{BootKicker} utility can be blessed to workaround this problem even without loading
@@ -3625,9 +3647,15 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Allow \texttt{CTRL+Enter} and \texttt{CTRL+Index} handling
-  to set the default boot option in the OpenCore picker; may be used in combination
+  to set the default boot option in the OpenCore picker.
+
+  \emph{Note 1}: May be used in combination
   with \texttt{Shift+Enter} or \texttt{Shift+Index} when \texttt{PollAppleHotKeys} is
   enabled.
+
+  \emph{Note 2}: In order to support systems with unresponsive modifiers during preboot
+  (which includes \texttt{V1} and \texttt{V2} \texttt{KeySupport} mode on some firmware)
+  OpenCore also allows holding the \texttt{=/+} key in order to trigger `set default' mode.
 \item
   \texttt{ApECID}\\
   \textbf{Type}: \texttt{plist\ integer}, 64 bit\\
@@ -4018,10 +4046,10 @@ rm vault.pub
 
   \begin{enumerate}
     \tightlist
-    \item As with T2 Macs, unsigned kernel drivers and several signed kernel
-      drivers, including NVIDIA Web Drivers, cannot be installed.
-    \item The list of cached drivers may be different, resulting in a need
-      to change the list of \texttt{Added} or \texttt{Forced} kernel drivers.
+    \item As with T2 Macs, all unsigned kernel extensions as well as several
+      signed kernel extensions, including NVIDIA Web Drivers, cannot be installed.
+    \item The list of cached kernel extensions may be different, resulting in a need
+      to change the list of \texttt{Added} or \texttt{Forced} kernel extensions.
       For example, \texttt{IO80211Family} cannot be injected in this case.
     \item System volume alterations on operating systems with sealing, such as
       macOS~11, may result in the operating system being unbootable. Do not
@@ -5110,8 +5138,8 @@ from \href{https://github.com/acidanthera/dmidecode/releases}{Acidanthera/dmidec
   \textbf{Failsafe}: Empty\\
   \textbf{Description}: Specifies the custom memory devices to be added.
 
-  Designed to be filled with \texttt{plist\ dictionary} values, describing each
-  memory device. See the \hyperref[platforminfomemorydevice]{Memory Devices Properties}
+  To be filled with \texttt{plist\ dictionary} values, describing each
+  memory device. Refer to the \hyperref[platforminfomemorydevice]{Memory Devices Properties}
   section below. This should include all memory slots, even if unpopulated.
 
 \item
@@ -5800,7 +5828,8 @@ Some of the known tools are listed below (builtin tools are marked with \textbf{
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{RtcRw}}\textbf{*}
 & Utility to read and write RTC (CMOS) memory. \\
 \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{ControlMsrE2}}\textbf{*}
-& Check \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) consistency across all cores.
+& Check \texttt{CFG Lock} (MSR \texttt{0xE2} write protection) consistency
+across all cores and change such hidden options on selected platforms.
 \end{tabular}
 
 \subsection{OpenCanopy}\label{ueficanopy}
@@ -5970,8 +5999,7 @@ functioning. Feature highlights:
   \textbf{Description}: Load selected drivers from \texttt{OC/Drivers}
   directory.
 
-  Designed to be filled with string filenames meant to be loaded as UEFI
-  drivers.
+  To be filled with string filenames meant to be loaded as UEFI drivers.
 
 \item
   \texttt{Input}\\
@@ -6006,11 +6034,11 @@ functioning. Feature highlights:
 \item
   \texttt{ReservedMemory}\\
   \textbf{Type}: \texttt{plist\ array}\\
-  \textbf{Description}: Designed to be filled with \texttt{plist\ dict} values,
+  \textbf{Description}: To be filled with \texttt{plist\ dict} values,
   describing memory areas exclusive to specific firmware and hardware functioning,
   which should not be used by the operating system. Examples of such memory regions
   could be the second 256 MB corrupted by the Intel HD 3000 or an area with faulty RAM.
-  See the \hyperref[uefirsvdprops]{ReservedMemory Properties} section below.
+  Refer to the \hyperref[uefirsvdprops]{ReservedMemory Properties} section below.
 
 \end{enumerate}
 
@@ -6211,7 +6239,7 @@ functioning. Feature highlights:
   to use \texttt{TC0} traffic class. Refer to Intel I/O Controller Hub 9 (ICH9) Family
   Datasheet (or any other ICH datasheet) for more details about this register.
 
-  \emph{Note}: This option is independent from \texttt{AudioSupport}. If AppleALC is used 
+  \emph{Note}: This option is independent from \texttt{AudioSupport}. If AppleALC is used
   it is preferred to use AppleALC \texttt{alctsel} property instead.
 
 \item
@@ -6261,30 +6289,42 @@ functioning. Feature highlights:
   \texttt{KeyForgetThreshold}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{0}\\
-  \textbf{Description}: Remove key unless it was submitted during this timeout in 10 ms units.
+  \textbf{Description}: Treat duplicate key presses as held keys if they arrive
+  during this timeout, in 10 ms units. Only applies to systems using \texttt{KeySupport}.
 
   \texttt{AppleKeyMapAggregator} protocol is supposed to contain a fixed length buffer
-  of currently pressed keys. However, the majority of the drivers only report key
-  presses as interrupts and pressing and holding the key on the keyboard results in
-  subsequent submissions of this key with some defined time interval. As a result
-  we use a timeout to remove once pressed keys from the buffer once the timeout
-  expires and no new submission of this key happened.
+  of currently pressed keys. However, the majority of the drivers which require
+  \texttt{KeySupport} report key presses as interrupts, with automatically generated
+  key repeat behaviour with some defined initial and subsequent delay. As a result,
+  to emulate the raw key behaviour required by several Apple boot systems, we use a
+  timeout to merge multiple repeated keys which are submitted within a small timeout
+  window.
 
   This option allows setting this timeout based on the platform. The recommended
-  value for the majority of platforms is \texttt{5} (\texttt{50} milliseconds).
-  For reference, holding one key on VMware will repeat it roughly every \texttt{20}
-  milliseconds and the same value for APTIO V is \texttt{30-40} milliseconds. Thus,
-  it is possible to set a slightly lower value on faster platforms
-  and a slightly higher value on slower platforms for more responsive input.
+  value for the majority of platforms is from \texttt{5} (\texttt{50} milliseconds)
+  to \texttt{7} (\texttt{70} milliseconds), although values up to \texttt{9}
+  (\texttt{90} milliseconds) have been observed to be required on some PS/2 systems.
+  For reference, holding a key on VMware will repeat roughly every \texttt{20}
+  milliseconds and the equivalent value for APTIO V is \texttt{30-40} milliseconds.
+  \texttt{KeyForgetThreshold} should be configured to be longer than this. Thus,
+  it is possible to configure a lower \texttt{KeyForgetThreshold} value on platforms
+  with a faster native driver key repeat rate, for more responsive input, and it is
+  required to set a higher value on slower platforms.
 
   Pressing keys one after the other results in delays of at least \texttt{60} and
-  \texttt{100} milliseconds for the same platforms.
+  \texttt{100} milliseconds for the same platforms. Ideally, \texttt{KeyForgetThreshold}
+  should remain lower than this value, to avoid merging real key presses.
 
-  \emph{Note}: Some platforms may require different values, which may be higher or lower.
-  For example, when detecting key misses in OpenCanopy, try increasing this value
-  (e.g. to \texttt{10}), and when detecting key stall, try decreasing this value.
-  Since every platform is different, it may be prudent to check every value
-  from \texttt{1} to \texttt{25} (\texttt{10} to \texttt{250} milliseconds).
+  \emph{Note}: If you wish to fine tune this value, a good heuristic is to use
+  the `set default' indicator within either OpenCanopy or the builtin picker. When
+  \texttt{KeyForgetThreshold} is configured correctly, this indicator should
+  flicker once, when first pressing and holding the \texttt{CTRL} or \texttt{=/+} key, and then
+  after a further very brief interval should go on and stay on. (The initial flicker
+  is an unavoidable artefact of using \texttt{KeySupport} to emulate raw keyboard
+  data.) If \texttt{KeyForgetThreshold} is configured too low for the system, then
+  the `set default' indicator will continue to flicker while \texttt{CTRL} or \texttt{=/+} is held. Configure
+  the lowest value which causes this indicator to go on and stay on after the first
+  initial flicker.
 
 \item
   \texttt{KeySupport}\\
@@ -6316,6 +6356,19 @@ functioning. Feature highlights:
 
   \emph{Note}: Currently \texttt{V1}, \texttt{V2}, and \texttt{AMI} unlike \texttt{Auto} only do filtering of
   the particular specified protocol. This may change in the future versions.
+
+  \item
+  \texttt{KeySkipFirstDelay}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Suppress initial delay before key repeat in
+  OpenCore implementation of Apple Event protocol.
+
+  When combining OpenCore \texttt{KeySupport} with the Apple Event protocol, key repeat behaviour
+  may show one additional slow key repeat before normal key repeat starts. Enabling this option
+  works around this problem by suppressing the initial repeat delay in the OpenCore Apple Event
+  implementation. This option is recommended to be set when using \texttt{KeySupport} mode, in most
+  cases, and is not recommended to be set on any systems which are not using \texttt{KeySupport} mode.
 
 \item
   \texttt{KeySwap}\\
@@ -6696,7 +6749,7 @@ functioning. Feature highlights:
   version.
 
   This protocol replaces the legacy \texttt{VirtualSmc} UEFI driver, and is compatible
-  with any SMC kernel extension. However, in case \texttt{FakeSMC} kernel extension
+  with any SMC kernel extension. However, in case the \texttt{FakeSMC} kernel extension
   is used, manual NVRAM key variable addition may be needed.
 
 \item
@@ -6864,13 +6917,13 @@ functioning. Feature highlights:
 
   This is an experimental quirk, which should only be used for the aforementioned problem.
   In all other cases, the quirk may render the operating system unstable and is not recommended.
-  The recommended solution in the other cases is to install a kernel driver such as
+  The recommended solution in the other cases is to install a kernel extension such as
   \href{https://github.com/RehabMan/VoodooTSCSync}{VoodooTSCSync},
   \href{https://github.com/interferenc/TSCAdjustReset}{TSCAdjustReset},
   or \href{https://github.com/lvs1974/CpuTscSync}{CpuTscSync} (a more specialised
   variant of VoodooTSCSync for newer laptops).
 
-  \emph{Note}: This quirk cannot replace the kernel driver because it cannot operate in
+  \emph{Note}: This quirk cannot replace the kernel extension because it cannot operate in
   ACPI S3 (sleep wake) mode and because the UEFI firmware only provides very limited
   multicore support which prevents precise updates of the MSR registers.
 
