@@ -114,7 +114,8 @@ typedef struct _BOOT_PICKER_GUI_CONTEXT {
   BOOLEAN                              DoneIntroAnimation;
   BOOLEAN                              ReadyToBoot;
   UINT8                                Scale;
-  GUI_PTR_POSITION                     CursorDefaultPos;
+  INT32                                CursorOffsetX;
+  INT32                                CursorOffsetY;
   INT32                                AudioPlaybackTimeout;
   OC_PICKER_CONTEXT                    *PickerContext;
 } BOOT_PICKER_GUI_CONTEXT;
@@ -141,8 +142,9 @@ BootPickerViewInitialize (
 
 VOID
 BootPickerViewLateInitialize (
-  IN BOOT_PICKER_GUI_CONTEXT  *GuiContext,
-  IN UINT8                    DefaultIndex
+  IN OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN     BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN     UINT8                    DefaultIndex
   );
 
 EFI_STATUS

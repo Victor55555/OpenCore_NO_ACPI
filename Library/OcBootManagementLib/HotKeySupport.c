@@ -40,6 +40,7 @@ OcLoadPickerHotKeys (
 
   BOOLEAN                            HasCommand;
   BOOLEAN                            HasEscape;
+  BOOLEAN                            HasZero;
   BOOLEAN                            HasOption;
   BOOLEAN                            HasKeyP;
   BOOLEAN                            HasKeyR;
@@ -78,6 +79,7 @@ OcLoadPickerHotKeys (
   HasCommand = (Modifiers & (APPLE_MODIFIER_LEFT_COMMAND | APPLE_MODIFIER_RIGHT_COMMAND)) != 0;
   HasOption  = (Modifiers & (APPLE_MODIFIER_LEFT_OPTION  | APPLE_MODIFIER_RIGHT_OPTION)) != 0;
   HasEscape  = OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyEscape);
+  HasZero    = OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyZero);
   HasKeyP    = OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyP);
   HasKeyR    = OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyR);
   HasKeyX    = OcKeyMapHasKey (Keys, NumKeys, AppleHidUsbKbUsageKeyX);
@@ -94,8 +96,8 @@ OcLoadPickerHotKeys (
   } else if (HasOption) {
     DEBUG ((DEBUG_INFO, "OCHK: OPT causes picker to show\n"));
     Context->PickerCommand = OcPickerShowPicker;
-  } else if (HasEscape) {
-    DEBUG ((DEBUG_INFO, "OCHK: ESC causes picker to show as OC extension\n"));
+  } else if (HasEscape || HasZero) {
+    DEBUG ((DEBUG_INFO, "OCHK: ESC/0 causes picker to show as OC extension\n"));
     Context->PickerCommand = OcPickerShowPicker;
   } else {
     //
@@ -243,6 +245,14 @@ GetPickerKeyInfo (
   //
   if ((Modifiers & ~ValidBootModifiers) == 0
     && (Modifiers & APPLE_MODIFIERS_CONTROL) != 0) {
+    PickerKeyInfo->OcModifiers |= OC_MODIFIERS_SET_DEFAULT;
+  }
+
+  //
+  // Alternative 'set default' key, if modifiers not working;
+  // useful both for 'set default' and for tuning KeyForgetThreshold.
+  //
+  if (OcKeyMapHasKey (AkmaKeys, AkmaNumKeys, AppleHidUsbKbUsageKeyEquals)) {
     PickerKeyInfo->OcModifiers |= OC_MODIFIERS_SET_DEFAULT;
   }
 
