@@ -536,11 +536,11 @@ AppleEventUnload (
   InternalUnregisterHandlers ();
   InternalCancelPollEvents ();
 
-  Status = gBS->UninstallProtocolInterface (
-                  gImageHandle,
-                  &gAppleEventProtocolGuid,
-                  (VOID *)&mAppleEventProtocol
-                  );
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+    gImageHandle,
+    &gAppleEventProtocolGuid,
+    (VOID *) &mAppleEventProtocol
+    );
 
   return Status;
 }
@@ -549,23 +549,26 @@ AppleEventUnload (
   Install and initialise Apple Event protocol.
 
   @param[in] Reinstall          Overwrite installed protocol.
+  @param[in] CustomDelays       If true, use key delays specified.
+                                If false, use Apple OEM default key delay values.
   @param[in] KeyInitialDelay    Key repeat initial delay in 10ms units.
-                                If less than or equal to 0 then use 50.
   @param[in] KeySubsequentDelay Key repeat subsequent delay in 10ms units.
-                                If less than or equal to 0 then use 5.
+                                If zero, warn and use 1.
 
   @retval installed or located protocol or NULL.
 **/
 APPLE_EVENT_PROTOCOL *
 OcAppleEventInstallProtocol (
   IN BOOLEAN  Reinstall,
-  IN UINT16   KeyInitialDelay      OPTIONAL,
-  IN UINT16   KeySubsequentDelay   OPTIONAL
+  IN BOOLEAN  CustomDelays,
+  IN UINT16   KeyInitialDelay,
+  IN UINT16   KeySubsequentDelay,
+  IN UINT16   PointerSpeedDiv,
+  IN UINT16   PointerSpeedMul
   )
 {
   EFI_STATUS           Status;
   APPLE_EVENT_PROTOCOL *Protocol;
-  EFI_HANDLE           NewHandle;
 
   DEBUG ((DEBUG_VERBOSE, "OcAppleEventInstallProtocol\n"));
 
@@ -588,18 +591,18 @@ OcAppleEventInstallProtocol (
     }
   }
 
-  InternalSetKeyDelays (KeyInitialDelay, KeySubsequentDelay);
+  if (CustomDelays) {
+    InternalSetKeyDelays (KeyInitialDelay, KeySubsequentDelay);
+  }
 
-  //
-  // Apple code supports unloading, ours does not.
-  //
-  NewHandle = NULL;
-  Status      = gBS->InstallProtocolInterface (
-                       &NewHandle,
-                       &gAppleEventProtocolGuid,
-                       EFI_NATIVE_INTERFACE,
-                       (VOID *)&mAppleEventProtocol
-                       );
+  InternalSetPointerSpeed (PointerSpeedDiv, PointerSpeedMul);
+
+  Status = gBS->InstallMultipleProtocolInterfaces (
+    &gImageHandle,
+    &gAppleEventProtocolGuid,
+    &mAppleEventProtocol,
+    NULL
+    );
 
   if (!EFI_ERROR (Status)) {
     InternalCreateQueueEvent ();

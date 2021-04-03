@@ -1,5 +1,7 @@
 #include <Base.h>
 
+#include <Protocol/OcAudio.h>
+
 #include <Library/DebugLib.h>
 
 #include "../OpenCanopy.h"
@@ -412,6 +414,14 @@ InternalCommonShutDownKeyEvent (
 {
   if (KeyEvent->OcKeyCode == OC_INPUT_CONTINUE
    || KeyEvent->OcKeyCode == OC_INPUT_TYPING_CONFIRM) {
+    if (Context->PickerContext->PickerAudioAssist) {
+      Context->PickerContext->PlayAudioFile (
+        Context->PickerContext,
+        AppleVoiceOverAudioFileBeep,
+        TRUE
+        );
+    }
+
     ResetShutdown ();
   }
 }
@@ -469,6 +479,14 @@ InternalCommonRestartKeyEvent (
 {
   if (KeyEvent->OcKeyCode == OC_INPUT_CONTINUE
    || KeyEvent->OcKeyCode == OC_INPUT_TYPING_CONFIRM) {
+    if (Context->PickerContext->PickerAudioAssist) {
+      Context->PickerContext->PlayAudioFile (
+        Context->PickerContext,
+        AppleVoiceOverAudioFileBeep,
+        TRUE
+        );
+    }
+    
     ResetWarm ();
   }
 }
@@ -546,6 +564,15 @@ InternalCommonActionButtonFocus (
 
     mCommonFocus.Obj.OffsetX = This->OffsetX + ((INT32) This->Width - (INT32) mCommonFocus.Obj.Width) / 2;
     mCommonFocus.Obj.OffsetY = This->OffsetY + ((INT32) This->Height - (INT32) mCommonFocus.Obj.Height) / 2;
+
+    DrawContext->GuiContext->AudioPlaybackTimeout = 0;
+
+    if (This == &mCommonShutDown.Hdr.Obj) {
+      DrawContext->GuiContext->VoAction = CanopyVoFocusShutDown;
+    } else {
+      ASSERT (This == &mCommonRestart.Hdr.Obj);
+      DrawContext->GuiContext->VoAction = CanopyVoFocusRestart;
+    }
   }
 
   GuiRequestDrawCrop (
