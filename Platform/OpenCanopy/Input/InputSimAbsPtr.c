@@ -26,6 +26,8 @@
 #define ABS_DOUBLE_CLICK_RADIUS  25U
 #define IS_POWER_2(x)  (((x) & ((x) - 1)) == 0 && (x) != 0)
 
+#define POINTER_SCALE  1U
+
 struct GUI_POINTER_CONTEXT_ {
   APPLE_EVENT_PROTOCOL          *AppleEvent;
   EFI_ABSOLUTE_POINTER_PROTOCOL *AbsPointer;
@@ -33,9 +35,9 @@ struct GUI_POINTER_CONTEXT_ {
   EFI_EVENT                     AbsPollEvent;
   UINT32                        MaxX;
   UINT32                        MaxY;
-  GUI_PTR_POSITION              RawPos;
   GUI_PTR_POSITION              CurPos;
   GUI_PTR_POSITION              AbsLastDownPos;
+  UINT32                        OldEventExScale;
   BOOLEAN                       AbsPrimaryDown;
   BOOLEAN                       AbsDoubleClick;
   UINT8                         UiScale;
@@ -116,9 +118,6 @@ InternalAppleEventNotification (
 {
   APPLE_POINTER_EVENT_TYPE  EventType;
   GUI_POINTER_CONTEXT       *Context;
-  GUI_PTR_POSITION          NewPos;
-  GUI_PTR_POSITION          NewRaw;
-  INT64                     NewCoord;
 
   Context = NotifyContext;
 
@@ -133,34 +132,8 @@ InternalAppleEventNotification (
   EventType = Information->EventData.PointerEventType;
 
   if ((EventType & APPLE_EVENT_TYPE_MOUSE_MOVED) != 0) {
-    //
-    // Use a factor of 2 for pointer acceleration.
-    //
-
-    NewRaw.Pos.X = (UINT32) Information->PointerPosition.Horizontal;
-
-    NewCoord = (INT64) Context->CurPos.Pos.X + 2 * ((INT64) NewRaw.Pos.X - Context->RawPos.Pos.X);
-    if (NewCoord < 0) {
-      NewPos.Pos.X = 0;
-    } else if (NewCoord > Context->MaxX) {
-      NewPos.Pos.X = Context->MaxX;
-    } else {
-      NewPos.Pos.X = (UINT32) NewCoord;
-    }
-
-    NewRaw.Pos.Y = (UINT32) Information->PointerPosition.Vertical;
-
-    NewCoord = (INT64) Context->CurPos.Pos.Y + 2 * ((INT64) NewRaw.Pos.Y - Context->RawPos.Pos.Y);
-    if (NewCoord < 0) {
-      NewPos.Pos.Y = 0;
-    } else if (NewCoord > Context->MaxY) {
-      NewPos.Pos.Y = Context->MaxY;
-    } else {
-      NewPos.Pos.Y = (UINT32) NewCoord;
-    }
-
-    Context->CurPos.Uint64 = NewPos.Uint64;
-    Context->RawPos.Uint64 = NewRaw.Uint64;
+    Context->CurPos.Pos.X = (UINT32) Information->PointerPosition.Horizontal;
+    Context->CurPos.Pos.Y = (UINT32) Information->PointerPosition.Vertical;
   }
 
   if ((EventType & APPLE_EVENT_TYPE_LEFT_BUTTON) != 0) {
@@ -169,8 +142,8 @@ InternalAppleEventNotification (
       InternalQueuePointerEvent (
         Context,
         GuiPointerPrimaryDown,
-        Context->CurPos.Pos.X,
-        Context->CurPos.Pos.Y
+        (UINT32) Information->PointerPosition.Horizontal,
+        (UINT32) Information->PointerPosition.Vertical
         );
       Context->LockedBy = PointerLockedSimple;
     } else if ((EventType & APPLE_EVENT_TYPE_MOUSE_UP) != 0) {
@@ -178,16 +151,16 @@ InternalAppleEventNotification (
       InternalQueuePointerEvent (
         Context,
         GuiPointerPrimaryUp,
-        Context->CurPos.Pos.X,
-        Context->CurPos.Pos.Y
+        (UINT32) Information->PointerPosition.Horizontal,
+        (UINT32) Information->PointerPosition.Vertical
         );
       Context->LockedBy = PointerUnlocked;
     } else if ((EventType & APPLE_EVENT_TYPE_MOUSE_DOUBLE_CLICK) != 0) {
       InternalQueuePointerEvent (
         Context,
         GuiPointerPrimaryDoubleClick,
-        Context->CurPos.Pos.X,
-        Context->CurPos.Pos.Y
+        (UINT32) Information->PointerPosition.Horizontal,
+        (UINT32) Information->PointerPosition.Vertical
         );
     }
   }
@@ -239,7 +212,6 @@ InternalUpdateContextAbsolute (
     );
 
   Context->CurPos.Uint64 = NewPos.Uint64;
-  Context->RawPos.Uint64 = NewPos.Uint64;
   //
   // Cancel double click when the finger is moved too far away.
   //
@@ -353,7 +325,6 @@ GuiPointerSetPosition (
   // Return the current pointer position.
   //
   Context->CurPos.Uint64 = Position->Uint64;
-  Context->RawPos.Uint64 = Position->Uint64;
 
   gBS->RestoreTPL (OldTpl);
 }
@@ -383,16 +354,17 @@ GuiPointerConstruct (
   Context.MaxY         = Height - 1;
   Context.CurPos.Pos.X = DefaultX;
   Context.CurPos.Pos.Y = DefaultY;
-  Context.RawPos.Pos.X = DefaultX;
-  Context.RawPos.Pos.Y = DefaultY;
   Context.UiScale      = UiScale;
 
-  Status = OcHandleProtocolFallback (
-    gST->ConsoleInHandle,
+  Context.AppleEvent = OcGetProtocol (
     &gAppleEventProtocolGuid,
-    (VOID **)&Context.AppleEvent
+    DEBUG_WARN,
+    "GuiPointerConstruct",
+    "AppleEvent"
     );
-  if (!EFI_ERROR (Status)) {
+
+  Status = EFI_UNSUPPORTED;
+  if (Context.AppleEvent != NULL) {
     if (Context.AppleEvent->Revision >= APPLE_EVENT_PROTOCOL_REVISION) {
       Dimension.Horizontal = (INT32) DefaultX;
       Dimension.Vertical   = (INT32) DefaultY;
@@ -409,8 +381,6 @@ GuiPointerConstruct (
         &Context.AppleEventHandle,
         &Context
         );
-    } else {
-      Status = EFI_UNSUPPORTED;
     }
 
     if (EFI_ERROR (Status)) {
