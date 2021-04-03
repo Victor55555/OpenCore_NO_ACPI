@@ -1,15 +1,6 @@
 /** @file
-  Copyright (C) 2019, vit9696. All rights reserved.
-
-  All rights reserved.
-
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (C) 2019, vit9696. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-3-Clause
 **/
 
 #include "BootManagementInternal.h"
@@ -35,6 +26,7 @@
 #include <Library/DevicePathLib.h>
 #include <Library/OcGuardLib.h>
 #include <Library/OcTimerLib.h>
+#include <Library/OcTypingLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/OcAppleKeyMapLib.h>
 #include <Library/OcBootManagementLib.h>
@@ -47,6 +39,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/UefiLib.h>
+#include <Library/ResetSystemLib.h>
 
 STATIC
 EFI_STATUS
@@ -95,401 +88,61 @@ RunShowMenu (
     &EntryReason
     );
 
+  Status = OcInitHotKeys (BootContext->PickerContext);
+  if (EFI_ERROR(Status)) {
+    FreePool (BootEntries);
+    return Status;
+  }
+      
   Status = BootContext->PickerContext->ShowMenu (
     BootContext,
     BootEntries,
     ChosenBootEntry
     );
+
+  OcFreeHotKeys (BootContext->PickerContext);
+
   FreePool (BootEntries);
 
   return Status;
 }
 
 EFI_STATUS
-EFIAPI
-OcShowSimpleBootMenu (
-  IN  OC_BOOT_CONTEXT             *BootContext,
-  IN  OC_BOOT_ENTRY               **BootEntries,
-  OUT OC_BOOT_ENTRY               **ChosenBootEntry
-  )
-{
-  APPLE_KEY_MAP_AGGREGATOR_PROTOCOL  *KeyMap;
-  UINTN                              Index;
-  UINTN                              Length;
-  INTN                               KeyIndex;
-  INTN                               ChosenEntry;
-  CHAR16                             Code[2];
-  UINT32                             TimeOutSeconds;
-  UINT32                             Count;
-  BOOLEAN                            SetDefault;
-  BOOLEAN                            PlayedOnce;
-  BOOLEAN                            PlayChosen;
-
-  ChosenEntry    = -1;
-  Code[1]        = '\0';
-
-  TimeOutSeconds = BootContext->PickerContext->TimeoutSeconds;
-  ASSERT (BootContext->DefaultEntry != NULL);
-
-  PlayedOnce     = FALSE;
-  PlayChosen     = FALSE;
-
-  KeyMap = OcAppleKeyMapInstallProtocols (FALSE);
-  if (KeyMap == NULL) {
-    DEBUG ((DEBUG_ERROR, "OCB: Missing AppleKeyMapAggregator\n"));
-    return EFI_UNSUPPORTED;
-  }
-
-  Count = (UINT32) BootContext->BootEntryCount;
-
-  if (Count != MIN (Count, OC_INPUT_MAX)) {
-    DEBUG ((DEBUG_WARN, "OCB: Cannot display all entries in the menu!\n"));
-  }
-
-  OcConsoleControlSetMode (EfiConsoleControlScreenText);
-  gST->ConOut->EnableCursor (gST->ConOut, FALSE);
-
-  if (BootContext->PickerContext->ConsoleAttributes != 0) {
-    gST->ConOut->SetAttribute (gST->ConOut, BootContext->PickerContext->ConsoleAttributes & 0x7FU);
-  }
-
-  //
-  // Extension for OpenCore direct text render for faster redraw with custom background.
-  //
-  gST->ConOut->ClearScreen (gST->ConOut);
-  gST->ConOut->TestString (gST->ConOut, OC_CONSOLE_MARK_CONTROLLED);
-
-  while (TRUE) {
-    gST->ConOut->ClearScreen (gST->ConOut);
-    gST->ConOut->OutputString (gST->ConOut, OC_MENU_BOOT_MENU);
-
-    if (BootContext->PickerContext->TitleSuffix != NULL) {
-      Length = AsciiStrLen (BootContext->PickerContext->TitleSuffix);
-      gST->ConOut->OutputString (gST->ConOut, L" (");
-      for (Index = 0; Index < Length; ++Index) {
-        Code[0] = BootContext->PickerContext->TitleSuffix[Index];
-        gST->ConOut->OutputString (gST->ConOut, Code);
-      }
-      gST->ConOut->OutputString (gST->ConOut, L")");
-    }
-
-    gST->ConOut->OutputString (gST->ConOut, L"\r\n\r\n");
-
-    for (Index = 0; Index < MIN (Count, OC_INPUT_MAX); ++Index) {
-      if (TimeOutSeconds > 0 && BootContext->DefaultEntry->EntryIndex - 1 == Index) {
-        gST->ConOut->OutputString (gST->ConOut, L"* ");
-      } else if (ChosenEntry >= 0 && (UINTN) ChosenEntry == Index) {
-        gST->ConOut->OutputString (gST->ConOut, L"> ");
-      } else {
-        gST->ConOut->OutputString (gST->ConOut, L"  ");
-      }
-
-      Code[0] = OC_INPUT_STR[Index];
-      gST->ConOut->OutputString (gST->ConOut, Code);
-      gST->ConOut->OutputString (gST->ConOut, L". ");
-      gST->ConOut->OutputString (gST->ConOut, BootEntries[Index]->Name);
-      if (BootEntries[Index]->IsExternal) {
-        gST->ConOut->OutputString (gST->ConOut, OC_MENU_EXTERNAL);
-      }
-      gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-    }
-
-    gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-    gST->ConOut->OutputString (gST->ConOut, OC_MENU_CHOOSE_OS);
-
-    if (!PlayedOnce && BootContext->PickerContext->PickerAudioAssist) {
-      OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileChooseOS, FALSE);
-      for (Index = 0; Index < Count; ++Index) {
-        OcPlayAudioEntry (BootContext->PickerContext, BootEntries[Index]);
-        if (TimeOutSeconds > 0 && BootContext->DefaultEntry->EntryIndex - 1 == Index) {
-          OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileDefault, FALSE);
-        }
-      }
-      OcPlayAudioBeep (
-        BootContext->PickerContext,
-        OC_VOICE_OVER_SIGNALS_NORMAL,
-        OC_VOICE_OVER_SIGNAL_NORMAL_MS,
-        OC_VOICE_OVER_SILENCE_NORMAL_MS
-        );
-      PlayedOnce = TRUE;
-    }
-
-    while (TRUE) {
-      //
-      // Pronounce entry name only after N ms of idleness.
-      //
-      KeyIndex = OcWaitForAppleKeyIndex (
-        BootContext->PickerContext,
-        KeyMap,
-        PlayChosen ? OC_VOICE_OVER_IDLE_TIMEOUT_MS : TimeOutSeconds * 1000,
-        &SetDefault
-        );
-
-      if (PlayChosen && KeyIndex == OC_INPUT_TIMEOUT) {
-        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileSelected, FALSE);
-        OcPlayAudioEntry (BootContext->PickerContext, BootEntries[ChosenEntry]);
-        PlayChosen = FALSE;
-        continue;
-      } else if (KeyIndex == OC_INPUT_TIMEOUT) {
-        *ChosenBootEntry = BootEntries[BootContext->DefaultEntry->EntryIndex - 1];
-        gST->ConOut->OutputString (gST->ConOut, OC_MENU_TIMEOUT);
-        gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileTimeout, FALSE);
-        return EFI_SUCCESS;
-      } else if (KeyIndex == OC_INPUT_CONTINUE) {
-        if (ChosenEntry >= 0) {
-          *ChosenBootEntry = BootEntries[(UINTN) ChosenEntry];
-        } else {
-          *ChosenBootEntry = BootContext->DefaultEntry;
-        }
-        (*ChosenBootEntry)->SetDefault = SetDefault;
-        gST->ConOut->OutputString (gST->ConOut, OC_MENU_OK);
-        gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-        return EFI_SUCCESS;
-      } else if (KeyIndex == OC_INPUT_ABORTED) {
-        gST->ConOut->OutputString (gST->ConOut, OC_MENU_RELOADING);
-        gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileReloading, FALSE);
-        return EFI_ABORTED;
-      } else if (KeyIndex == OC_INPUT_MORE && BootContext->PickerContext->HideAuxiliary) {
-        gST->ConOut->OutputString (gST->ConOut, OC_MENU_SHOW_AUXILIARY);
-        gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileShowAuxiliary, FALSE);
-        BootContext->PickerContext->HideAuxiliary = FALSE;
-        return EFI_ABORTED;
-      } else if (KeyIndex == OC_INPUT_UP) {
-        if (TimeOutSeconds > 0) {
-          ChosenEntry = (INTN) (BootContext->DefaultEntry->EntryIndex - 1);
-        }
-        if (ChosenEntry < 0) {
-          ChosenEntry = 0;
-        } else if (ChosenEntry == 0) {
-          ChosenEntry = (INTN) (MIN (Count, OC_INPUT_MAX) - 1);
-        } else {
-          --ChosenEntry;
-        }
-        TimeOutSeconds = 0;
-        if (BootContext->PickerContext->PickerAudioAssist) {
-          PlayChosen = TRUE;
-        }
-        break;
-      } else if (KeyIndex == OC_INPUT_DOWN) {
-        if (TimeOutSeconds > 0) {
-          ChosenEntry = (INTN) (BootContext->DefaultEntry->EntryIndex - 1);
-        }
-        if (ChosenEntry < 0) {
-          ChosenEntry = 0;
-        } else if (ChosenEntry == (INTN) (MIN (Count, OC_INPUT_MAX) - 1)) {
-          ChosenEntry = 0;
-        } else {
-          ++ChosenEntry;
-        }
-        TimeOutSeconds = 0;
-        if (BootContext->PickerContext->PickerAudioAssist) {
-          PlayChosen = TRUE;
-        }
-        break;
-      } else if (KeyIndex == OC_INPUT_TOP || KeyIndex == OC_INPUT_LEFT) {
-        ChosenEntry = 0;
-        TimeOutSeconds = 0;
-        if (BootContext->PickerContext->PickerAudioAssist) {
-          PlayChosen = TRUE;
-        }
-        break;
-      } else if (KeyIndex == OC_INPUT_BOTTOM || KeyIndex == OC_INPUT_RIGHT) {
-        ChosenEntry = (INTN) (MIN (Count, OC_INPUT_MAX) - 1);
-        TimeOutSeconds = 0;
-        if (BootContext->PickerContext->PickerAudioAssist) {
-          PlayChosen = TRUE;
-        }
-        break;
-      } else if (KeyIndex == OC_INPUT_VOICE_OVER) {
-        OcToggleVoiceOver (BootContext->PickerContext, 0);
-        break;
-      } else if (KeyIndex != OC_INPUT_INVALID && KeyIndex >= 0 && (UINTN)KeyIndex < Count) {
-        *ChosenBootEntry = BootEntries[KeyIndex];
-        (*ChosenBootEntry)->SetDefault = SetDefault;
-        Code[0] = OC_INPUT_STR[KeyIndex];
-        gST->ConOut->OutputString (gST->ConOut, Code);
-        gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-        return EFI_SUCCESS;
-      }
-
-      if (TimeOutSeconds > 0) {
-        OcPlayAudioFile (BootContext->PickerContext, OcVoiceOverAudioFileAbortTimeout, FALSE);
-        TimeOutSeconds = 0;
-        break;
-      }
-    }
-  }
-
-  ASSERT (FALSE);
-}
-
-EFI_STATUS
-EFIAPI
-OcShowSimplePasswordRequest (
-  IN OC_PICKER_CONTEXT   *Context,
+InternalRunRequestPrivilege (
+  IN OC_PICKER_CONTEXT   *PickerContext,
   IN OC_PRIVILEGE_LEVEL  Level
   )
 {
-  OC_PRIVILEGE_CONTEXT *Privilege;
+  EFI_STATUS Status;
+  BOOLEAN    HotKeysAlreadyLive;
 
-  BOOLEAN              Result;
-
-  UINT8                Password[32];
-  UINT32               PwIndex;
-
-  UINT8                Index;
-  EFI_STATUS           Status;
-  EFI_INPUT_KEY        Key;
-
-  Privilege = Context->PrivilegeContext;
-
-  if (Privilege == NULL || Privilege->CurrentLevel >= Level) {
-    return EFI_SUCCESS;
+  if (PickerContext->PrivilegeContext == NULL
+   || PickerContext->PrivilegeContext->CurrentLevel >= Level) {
+     return EFI_SUCCESS;
   }
 
-  OcConsoleControlSetMode (EfiConsoleControlScreenText);
-  gST->ConOut->EnableCursor (gST->ConOut, FALSE);
-  gST->ConOut->ClearScreen (gST->ConOut);
-  gST->ConOut->TestString (gST->ConOut, OC_CONSOLE_MARK_CONTROLLED);
+  HotKeysAlreadyLive = (PickerContext->HotKeyContext != NULL);
 
-  for (Index = 0; Index < 3; ++Index) {
-    PwIndex = 0;
-    //
-    // Skip previously pressed characters.
-    //
-    do {
-      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-    } while (!EFI_ERROR (Status));
-
-    gST->ConOut->OutputString (gST->ConOut, OC_MENU_PASSWORD_REQUEST);
-    OcPlayAudioFile (Context, OcVoiceOverAudioFileEnterPassword, TRUE);
-
-    while (TRUE) {
-      Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-      if (Status == EFI_NOT_READY) {
-        continue;
-      } else if (EFI_ERROR (Status)) {
-        gST->ConOut->ClearScreen (gST->ConOut);
-        SecureZeroMem (Password, PwIndex);
-        SecureZeroMem (&Key.UnicodeChar, sizeof (Key.UnicodeChar));
-
-        DEBUG ((DEBUG_ERROR, "Input device error\r\n"));
-        OcPlayAudioBeep (
-          Context,
-          OC_VOICE_OVER_SIGNALS_HWERROR,
-          OC_VOICE_OVER_SIGNAL_ERROR_MS,
-          OC_VOICE_OVER_SILENCE_ERROR_MS
-          );
-        return EFI_ABORTED;
-      }
-
-      //
-      // TODO: We should really switch to Apple input here.
-      //
-      if (Key.ScanCode == SCAN_F5) {
-        OcToggleVoiceOver (Context, OcVoiceOverAudioFileEnterPassword);
-      }
-
-      if (Key.ScanCode == SCAN_ESC) {
-        gST->ConOut->ClearScreen (gST->ConOut);
-        SecureZeroMem (Password, PwIndex);
-        //
-        // ESC aborts the input.
-        //
-        return EFI_ABORTED;
-      } else if (Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
-        gST->ConOut->ClearScreen (gST->ConOut);
-        //
-        // RETURN finalizes the input.
-        //
-        break;
-      } else if (Key.UnicodeChar == CHAR_BACKSPACE) {
-        //
-        // Delete the last entered character, if such exists.
-        //
-        if (PwIndex != 0) {
-          --PwIndex;
-          Password[PwIndex] = 0;
-          //
-          // Overwrite current character with a space.
-          //
-          gST->ConOut->SetCursorPosition (
-                         gST->ConOut,
-                         gST->ConOut->Mode->CursorColumn - 1,
-                         gST->ConOut->Mode->CursorRow
-                         );
-          gST->ConOut->OutputString (gST->ConOut, L" ");
-          gST->ConOut->SetCursorPosition (
-                         gST->ConOut,
-                         gST->ConOut->Mode->CursorColumn - 1,
-                         gST->ConOut->Mode->CursorRow
-                         );
-        }
-
-        OcPlayAudioFile (Context, AppleVoiceOverAudioFileBeep, TRUE);
-        continue;
-      } else if (Key.UnicodeChar == CHAR_NULL
-       || (UINT8)Key.UnicodeChar != Key.UnicodeChar) {
-        //
-        // Only ASCII characters are supported.
-        //
-        OcPlayAudioBeep (
-          Context,
-          OC_VOICE_OVER_SIGNALS_ERROR,
-          OC_VOICE_OVER_SIGNAL_ERROR_MS,
-          OC_VOICE_OVER_SILENCE_ERROR_MS
-          );
-        continue;
-      }
-
-      if (PwIndex == ARRAY_SIZE (Password)) {
-        OcPlayAudioBeep (
-          Context,
-          OC_VOICE_OVER_SIGNALS_ERROR,
-          OC_VOICE_OVER_SIGNAL_ERROR_MS,
-          OC_VOICE_OVER_SILENCE_ERROR_MS
-          );
-        continue;
-      }
-
-      gST->ConOut->OutputString (gST->ConOut, L"*");
-      Password[PwIndex] = (UINT8)Key.UnicodeChar;
-      OcPlayAudioFile (Context, AppleVoiceOverAudioFileBeep, TRUE);
-      ++PwIndex;
-    }
-
-    Result = OcVerifyPasswordSha512 (
-               Password,
-               PwIndex,
-               Privilege->Salt,
-               Privilege->SaltSize,
-               Privilege->Hash
-               );
-
-    SecureZeroMem (Password, PwIndex);
-
-    if (Result) {
-      gST->ConOut->ClearScreen (gST->ConOut);
-      Privilege->CurrentLevel = Level;
-      OcPlayAudioFile (Context, OcVoiceOverAudioFilePasswordAccepted, TRUE);
-      return EFI_SUCCESS;
-    } else {
-      OcPlayAudioFile (Context, OcVoiceOverAudioFilePasswordIncorrect, TRUE);
+  if (!HotKeysAlreadyLive) {
+    Status = OcInitHotKeys (PickerContext);
+    if (EFI_ERROR(Status)) {
+      return Status;
     }
   }
 
-  gST->ConOut->ClearScreen (gST->ConOut);
-  gST->ConOut->OutputString (gST->ConOut, OC_MENU_PASSWORD_RETRY_LIMIT);
-  gST->ConOut->OutputString (gST->ConOut, L"\r\n");
-  OcPlayAudioFile (Context, OcVoiceOverAudioFilePasswordRetryLimit, TRUE);
-  DEBUG ((DEBUG_WARN, "OCB: User failed to verify password for 3 times running\n"));
+  Status = PickerContext->RequestPrivilege (
+    PickerContext,
+    OcPrivilegeAuthorized
+    );
+  if (!EFI_ERROR (Status)) {
+    PickerContext->PrivilegeContext->CurrentLevel = Level;
+  }
 
-  gBS->Stall (5000000);
-  gRT->ResetSystem (EfiResetWarm, EFI_SUCCESS, 0, NULL);
-  return EFI_ACCESS_DENIED;
+  if (!HotKeysAlreadyLive) {
+    OcFreeHotKeys (PickerContext);
+  }
+
+  return Status;
 }
 
 EFI_STATUS
@@ -525,10 +178,7 @@ OcRunBootPicker (
   // This one is handled as is for Apple BootPicker for now.
   //
   if (Context->PickerCommand != OcPickerDefault) {
-    Status = Context->RequestPrivilege (
-      Context,
-      OcPrivilegeAuthorized
-      );
+    Status = InternalRunRequestPrivilege (Context, OcPrivilegeAuthorized);
     if (EFI_ERROR (Status)) {
       if (Status != EFI_ABORTED) {
         ASSERT (FALSE);

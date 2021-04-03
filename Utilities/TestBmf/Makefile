@@ -9,11 +9,11 @@ OBJS    = $(PROJECT).o
 #
 # From OpenCanopy.
 #
-OBJS   += BitmapFont.o OpenCanopy.o InputSimTextIn.o InputSimAbsPtr.o OutputStGop.o BootPicker.o GuiApp.o
+OBJS   += BitmapFont.o Images.o Blending.o
 #
 # From OpenCore.
 #
-OBJS   += OcPng.o lodepng.o OcCompressionLib.o OcTimerLib.o OcAppleKeyMapLib.o HotKeySupport.o BootArguments.o BootEntryInfo.o OcAppleBootPolicyLib.o OcDevicePathLib.o DebugPrint.o GetFileInfo.o GetVolumeLabel.o ReadFile.o OpenFile.o FileProtocol.o OcStorageLib.o BootAudio.o
+OBJS   += OcPng.o lodepng.o OcCompressionLib.o OcTimerLib.o OcAppleKeyMapLib.o UpDownDetection.o OcTypingLib.o ConsoleUtils.o BootEntryInfo.o OcAppleBootPolicyLib.o OcDevicePathLib.o DebugPrint.o GetFileInfo.o GetVolumeLabel.o ReadFile.o OpenFile.o FileProtocol.o OcStorageLib.o BootAudio.o
 
 VPATH   = ../../Platform/OpenCanopy:$\
           ../../Platform/OpenCanopy/Input:$\
@@ -30,7 +30,9 @@ VPATH   = ../../Platform/OpenCanopy:$\
           ../../Library/OcDebugLogLib:$\
           ../../Library/OcFileLib:$\
           ../../Library/OcStorageLib:$\
-          ../../Library/OcTemplateLib
+          ../../Library/OcTemplateLib:$\
+          ../../Library/OcTypingLib:$\
+          ../../Library/OcMiscLib:
 
 include ../../User/Makefile
 

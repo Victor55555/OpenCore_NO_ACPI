@@ -15,6 +15,8 @@
 
 #define MAX_CURSOR_DIMENSION  144U
 
+#define BOOT_CURSOR_OFFSET  4U
+
 #define BOOT_ENTRY_DIMENSION       144U
 #define BOOT_ENTRY_ICON_DIMENSION  APPLE_DISK_ICON_DIMENSION
 #define BOOT_ENTRY_ICON_SPACE      ((BOOT_ENTRY_DIMENSION - BOOT_ENTRY_ICON_DIMENSION) / 2)
@@ -36,6 +38,20 @@
 #define BOOT_SCROLL_BUTTON_DIMENSION  40U
 #define BOOT_SCROLL_BUTTON_SPACE      40U
 
+#define BOOT_ACTION_BUTTON_DIMENSION        128U
+#define BOOT_ACTION_BUTTON_FOCUS_DIMENSION  144U
+#define BOOT_ACTION_BUTTON_SPACE            36U
+
+#define PASSWORD_LOCK_DIMENSION 144U
+
+#define PASSWORD_ENTER_WIDTH  75U
+#define PASSWORD_ENTER_HEIGHT 30U
+
+#define PASSWORD_BOX_WIDTH   288U
+#define PASSWORD_BOX_HEIGHT  30U
+
+#define PASSWORD_DOT_DIMENSION  10U
+
 typedef enum {
   LABEL_GENERIC_HDD,
   LABEL_APPLE,
@@ -53,8 +69,16 @@ typedef enum {
   ICON_CURSOR,
   ICON_SELECTED,
   ICON_SELECTOR,
+  ICON_SET_DEFAULT,
   ICON_LEFT,
   ICON_RIGHT,
+  ICON_SHUT_DOWN,
+  ICON_RESTART,
+  ICON_BUTTON_FOCUS,
+  ICON_PASSWORD,
+  ICON_DOT,
+  ICON_ENTER,
+  ICON_LOCK,
   ICON_NUM_SYS,
   ICON_GENERIC_HDD       = ICON_NUM_SYS,
   ICON_NUM_MANDATORY,
@@ -76,6 +100,13 @@ typedef enum {
   ICON_TYPE_COUNT    = 2,
 } ICON_TYPE;
 
+enum {
+  CanopyVoSelectedEntry,
+  CanopyVoFocusPassword,
+  CanopyVoFocusShutDown,
+  CanopyVoFocusRestart
+};
+
 typedef struct _BOOT_PICKER_GUI_CONTEXT {
   GUI_IMAGE                            Background;
   GUI_IMAGE                            Icons[ICON_NUM_TOTAL][ICON_TYPE_COUNT];
@@ -90,25 +121,46 @@ typedef struct _BOOT_PICKER_GUI_CONTEXT {
   BOOLEAN                              DoneIntroAnimation;
   BOOLEAN                              ReadyToBoot;
   UINT8                                Scale;
-  UINT32                               CursorDefaultX;
-  UINT32                               CursorDefaultY;
+  UINT8                                VoAction;
+  INT32                                CursorOffsetX;
+  INT32                                CursorOffsetY;
   INT32                                AudioPlaybackTimeout;
   OC_PICKER_CONTEXT                    *PickerContext;
 } BOOT_PICKER_GUI_CONTEXT;
 
 EFI_STATUS
-BootPickerViewInitialize (
+PasswordViewInitialize (
   OUT GUI_DRAWING_CONTEXT      *DrawContext,
-  IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext,
-  IN  GUI_CURSOR_GET_IMAGE     GetCursorImage
+  IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext
+  );
+
+VOID
+PasswordViewDeinitialize (
+  IN OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN OUT BOOT_PICKER_GUI_CONTEXT  *GuiContext
   );
 
 EFI_STATUS
-BootPickerEntriesAdd (
+BootPickerViewInitialize (
+  OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN  GUI_CURSOR_GET_IMAGE     GetCursorImage,
+  IN  UINT8                    NumBootEntries
+  );
+
+VOID
+BootPickerViewLateInitialize (
+  IN OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN     BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN     UINT8                    DefaultIndex
+  );
+
+EFI_STATUS
+BootPickerEntriesSet (
   IN OC_PICKER_CONTEXT              *Context,
   IN BOOT_PICKER_GUI_CONTEXT        *GuiContext,
   IN OC_BOOT_ENTRY                  *Entry,
-  IN BOOLEAN                        Default
+  IN UINT8                          EntryIndex
   );
 
 VOID
@@ -119,8 +171,7 @@ BootPickerViewDeinitialize (
 
 CONST GUI_IMAGE *
 InternalGetCursorImage (
-  IN OUT GUI_SCREEN_CURSOR        *This,
-  IN     BOOT_PICKER_GUI_CONTEXT  *Context
+  IN BOOT_PICKER_GUI_CONTEXT  *Context
   );
 
 #endif // GUI_APP_H

@@ -15,6 +15,8 @@
 #ifndef OC_CPU_INTERNALS_H
 #define OC_CPU_INTERNALS_H
 
+#include <Library/OcCpuLib.h>
+
 //
 // Tolerance within which we consider two frequency values to be roughly
 // equivalent.
@@ -83,11 +85,24 @@ InternalDetectAppleMajorType (
 **/
 UINT16
 InternalDetectAppleProcessorType (
-  IN UINT8  Model,
-  IN UINT8  Stepping,
-  IN UINT8  AppleMajorType,
-  IN UINT16 CoreCount,
+  IN UINT8   Model,
+  IN UINT8   Stepping,
+  IN UINT8   AppleMajorType,
+  IN UINT16  CoreCount,
   IN BOOLEAN Is64Bit
+  );
+
+
+/**
+  Obtain Intel CPU generation.
+
+  @param[in] Model           CPU model from CPUID.
+
+  @retval CPU's generation (e.g. OcCpuGenerationUnknown).
+ */
+OC_CPU_GENERATION
+InternalDetectIntelProcessorGeneration (
+  IN  OC_CPU_INFO  *CpuInfo
   );
 
 /**
@@ -112,6 +127,20 @@ InternalGetPmTimerAddr (
 UINT64
 InternalCalculateTSCFromPMTimer (
   IN BOOLEAN  Recalculate
+  );
+
+/**
+  Calculate the TSC frequency via Apple Platform Info
+
+  @param[out]  FSBFrequency  Updated FSB frequency, optional.
+  @param[in]   Recalculate   Do not re-use previously cached information.
+
+  @retval  The calculated TSC frequency.
+**/
+UINT64
+InternalCalculateTSCFromApplePlatformInfo (
+  OUT  UINT64   *FSBFrequency  OPTIONAL,
+  IN   BOOLEAN  Recalculate
   );
 
 /**
@@ -142,6 +171,18 @@ UINT64
 InternalCalculateVMTFrequency (
   OUT UINT64   *FSBFrequency     OPTIONAL,
   OUT BOOLEAN  *UnderHypervisor  OPTIONAL
+  );
+
+/**
+  Convert Apple FSB frequency to TSC frequency
+
+  @param[in]  FSBFrequency  Frequency in Apple FSB format.
+
+  @retval  Converted TSC frequency.
+**/
+UINT64
+InternalConvertAppleFSBToTSCFrequency (
+  IN  UINT64        FSBFrequency
   );
 
 /**

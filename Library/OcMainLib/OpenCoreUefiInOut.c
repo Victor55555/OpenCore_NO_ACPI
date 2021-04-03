@@ -134,7 +134,7 @@ OcLoadUefiInputSupport (
     if (PointerMode != OcInputPointerModeMax) {
       Status = OcAppleGenericInputPointerInit (PointerMode);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "OC: Failed to initialize pointer\n"));
+        DEBUG ((DEBUG_INFO, "OC: Failed to initialize pointer\n"));
       } else {
         ExitBs = TRUE;
       }
@@ -142,6 +142,7 @@ OcLoadUefiInputSupport (
   }
 
   if (Config->Uefi.Input.KeySupport) {
+    DEBUG ((DEBUG_INFO, "OC: Installing KeySupport...\n"));
     KeySupportStr = OC_BLOB_GET (&Config->Uefi.Input.KeySupportMode);
     KeyMode = OcInputKeyModeMax;
     if (AsciiStrCmp (KeySupportStr, "Auto") == 0) {
@@ -160,7 +161,6 @@ OcLoadUefiInputSupport (
       Status = OcAppleGenericInputKeycodeInit (
                  KeyMode,
                  Config->Uefi.Input.KeyForgetThreshold,
-                 Config->Uefi.Input.KeyMergeThreshold,
                  Config->Uefi.Input.KeySwap,
                  Config->Uefi.Input.KeyFiltering
                  );

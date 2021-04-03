@@ -3,13 +3,17 @@
 buildutil() {
   UTILS=(
     "AppleEfiSignTool"
+    "ACPIe"
     "EfiResTool"
     "LogoutHook"
+    "acdtinfo"
     "disklabel"
     "icnspack"
     "macserial"
+    "ocpasswordgen"
     "ocvalidate"
     "TestBmf"
+    "TestCpuFrequency"
     "TestDiskImage"
     "TestHelloWorld"
     "TestImg4"
@@ -128,7 +132,7 @@ package() {
       "ResetSystem.efi"
       "RtcRw.efi"
       "OpenControl.efi"
-      "VerifyMsrE2.efi"
+      "ControlMsrE2.efi"
       )
     for efiTool in "${efiTools[@]}"; do
       cp "${arch}/${efiTool}" "${dstdir}/${arch}/EFI/OC/Tools"/ || exit 1
@@ -217,7 +221,10 @@ package() {
   done
 
   utils=(
+    "ACPIe"
+    "acdtinfo"
     "macserial"
+    "ocpasswordgen"
     "ocvalidate"
     "disklabel"
     "icnspack"

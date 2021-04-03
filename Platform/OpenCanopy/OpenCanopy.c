@@ -28,26 +28,26 @@
 #include "GuiIo.h"
 #include "GuiApp.h"
 #include "Views/BootPicker.h"
+#include "Blending.h"
 
 typedef struct {
-  UINT32 MinX;
-  UINT32 MinY;
-  UINT32 MaxX;
-  UINT32 MaxY;
+  UINT32 X;
+  UINT32 Y;
+  UINT32 Width;
+  UINT32 Height;
 } GUI_DRAW_REQUEST;
 
 //
 // I/O contexts
 //
-STATIC GUI_OUTPUT_CONTEXT            *mOutputContext    = NULL;
-STATIC GUI_POINTER_CONTEXT           *mPointerContext   = NULL;
-STATIC GUI_KEY_CONTEXT               *mKeyContext       = NULL;
+STATIC GUI_OUTPUT_CONTEXT                         *mOutputContext  = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED GUI_POINTER_CONTEXT *mPointerContext = NULL;
+GLOBAL_REMOVE_IF_UNREFERENCED GUI_KEY_CONTEXT     *mKeyContext     = NULL;
 //
 // Screen buffer information
 //
 STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL *mScreenBuffer     = NULL;
 STATIC UINT32                        mScreenBufferDelta = 0;
-STATIC GUI_SCREEN_CURSOR             mScreenViewCursor  = { 0, 0 };
 //
 // Frame timing information (60 FPS)
 //
@@ -57,30 +57,15 @@ STATIC UINT64                        mStartTsc          = 0;
 // Drawing rectangles information
 //
 STATIC UINT8                         mNumValidDrawReqs  = 0;
-STATIC GUI_DRAW_REQUEST              mDrawRequests[4]   = { { 0 } };
-//
-// Disk label palette.
-//
-STATIC
-CONST UINT8
-gAppleDiskLabelImagePalette[256] = {
-  [0x00] = 255,
-  [0xf6] = 238,
-  [0xf7] = 221,
-  [0x2a] = 204,
-  [0xf8] = 187,
-  [0xf9] = 170,
-  [0x55] = 153,
-  [0xfa] = 136,
-  [0xfb] = 119,
-  [0x80] = 102,
-  [0xfc] = 85,
-  [0xfd] = 68,
-  [0xab] = 51,
-  [0xfe] = 34,
-  [0xff] = 17,
-  [0xd6] = 0
-};
+STATIC GUI_DRAW_REQUEST              mDrawRequests[6]   = { { 0 } };
+
+STATIC UINT32                        mPointerOldDrawBaseX  = 0;
+STATIC UINT32                        mPointerOldDrawBaseY  = 0;
+STATIC UINT32                        mPointerOldDrawWidth  = 0;
+STATIC UINT32                        mPointerOldDrawHeight = 0;
+
+#define PIXEL_TO_UINT32(Pixel)  \
+  ((UINT32) SIGNATURE_32 ((Pixel)->Blue, (Pixel)->Green, (Pixel)->Red, (Pixel)->Reserved))
 
 BOOLEAN
 GuiClipChildBounds (
@@ -90,39 +75,22 @@ GuiClipChildBounds (
   IN OUT UINT32  *ReqLength
   )
 {
-  UINT32 PosChildOffset;
-  UINT32 OffsetDelta;
+  INT64  OffsetDelta;
   UINT32 NewOffset;
   UINT32 NewLength;
 
   ASSERT (ReqOffset != NULL);
   ASSERT (ReqLength != NULL);
 
-  if (ChildOffset >= 0) {
-    if (ChildLength == 0) {
-      return FALSE;
-    }
-
-    PosChildOffset = (UINT32)ChildOffset;
-  } else {
-    if ((INT64)ChildLength - (-ChildOffset) <= 0) {
-      return FALSE;
-    }
-
-    PosChildOffset = 0;
-    ChildLength    = (UINT32)(ChildLength - (-ChildOffset));
-  }
-
-  ASSERT (ChildLength > 0);
-
   NewOffset = *ReqOffset;
   NewLength = *ReqLength;
 
-  if (NewOffset >= PosChildOffset) {
+  OffsetDelta = NewOffset - ChildOffset;
+
+  if (OffsetDelta >= 0) {
     //
     // The requested offset starts within or past the child.
     //
-    OffsetDelta = (NewOffset - PosChildOffset);
     if (ChildLength <= OffsetDelta) {
       //
       // The requested offset starts past the child.
@@ -132,13 +100,13 @@ GuiClipChildBounds (
     //
     // The requested offset starts within the child.
     //
-    NewOffset -= PosChildOffset;
+    NewOffset = (UINT32) OffsetDelta;
+    NewLength = MIN (NewLength, (UINT32) (ChildLength - OffsetDelta));
   } else {
     //
-    // The requested offset ends within or before the child.
+    // The requested offset starts before the child.
     //
-    OffsetDelta = (PosChildOffset - NewOffset);
-    if (NewLength <= OffsetDelta) {
+    if (NewLength <= -OffsetDelta) {
       //
       // The requested offset ends before the child.
       //
@@ -147,13 +115,13 @@ GuiClipChildBounds (
     //
     // The requested offset ends within the child.
     //
-    NewOffset  = 0;
-    NewLength -= OffsetDelta;
+    NewOffset = 0;
+    NewLength = MIN ((UINT32) (NewLength + OffsetDelta), ChildLength);
   }
 
-  if (ChildOffset < 0) {
-    NewOffset = (UINT32)(NewOffset + (-ChildOffset));
-  }
+  ASSERT (ChildOffset + ChildLength > 0);
+  ASSERT (NewLength > 0);
+  ASSERT (NewOffset + NewLength <= ChildLength);
 
   *ReqOffset = NewOffset;
   *ReqLength = NewLength;
@@ -172,38 +140,31 @@ GuiObjDrawDelegate (
   IN     UINT32                  OffsetY,
   IN     UINT32                  Width,
   IN     UINT32                  Height,
-  IN     BOOLEAN                 RequestDraw
+  IN     UINT8                   Opacity
   )
 {
   BOOLEAN       Result;
 
-  LIST_ENTRY    *ChildEntry;
+  UINTN         Index;
   GUI_OBJ_CHILD *Child;
 
   UINT32        ChildDrawOffsetX;
   UINT32        ChildDrawOffsetY;
   UINT32        ChildDrawWidth;
   UINT32        ChildDrawHeight;
+  UINT8         ChildOpacity;
 
   ASSERT (This != NULL);
-  ASSERT (This->Width  > OffsetX);
-  ASSERT (This->Height > OffsetY);
+  ASSERT (OffsetX < This->Width);
+  ASSERT (OffsetY < This->Height);
+  ASSERT (Width > 0);
+  ASSERT (Height > 0);
+  ASSERT (Width <= This->Width);
+  ASSERT (Height <= This->Height);
   ASSERT (DrawContext != NULL);
 
-  if (Width > This->Width - OffsetX) {
-    Width = This->Width - OffsetX;
-  }
-
-  if (Height > This->Height - OffsetY) {
-    Height = This->Height - OffsetY;
-  }
-
-  for (
-    ChildEntry = GetPreviousNode (&This->Children, &This->Children);
-    !IsNull (&This->Children, ChildEntry);
-    ChildEntry = GetPreviousNode (&This->Children, ChildEntry)
-    ) {
-    Child = BASE_CR (ChildEntry, GUI_OBJ_CHILD, Link);
+  for (Index = 0; Index < This->NumChildren; ++Index) {
+    Child = This->Children[Index];
 
     ChildDrawOffsetX = OffsetX;
     ChildDrawWidth   = Width;
@@ -229,6 +190,18 @@ GuiObjDrawDelegate (
       continue;
     }
 
+    if (Opacity == 0xFF) {
+      ChildOpacity = Child->Obj.Opacity;
+    } else if (Child->Obj.Opacity == 0xFF) {
+      ChildOpacity = Opacity;
+    } else {
+      ChildOpacity = RGB_APPLY_OPACITY (Child->Obj.Opacity, Opacity);
+    }
+
+    ASSERT (ChildDrawOffsetX + ChildDrawWidth <= Child->Obj.Width);
+    ASSERT (ChildDrawOffsetY + ChildDrawHeight <= Child->Obj.Height);
+    ASSERT (ChildDrawWidth > 0);
+    ASSERT (ChildDrawHeight > 0);
     ASSERT (Child->Obj.Draw != NULL);
     Child->Obj.Draw (
                  &Child->Obj,
@@ -240,7 +213,7 @@ GuiObjDrawDelegate (
                  ChildDrawOffsetY,
                  ChildDrawWidth,
                  ChildDrawHeight,
-                 RequestDraw
+                 ChildOpacity
                  );
   }
 }
@@ -250,32 +223,30 @@ GuiObjDelegatePtrEvent (
   IN OUT GUI_OBJ                 *This,
   IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
   IN     BOOT_PICKER_GUI_CONTEXT *Context,
-  IN     GUI_PTR_EVENT           Event,
   IN     INT64                   BaseX,
   IN     INT64                   BaseY,
-  IN     INT64                   OffsetX,
-  IN     INT64                   OffsetY
+  IN     CONST GUI_PTR_EVENT     *Event
   )
 {
+  UINTN         Index;
   GUI_OBJ       *Obj;
-  LIST_ENTRY    *ChildEntry;
   GUI_OBJ_CHILD *Child;
 
   ASSERT (This != NULL);
-  ASSERT (This->Width  > OffsetX);
-  ASSERT (This->Height > OffsetY);
+  ASSERT (Event->Pos.Pos.X >= BaseX);
+  ASSERT (Event->Pos.Pos.Y >= BaseY);
+  ASSERT (This->Width  > Event->Pos.Pos.X - BaseX);
+  ASSERT (This->Height > Event->Pos.Pos.Y - BaseY);
   ASSERT (DrawContext != NULL);
-
-  for (
-    ChildEntry = GetFirstNode (&This->Children);
-    !IsNull (&This->Children, ChildEntry);
-    ChildEntry = GetNextNode (&This->Children, ChildEntry)
-    ) {
-    Child = BASE_CR (ChildEntry, GUI_OBJ_CHILD, Link);
-    if (OffsetX  < Child->Obj.OffsetX
-     || OffsetX >= Child->Obj.OffsetX + Child->Obj.Width
-     || OffsetY  < Child->Obj.OffsetY
-     || OffsetY >= Child->Obj.OffsetY + Child->Obj.Height) {
+  //
+  // Pointer event propagation is backwards due to forwards draw order.
+  //
+  for (Index = This->NumChildren; Index > 0; --Index) {
+    Child = This->Children[Index - 1];
+    if (Event->Pos.Pos.X - BaseX  < Child->Obj.OffsetX
+     || Event->Pos.Pos.X - BaseX >= Child->Obj.OffsetX + Child->Obj.Width
+     || Event->Pos.Pos.Y - BaseY  < Child->Obj.OffsetY
+     || Event->Pos.Pos.Y - BaseY >= Child->Obj.OffsetY + Child->Obj.Height) {
       continue;
     }
 
@@ -284,11 +255,9 @@ GuiObjDelegatePtrEvent (
                        &Child->Obj,
                        DrawContext,
                        Context,
-                       Event,
-                       BaseX   + Child->Obj.OffsetX,
-                       BaseY   + Child->Obj.OffsetY,
-                       OffsetX - Child->Obj.OffsetX,
-                       OffsetY - Child->Obj.OffsetY
+                       BaseX + Child->Obj.OffsetX,
+                       BaseY + Child->Obj.OffsetY,
+                       Event
                        );
     if (Obj != NULL) {
       return Obj;
@@ -298,107 +267,95 @@ GuiObjDelegatePtrEvent (
   return NULL;
 }
 
-#define RGB_APPLY_OPACITY(Rgba, Opacity)  \
-  (((Rgba) * (Opacity)) / 0xFF)
-
-#define RGB_ALPHA_BLEND(Back, Front, InvFrontOpacity)  \
-  ((Front) + RGB_APPLY_OPACITY (InvFrontOpacity, Back))
-
 VOID
-GuiBlendPixel (
-  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
-  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel,
-  IN     UINT8                                Opacity
+GuiDrawToBufferFill (
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *Colour,
+  IN OUT GUI_DRAWING_CONTEXT                  *DrawContext,
+  IN     UINT32                               PosX,
+  IN     UINT32                               PosY,
+  IN     UINT32                               Width,
+  IN     UINT32                               Height
   )
 {
-  UINT8                               CombOpacity;
-  UINT8                               InvFrontOpacity;
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL       OpacFrontPixel;
-  CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL *FinalFrontPixel;
-  //
-  // FIXME: Optimise with SIMD or such.
-  // qt_blend_argb32_on_argb32 in QT
-  //
-  ASSERT (BackPixel != NULL);
-  ASSERT (FrontPixel != NULL);
+  UINT32 RowIndex;
+  UINT32 TargetRowOffset;
 
-  if (FrontPixel->Reserved == 0) {
-    return;
+  ASSERT (Colour != NULL);
+  ASSERT (DrawContext != NULL);
+  ASSERT (Width > 0);
+  ASSERT (Height > 0);
+  //
+  // Screen cropping happens in GuiRequestDrawCrop().
+  //
+  ASSERT (DrawContext->Screen.Width  >= PosX);
+  ASSERT (DrawContext->Screen.Height >= PosY);
+  ASSERT (PosX + Width <= DrawContext->Screen.Width);
+  ASSERT (PosY + Height <= DrawContext->Screen.Height);
+  //
+  // Iterate over each row of the request.
+  //
+  for (
+    RowIndex = 0,
+      TargetRowOffset = PosY * DrawContext->Screen.Width;
+    RowIndex < Height;
+    ++RowIndex,
+      TargetRowOffset += DrawContext->Screen.Width
+    ) {
+    //
+    // Populate the row pixel-by-pixel with Source's (0,0).
+    //
+    SetMem32 (
+      &mScreenBuffer[TargetRowOffset + PosX],
+      Width * sizeof (UINT32),
+      PIXEL_TO_UINT32 (Colour)
+      );
   }
 
-  if (FrontPixel->Reserved == 0xFF) {
-    if (Opacity == 0xFF) {
-      BackPixel->Blue     = FrontPixel->Blue;
-      BackPixel->Green    = FrontPixel->Green;
-      BackPixel->Red      = FrontPixel->Red;
-      BackPixel->Reserved = FrontPixel->Reserved;
-      return;
+  //
+  // TODO: Support opaque fill?
+  //
+
+#if 0
+  //
+  // Iterate over each row of the request.
+  //
+  for (
+    RowIndex = 0,
+      TargetRowOffset = PosY * DrawContext->Screen.Width;
+    RowIndex < Height;
+    ++RowIndex,
+      TargetRowOffset += DrawContext->Screen.Width
+    ) {
+    //
+    // Blend the row pixel-by-pixel with Source's (0,0).
+    //
+    for (
+      TargetColumnOffset = PosY;
+      TargetColumnOffset < PosY + Width;
+      ++TargetColumnOffset
+      ) {
+      TargetPixel = &mScreenBuffer[TargetRowOffset + TargetColumnOffset];
+      GuiBlendPixel (TargetPixel, &Image->Buffer[0], Opacity);
     }
-
-    CombOpacity = Opacity;
-  } else {
-    CombOpacity = RGB_APPLY_OPACITY (FrontPixel->Reserved, Opacity);
   }
-
-  if (CombOpacity == 0) {
-    return;
-  } else if (CombOpacity == FrontPixel->Reserved) {
-    FinalFrontPixel = FrontPixel;
-  } else {
-    OpacFrontPixel.Reserved = CombOpacity;
-    OpacFrontPixel.Blue     = RGB_APPLY_OPACITY (FrontPixel->Blue,  Opacity);
-    OpacFrontPixel.Green    = RGB_APPLY_OPACITY (FrontPixel->Green, Opacity);
-    OpacFrontPixel.Red      = RGB_APPLY_OPACITY (FrontPixel->Red,   Opacity);
-
-    FinalFrontPixel = &OpacFrontPixel;
-  }
-
-  InvFrontOpacity = (0xFF - CombOpacity);
-
-  BackPixel->Blue = RGB_ALPHA_BLEND (
-                      BackPixel->Blue,
-                      FinalFrontPixel->Blue,
-                      InvFrontOpacity
-                      );
-  BackPixel->Green = RGB_ALPHA_BLEND (
-                       BackPixel->Green,
-                       FinalFrontPixel->Green,
-                       InvFrontOpacity
-                       );
-  BackPixel->Red = RGB_ALPHA_BLEND (
-                     BackPixel->Red,
-                     FinalFrontPixel->Red,
-                     InvFrontOpacity
-                     );
-
-  if (BackPixel->Reserved != 0xFF) {
-    BackPixel->Reserved = RGB_ALPHA_BLEND (
-                            BackPixel->Reserved,
-                            CombOpacity,
-                            InvFrontOpacity
-                            );
-  }
+#endif
 }
 
 VOID
 GuiDrawToBuffer (
   IN     CONST GUI_IMAGE      *Image,
   IN     UINT8                Opacity,
-  IN     BOOLEAN              Fill,
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                BaseX,
   IN     INT64                BaseY,
   IN     UINT32               OffsetX,
   IN     UINT32               OffsetY,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
   )
 {
-  UINT32                              PosBaseX;
-  UINT32                              PosBaseY;
-  UINT32                              PosOffsetX;
-  UINT32                              PosOffsetY;
+  UINT32                              PosX;
+  UINT32                              PosY;
 
   UINT32                              RowIndex;
   UINT32                              SourceRowOffset;
@@ -407,120 +364,69 @@ GuiDrawToBuffer (
   UINT32                              TargetColumnOffset;
   CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL *SourcePixel;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL       *TargetPixel;
-  GUI_DRAW_REQUEST                    ThisReq;
-  UINTN                               Index;
-
-  UINT32                              ThisArea;
-
-  UINT32                              ReqWidth;
-  UINT32                              ReqHeight;
-  UINT32                              ReqArea;
-
-  UINT32                              CombMinX;
-  UINT32                              CombMaxX;
-  UINT32                              CombMinY;
-  UINT32                              CombMaxY;
-  UINT32                              CombWidth;
-  UINT32                              CombHeight;
-  UINT32                              CombArea;
-
-  UINT32                              OverMinX;
-  UINT32                              OverMaxX;
-  UINT32                              OverMinY;
-  UINT32                              OverMaxY;
-  UINT32                              OverArea;
-  UINT32                              OverWidth;
-  UINT32                              OverHeight;
-
-  UINT32                              ActualArea;
 
   ASSERT (Image != NULL);
   ASSERT (DrawContext != NULL);
-  ASSERT (DrawContext->Screen != NULL);
   ASSERT (BaseX + OffsetX >= 0);
   ASSERT (BaseY + OffsetY >= 0);
-  //
-  // Only draw the onscreen parts.
-  //
-  if (BaseX >= 0) {
-    PosBaseX   = (UINT32)BaseX;
-    PosOffsetX = OffsetX;
-  } else {
-    ASSERT (BaseX + OffsetX + Width >= 0);
+  ASSERT (Width > 0);
+  ASSERT (Height > 0);
+  ASSERT (BaseX + OffsetX + Width >= 0);
+  ASSERT (BaseY + OffsetY + Height >= 0);
+  ASSERT (BaseX + OffsetX + Width <= MAX_UINT32);
+  ASSERT (BaseY + OffsetY + Height <= MAX_UINT32);
 
-    PosBaseX = 0;
+  PosX = (UINT32) (BaseX + OffsetX);
+  PosY = (UINT32) (BaseY + OffsetY);
+  //
+  // Screen cropping happens in GuiRequestDrawCrop().
+  //
+  ASSERT (DrawContext->Screen.Width  >= PosX);
+  ASSERT (DrawContext->Screen.Height >= PosY);
+  ASSERT (PosX + Width <= DrawContext->Screen.Width);
+  ASSERT (PosY + Height <= DrawContext->Screen.Height);
 
-    if (OffsetX - (-BaseX) >= 0) {
-      PosOffsetX = (UINT32)(OffsetX - (-BaseX));
-    } else {
-      PosOffsetX = 0;
-      Width      = (UINT32)(Width - (-(OffsetX - (-BaseX))));
-    }
+  if (Opacity == 0) {
+    return;
   }
 
-  if (BaseY >= 0) {
-    PosBaseY   = (UINT32)BaseY;
-    PosOffsetY = OffsetY;
-  } else {
-    ASSERT (BaseY + OffsetY + Height >= 0);
-
-    PosBaseY = 0;
-
-    if (OffsetY - (-BaseY) >= 0) {
-      PosOffsetY = (UINT32)(OffsetY - (-BaseY));
-    } else {
-      PosOffsetY = 0;
-      Height     = (UINT32)(Height - (-(OffsetY - (-BaseY))));
-    }
-  }
-
-  if (!Fill) {
-    ASSERT (Image->Width  > OffsetX);
-    ASSERT (Image->Height > OffsetY);
-    //
-    // Only crop to the image's dimensions when not using fill-drawing.
-    //
-    Width  = MIN (Width,  Image->Width  - OffsetX);
-    Height = MIN (Height, Image->Height - OffsetY);
-  }
+  ASSERT (Image->Width  > OffsetX);
+  ASSERT (Image->Height > OffsetY);
   //
-  // Crop to the screen's dimensions.
+  // Only crop to the image's dimensions when not using fill-drawing.
   //
-  ASSERT (DrawContext->Screen->Width  >= PosBaseX + PosOffsetX);
-  ASSERT (DrawContext->Screen->Height >= PosBaseY + PosOffsetY);
-  Width  = MIN (Width,  DrawContext->Screen->Width  - (PosBaseX + PosOffsetX));
-  Height = MIN (Height, DrawContext->Screen->Height - (PosBaseY + PosOffsetY));
-
+  Width  = MIN (Width,  Image->Width  - OffsetX);
+  Height = MIN (Height, Image->Height - OffsetY);
   if (Width == 0 || Height == 0) {
     return;
   }
 
   ASSERT (Image->Buffer != NULL);
 
-  if (!Fill) {
+  if (Opacity == 0xFF) {
     //
     // Iterate over each row of the request.
     //
     for (
       RowIndex = 0,
         SourceRowOffset = OffsetY * Image->Width,
-        TargetRowOffset = (PosBaseY + PosOffsetY) * DrawContext->Screen->Width;
+        TargetRowOffset = PosY * DrawContext->Screen.Width;
       RowIndex < Height;
       ++RowIndex,
         SourceRowOffset += Image->Width,
-        TargetRowOffset += DrawContext->Screen->Width
+        TargetRowOffset += DrawContext->Screen.Width
       ) {
       //
       // Blend the row pixel-by-pixel.
       //
       for (
-        TargetColumnOffset = PosOffsetX, SourceColumnOffset = OffsetX;
-        TargetColumnOffset < PosOffsetX + Width;
+        TargetColumnOffset = PosX, SourceColumnOffset = OffsetX;
+        TargetColumnOffset < PosX + Width;
         ++TargetColumnOffset, ++SourceColumnOffset
         ) {
-        TargetPixel = &mScreenBuffer[TargetRowOffset + PosBaseX + TargetColumnOffset];
+        TargetPixel = &mScreenBuffer[TargetRowOffset + TargetColumnOffset];
         SourcePixel = &Image->Buffer[SourceRowOffset + SourceColumnOffset];
-        GuiBlendPixel (TargetPixel, SourcePixel, Opacity);
+        GuiBlendPixelSolid (TargetPixel, SourcePixel);
       }
     }
   } else {
@@ -529,120 +435,129 @@ GuiDrawToBuffer (
     //
     for (
       RowIndex = 0,
-        TargetRowOffset = (PosBaseY + PosOffsetY) * DrawContext->Screen->Width;
+        SourceRowOffset = OffsetY * Image->Width,
+        TargetRowOffset = PosY * DrawContext->Screen.Width;
       RowIndex < Height;
       ++RowIndex,
-        TargetRowOffset += DrawContext->Screen->Width
+        SourceRowOffset += Image->Width,
+        TargetRowOffset += DrawContext->Screen.Width
       ) {
       //
-      // Blend the row pixel-by-pixel with Source's (0,0).
+      // Blend the row pixel-by-pixel.
       //
       for (
-        TargetColumnOffset = PosOffsetX;
-        TargetColumnOffset < PosOffsetX + Width;
-        ++TargetColumnOffset
+        TargetColumnOffset = PosX, SourceColumnOffset = OffsetX;
+        TargetColumnOffset < PosX + Width;
+        ++TargetColumnOffset, ++SourceColumnOffset
         ) {
-        TargetPixel = &mScreenBuffer[TargetRowOffset + PosBaseX + TargetColumnOffset];
-        GuiBlendPixel (TargetPixel, &Image->Buffer[0], Opacity);
+        TargetPixel = &mScreenBuffer[TargetRowOffset + TargetColumnOffset];
+        SourcePixel = &Image->Buffer[SourceRowOffset + SourceColumnOffset];
+        GuiBlendPixelOpaque (TargetPixel, SourcePixel, Opacity);
       }
     }
-  }
-
-  if (RequestDraw) {
-    //
-    // Update the coordinates of the smallest rectangle covering all changes.
-    //
-    ThisReq.MinX = PosBaseX + PosOffsetX;
-    ThisReq.MinY = PosBaseY + PosOffsetY;
-    ThisReq.MaxX = PosBaseX + PosOffsetX + Width  - 1;
-    ThisReq.MaxY = PosBaseY + PosOffsetY + Height - 1;
-
-    ThisArea = Width * Height;
-
-    for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
-      //
-      // Calculate several dimensions to determine whether to merge the two
-      // draw requests for improved flushing performance.
-      //
-      ReqWidth  = mDrawRequests[Index].MaxX - mDrawRequests[Index].MinX + 1;
-      ReqHeight = mDrawRequests[Index].MaxY - mDrawRequests[Index].MinY + 1;
-      ReqArea   = ReqWidth * ReqHeight;
-
-      if (mDrawRequests[Index].MinX < ThisReq.MinX) {
-        CombMinX = mDrawRequests[Index].MinX;
-        OverMinX = ThisReq.MinX;
-      } else {
-        CombMinX = ThisReq.MinX;
-        OverMinX = mDrawRequests[Index].MinX;
-      }
-
-      if (mDrawRequests[Index].MaxX > ThisReq.MaxX) {
-        CombMaxX = mDrawRequests[Index].MaxX;
-        OverMaxX = ThisReq.MaxX;
-      } else {
-        CombMaxX = ThisReq.MaxX;
-        OverMaxX = mDrawRequests[Index].MaxX;
-      }
-
-      if (mDrawRequests[Index].MinY < ThisReq.MinY) {
-        CombMinY = mDrawRequests[Index].MinY;
-        OverMinY = ThisReq.MinY;
-      } else {
-        CombMinY = ThisReq.MinY;
-        OverMinY = mDrawRequests[Index].MinY;
-      }
-
-      if (mDrawRequests[Index].MaxY > ThisReq.MaxY) {
-        CombMaxY = mDrawRequests[Index].MaxY;
-        OverMaxY = ThisReq.MaxY;
-      } else {
-        CombMaxY = ThisReq.MaxY;
-        OverMaxY = mDrawRequests[Index].MaxY;
-      }
-
-      CombWidth  = CombMaxX - CombMinX + 1;
-      CombHeight = CombMaxY - CombMinY + 1;
-      CombArea   = CombWidth * CombHeight;
-
-      OverArea = 0;
-      if (OverMinX <= OverMaxX && OverMinY <= OverMaxY) {
-        OverWidth  = OverMaxX - OverMinX + 1;
-        OverHeight = OverMaxY - OverMinY + 1;
-        OverArea   = OverWidth * OverHeight;
-      }
-
-      ActualArea = ThisArea + ReqArea - OverArea;
-      //
-      // Two requests are merged when their combined actual draw area is at
-      // least 3/4 of the area needed to draw both at once.
-      //
-      if (4 * ActualArea >= 3 * CombArea) {
-        mDrawRequests[Index].MinX = CombMinX;
-        mDrawRequests[Index].MaxX = CombMaxX;
-        mDrawRequests[Index].MinY = CombMinY;
-        mDrawRequests[Index].MaxY = CombMaxY;
-        return;
-      }
-    }
-
-    if (mNumValidDrawReqs >= ARRAY_SIZE (mDrawRequests)) {
-      ASSERT (FALSE);
-      return;
-    }
-
-    CopyMem (&mDrawRequests[mNumValidDrawReqs], &ThisReq, sizeof (ThisReq));
-    ++mNumValidDrawReqs;
   }
 }
 
 VOID
-GuiDrawScreen (
+GuiRequestDraw (
+  IN UINT32  PosX,
+  IN UINT32  PosY,
+  IN UINT32  Width,
+  IN UINT32  Height
+  )
+{
+  UINTN  Index;
+
+  UINT32 ThisArea;
+  UINT32 ThisMaxXPlus1;
+  UINT32 ThisMaxYPlus1;
+
+  UINT32 ReqMaxXPlus1;
+  UINT32 ReqMaxYPlus1;
+  UINT32 ReqArea;
+
+  UINT32 CombX;
+  UINT32 CombY;
+  UINT32 CombWidth;
+  UINT32 CombHeight;
+  UINT32 CombArea;
+
+  ThisMaxXPlus1 = PosX + Width;
+  ThisMaxYPlus1 = PosY + Height;
+
+  ThisArea = Width * Height;
+
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
+    //
+    // Calculate several dimensions to determine whether to merge the two
+    // draw requests for improved flushing performance.
+    //
+    ReqMaxXPlus1 = mDrawRequests[Index].X + mDrawRequests[Index].Width;
+    ReqMaxYPlus1 = mDrawRequests[Index].Y + mDrawRequests[Index].Height;
+    ReqArea = mDrawRequests[Index].Width * mDrawRequests[Index].Height;
+
+    if (mDrawRequests[Index].X < PosX) {
+      CombX = mDrawRequests[Index].X;
+    } else {
+      CombX = PosX;
+    }
+
+    if (ReqMaxXPlus1 > ThisMaxXPlus1) {
+      CombWidth = ReqMaxXPlus1;
+    } else {
+      CombWidth = ThisMaxXPlus1;
+    }
+    CombWidth -= CombX;
+
+    if (mDrawRequests[Index].Y < PosY) {
+      CombY = mDrawRequests[Index].Y;
+    } else {
+      CombY = PosY;
+    }
+
+    if (ReqMaxYPlus1 > ThisMaxYPlus1) {
+      CombHeight = ReqMaxYPlus1;
+    } else {
+      CombHeight = ThisMaxYPlus1;
+    }
+    CombHeight -= CombY;
+
+    CombArea = CombWidth * CombHeight;
+    //
+    // Two requests are merged when the overarching rectangle is not bigger than
+    // the two separate rectangles (not accounting for the overlap, as it would
+    // be drawn twice).
+    //
+    // TODO: Profile a good constant factor?
+    //
+    if (ThisArea + ReqArea >= CombArea) {
+      mDrawRequests[Index].X = CombX;
+      mDrawRequests[Index].Y = CombY;
+      mDrawRequests[Index].Width = CombWidth;
+      mDrawRequests[Index].Height = CombHeight;
+      return;
+    }
+  }
+
+  if (mNumValidDrawReqs >= ARRAY_SIZE (mDrawRequests)) {
+    ASSERT (FALSE);
+    return;
+  }
+
+  mDrawRequests[mNumValidDrawReqs].X = PosX;
+  mDrawRequests[mNumValidDrawReqs].Y = PosY;
+  mDrawRequests[mNumValidDrawReqs].Width = Width;
+  mDrawRequests[mNumValidDrawReqs].Height = Height;
+  ++mNumValidDrawReqs;
+}
+
+VOID
+GuiRequestDrawCrop (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                X,
   IN     INT64                Y,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
   )
 {
   UINT32 PosX;
@@ -651,183 +566,125 @@ GuiDrawScreen (
   INT64  EffHeight;
 
   ASSERT (DrawContext != NULL);
-  ASSERT (DrawContext->Screen != NULL);
+
+  EffWidth  = Width;
+  EffHeight = Height;
   //
   // Only draw the onscreen parts.
   //
   if (X >= 0) {
     PosX = (UINT32)X;
   } else {
-    if (X + Width <= 0) {
-      return;
-    }
-
-    Width = (UINT32)(Width - (-X));
-    PosX  = 0;
+    EffWidth += X;
+    PosX      = 0;
   }
 
   if (Y >= 0) {
     PosY = (UINT32)Y;
   } else {
-    if (Y + Height <= 0) {
-      return;
-    }
-
-    Height = (UINT32)(Height - (-Y));
-    PosY  = 0;
+    EffHeight += Y;
+    PosY       = 0;
   }
 
-  EffWidth  = MIN (Width,  (INT64) DrawContext->Screen->Width  - PosX);
-  EffHeight = MIN (Height, (INT64) DrawContext->Screen->Height - PosY);
+  EffWidth  = MIN (EffWidth,  (INT64) DrawContext->Screen.Width  - PosX);
+  EffHeight = MIN (EffHeight, (INT64) DrawContext->Screen.Height - PosY);
 
   if (EffWidth <= 0 || EffHeight <= 0) {
     return;
   }
 
-  ASSERT (DrawContext->Screen->OffsetX == 0);
-  ASSERT (DrawContext->Screen->OffsetY == 0);
-  ASSERT (DrawContext->Screen->Draw != NULL);
-  DrawContext->Screen->Draw (
-                         DrawContext->Screen,
-                         DrawContext,
-                         DrawContext->GuiContext,
-                         0,
-                         0,
-                         PosX,
-                         PosY,
-                         Width,
-                         Height,
-                         RequestDraw
-                         );
+  GuiRequestDraw (PosX, PosY, (UINT32) EffWidth, (UINT32) EffHeight);
 }
 
 VOID
-GuiRedrawObject (
-  IN OUT GUI_OBJ              *This,
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     INT64                BaseX,
-  IN     INT64                BaseY,
-  IN     BOOLEAN              RequestDraw
-  )
-{
-  ASSERT (This != NULL);
-  ASSERT (DrawContext != NULL);
-
-  GuiDrawScreen (
-    DrawContext,
-    BaseX,
-    BaseY,
-    This->Width,
-    This->Height,
-    RequestDraw
-    );
-}
-
-VOID
-GuiRedrawPointer (
+GuiOverlayPointer (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   )
 {
-  STATIC UINT32          CursorOldX      = 0;
-  STATIC UINT32          CursorOldY      = 0;
-  STATIC UINT32          CursorOldWidth  = 0;
-  STATIC UINT32          CursorOldHeight = 0;
-  STATIC CONST GUI_IMAGE *CursorOldImage = NULL;
+  CONST GUI_IMAGE  *CursorImage;
+  UINT32           MaxWidth;
+  UINT32           MaxHeight;
+  GUI_PTR_POSITION PointerPos;
 
-  CONST GUI_IMAGE *CursorImage;
-  BOOLEAN         RequestDraw;
-  UINT32          MinX;
-  UINT32          DeltaX;
-  UINT32          MinY;
-  UINT32          DeltaY;
+  INT64            BaseX;
+  INT64            BaseY;
+  UINT32           ImageOffsetX;
+  UINT32           ImageOffsetY;
+  UINT32           DrawBaseX;
+  UINT32           DrawBaseY;
 
   ASSERT (DrawContext != NULL);
 
   ASSERT (DrawContext->GetCursorImage != NULL);
-  CursorImage = DrawContext->GetCursorImage (
-                               &mScreenViewCursor,
-                               DrawContext->GuiContext
-                               );
+  CursorImage = DrawContext->GetCursorImage (DrawContext->GuiContext);
   ASSERT (CursorImage != NULL);
+  //
+  // Poll the current cursor position late to reduce input lag.
+  //
+  GuiPointerGetPosition (mPointerContext, &PointerPos);
 
-  RequestDraw = FALSE;
+  ASSERT (PointerPos.Pos.X < DrawContext->Screen.Width);
+  ASSERT (PointerPos.Pos.Y < DrawContext->Screen.Height);
 
-  if (mScreenViewCursor.X != CursorOldX || mScreenViewCursor.Y != CursorOldY) {
-    //
-    // Redraw the cursor when it has been moved.
-    //
-    RequestDraw = TRUE;
-  } else if (CursorImage != CursorOldImage) {
-    //
-    // Redraw the cursor if its image has changed.
-    //
-    RequestDraw = TRUE;
-  } else if (mNumValidDrawReqs == 0) {
-    //
-    // Redraw the cursor if nothing else is drawn to always invoke GOP for a
-    // more consistent framerate.
-    //
-    RequestDraw = TRUE;
-  }
   //
-  // Always drawing the cursor to the buffer increases consistency and is less
-  // error-prone to situational hiding.
+  // Unconditionally draw the cursor to increase frametime consistency and
+  // prevent situational hiding.
   //
-  // Restore the rectangle previously covered by the cursor.
-  // Cover the area of the new cursor too and do not request a draw of the new
-  // cursor to not need to merge the requests later.
+  // The original area of the cursor is restored at the beginning of the main
+  // drawing loop.
   //
-  if (CursorOldX < mScreenViewCursor.X) {
-    MinX   = CursorOldX;
-    DeltaX = mScreenViewCursor.X - CursorOldX;
+
+  //
+  // Draw the new cursor at the new position.
+  //
+
+  BaseX = (INT64) PointerPos.Pos.X - BOOT_CURSOR_OFFSET * DrawContext->Scale;
+  if (BaseX < 0) {
+    ImageOffsetX = (UINT32) -BaseX;
+    DrawBaseX    = 0;
   } else {
-    MinX   = mScreenViewCursor.X;
-    DeltaX = CursorOldX - mScreenViewCursor.X;
+    ImageOffsetX = 0;
+    DrawBaseX    = (UINT32) BaseX;
   }
 
-  if (CursorOldY < mScreenViewCursor.Y) {
-    MinY   = CursorOldY;
-    DeltaY = mScreenViewCursor.Y - CursorOldY;
+  MaxWidth = MIN (CursorImage->Width, (UINT32) (DrawContext->Screen.Width - BaseX));
+
+  BaseY = (INT64) PointerPos.Pos.Y - BOOT_CURSOR_OFFSET * DrawContext->Scale;
+  if (BaseY < 0) {
+    ImageOffsetY = (UINT32) -BaseY;
+    DrawBaseY    = 0;
   } else {
-    MinY   = mScreenViewCursor.Y;
-    DeltaY = CursorOldY - mScreenViewCursor.Y;
+    ImageOffsetY = 0;
+    DrawBaseY    = (UINT32) BaseY;
   }
 
-  GuiDrawScreen (
-    DrawContext,
-    MinX,
-    MinY,
-    MAX (CursorOldWidth,  CursorImage->Width)  + DeltaX,
-    MAX (CursorOldHeight, CursorImage->Height) + DeltaY,
-    RequestDraw
-    );
+  MaxHeight = MIN (CursorImage->Height, (UINT32) (DrawContext->Screen.Height - BaseY));
+
   GuiDrawToBuffer (
     CursorImage,
-    0xFF,
-    FALSE,
+    DrawContext->CursorOpacity,
     DrawContext,
-    mScreenViewCursor.X,
-    mScreenViewCursor.Y,
-    0,
-    0,
-    CursorImage->Width,
-    CursorImage->Height,
-    FALSE
+    BaseX,
+    BaseY,
+    ImageOffsetX,
+    ImageOffsetY,
+    MaxWidth,
+    MaxHeight
+    );
+  //
+  // Queue a draw request for the newly drawn cursor.
+  //
+  GuiRequestDraw (
+    DrawBaseX,
+    DrawBaseY,
+    MaxWidth,
+    MaxHeight
     );
 
-  if (RequestDraw) {
-    CursorOldX      = mScreenViewCursor.X;
-    CursorOldY      = mScreenViewCursor.Y;
-    CursorOldWidth  = CursorImage->Width;
-    CursorOldHeight = CursorImage->Height;
-    CursorOldImage  = CursorImage;
-  } else {
-    ASSERT (CursorOldX      == mScreenViewCursor.X);
-    ASSERT (CursorOldY      == mScreenViewCursor.Y);
-    ASSERT (CursorOldWidth  == CursorImage->Width);
-    ASSERT (CursorOldHeight == CursorImage->Height);
-    ASSERT (CursorOldImage  == CursorImage);
-  }
+  mPointerOldDrawBaseX  = DrawBaseX;
+  mPointerOldDrawBaseY  = DrawBaseY;
+  mPointerOldDrawWidth  = MaxWidth;
+  mPointerOldDrawHeight = MaxHeight;
 }
 
 /**
@@ -871,71 +728,58 @@ GuiFlushScreen (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   )
 {
-  EFI_TPL OldTpl;
-
-  UINTN   NumValidDrawReqs;
   UINTN   Index;
 
   UINT64  EndTsc;
   UINT64  DeltaTsc;
 
-  BOOLEAN Interrupts;
-
   ASSERT (DrawContext != NULL);
-  ASSERT (DrawContext->Screen != NULL);
-
-  if (mPointerContext != NULL) {
-    GuiRedrawPointer (DrawContext);
-  }
-
-  NumValidDrawReqs = mNumValidDrawReqs;
-  ASSERT (NumValidDrawReqs <= ARRAY_SIZE (mDrawRequests));
-
-  mNumValidDrawReqs = 0;
-
-  for (Index = 0; Index < NumValidDrawReqs; ++Index) {
-    ASSERT (mDrawRequests[Index].MaxX >= mDrawRequests[Index].MinX);
-    ASSERT (mDrawRequests[Index].MaxY >= mDrawRequests[Index].MinY);
-    //
-    // Set MaxX/Y to Width and Height as the requests are invalidated anyway.
-    //
-    mDrawRequests[Index].MaxX -= mDrawRequests[Index].MinX - 1;
-    mDrawRequests[Index].MaxY -= mDrawRequests[Index].MinY - 1;
+  ASSERT (DrawContext->Screen.OffsetX == 0);
+  ASSERT (DrawContext->Screen.OffsetY == 0);
+  ASSERT (DrawContext->Screen.Draw != NULL);
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
+    DrawContext->Screen.Draw (
+      &DrawContext->Screen,
+      DrawContext,
+      DrawContext->GuiContext,
+      0,
+      0,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].Width,
+      mDrawRequests[Index].Height,
+      DrawContext->Screen.Opacity
+      );
   }
   //
   // Raise the TPL to not interrupt timing or flushing.
   //
-  OldTpl     = gBS->RaiseTPL (TPL_NOTIFY);
-  Interrupts = SaveAndDisableInterrupts ();
-
   EndTsc   = AsmReadTsc ();
   DeltaTsc = EndTsc - mStartTsc;
   if (DeltaTsc < mDeltaTscTarget) {
     EndTsc = InternalCpuDelayTsc (mDeltaTscTarget - DeltaTsc);
   }
 
-  for (Index = 0; Index < NumValidDrawReqs; ++Index) {
-    //
-    // Due to above's loop, MaxX/Y correspond to Width and Height here.
-    //
+  if (mPointerContext != NULL) {
+    GuiOverlayPointer (DrawContext);
+  }
+
+  for (Index = 0; Index < mNumValidDrawReqs; ++Index) {
     GuiOutputBlt (
       mOutputContext,
       mScreenBuffer,
       EfiBltBufferToVideo,
-      mDrawRequests[Index].MinX,
-      mDrawRequests[Index].MinY,
-      mDrawRequests[Index].MinX,
-      mDrawRequests[Index].MinY,
-      mDrawRequests[Index].MaxX,
-      mDrawRequests[Index].MaxY,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].X,
+      mDrawRequests[Index].Y,
+      mDrawRequests[Index].Width,
+      mDrawRequests[Index].Height,
       mScreenBufferDelta
       );
   }
 
-  if (Interrupts) {
-    EnableInterrupts ();
-  }
-  gBS->RestoreTPL (OldTpl);
+  mNumValidDrawReqs = 0;
   //
   // Explicitly include BLT time in the timing calculation.
   // FIXME: GOP takes inconsistently long depending on dimensions.
@@ -949,22 +793,23 @@ GuiRedrawAndFlushScreen (
   )
 {
   ASSERT (DrawContext != NULL);
-  ASSERT (DrawContext->Screen != NULL);
 
   mStartTsc = AsmReadTsc ();
 
-  GuiRedrawObject (DrawContext->Screen, DrawContext, 0, 0, TRUE);
+  GuiRequestDraw (0, 0, DrawContext->Screen.Width, DrawContext->Screen.Height);
   GuiFlushScreen (DrawContext);
 }
 
 EFI_STATUS
 GuiLibConstruct (
-  IN OC_PICKER_CONTEXT  *PickerContext,
-  IN UINT32             CursorDefaultX,
-  IN UINT32             CursorDefaultY
+  IN BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN INT32                    CursorOffsetX,
+  IN INT32                    CursorOffsetY
   )
 {
   CONST EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *OutputInfo;
+  INT64                                      CursorX;
+  INT64                                      CursorY;
 
   mOutputContext = GuiOutputConstruct ();
   if (mOutputContext == NULL) {
@@ -975,23 +820,33 @@ GuiLibConstruct (
   OutputInfo = GuiOutputGetInfo (mOutputContext);
   ASSERT (OutputInfo != NULL);
 
-  CursorDefaultX = MIN (CursorDefaultX, OutputInfo->HorizontalResolution - 1);
-  CursorDefaultY = MIN (CursorDefaultY, OutputInfo->VerticalResolution   - 1);
+  if ((GuiContext->PickerContext->PickerAttributes & OC_ATTR_USE_POINTER_CONTROL) != 0) {
+    CursorX = (INT64) CursorOffsetX + OutputInfo->HorizontalResolution / 2;
+    if (CursorX < 0) {
+      CursorX = 0;
+    } else if (CursorX > OutputInfo->HorizontalResolution - 1) {
+      CursorX = OutputInfo->HorizontalResolution - 1;
+    }
+    CursorY = (INT64) CursorOffsetY + OutputInfo->VerticalResolution / 2;
+    if (CursorY < 0) {
+      CursorY = 0;
+    } else if (CursorY > OutputInfo->VerticalResolution - 1) {
+      CursorY = OutputInfo->VerticalResolution - 1;
+    }
 
-  if ((PickerContext->PickerAttributes & OC_ATTR_USE_POINTER_CONTROL) != 0) {
     mPointerContext = GuiPointerConstruct (
-      PickerContext,
-      CursorDefaultX,
-      CursorDefaultY,
+      (UINT32) CursorX,
+      (UINT32) CursorY,
       OutputInfo->HorizontalResolution,
-      OutputInfo->VerticalResolution
+      OutputInfo->VerticalResolution,
+      GuiContext->Scale
       );
     if (mPointerContext == NULL) {
       DEBUG ((DEBUG_WARN, "OCUI: Failed to initialise pointer\n"));
     }
   }
 
-  mKeyContext = GuiKeyConstruct (PickerContext);
+  mKeyContext = GuiKeyConstruct (GuiContext->PickerContext);
   if (mKeyContext == NULL) {
     DEBUG ((DEBUG_WARN, "OCUI: Failed to initialise key input\n"));
   }
@@ -1016,9 +871,6 @@ GuiLibConstruct (
     );
 
   mDeltaTscTarget =  DivU64x32 (OcGetTSCFrequency (), 60);
-
-  mScreenViewCursor.X = CursorDefaultX;
-  mScreenViewCursor.Y = CursorDefaultY;
 
   return EFI_SUCCESS;
 }
@@ -1046,47 +898,55 @@ GuiLibDestruct (
 
 VOID
 GuiViewInitialize (
-  OUT    GUI_DRAWING_CONTEXT     *DrawContext,
-  IN OUT GUI_OBJ                 *Screen,
-  IN     GUI_CURSOR_GET_IMAGE    GetCursorImage,
-  IN     GUI_EXIT_LOOP           ExitLoop,
-  IN     BOOT_PICKER_GUI_CONTEXT *GuiContext
+  OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN  CONST GUI_VIEW_CONTEXT   *ViewContext
   )
 {
   CONST EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *OutputInfo;
 
   ASSERT (DrawContext != NULL);
-  ASSERT (Screen != NULL);
-  ASSERT (GetCursorImage != NULL);
-  ASSERT (ExitLoop != NULL);
 
   OutputInfo = GuiOutputGetInfo (mOutputContext);
   ASSERT (OutputInfo != NULL);
 
-  Screen->Width  = OutputInfo->HorizontalResolution;
-  Screen->Height = OutputInfo->VerticalResolution;
+  DrawContext->CursorOpacity = 0xFF;
+  DrawContext->Scale         = GuiContext->Scale;
 
-  DrawContext->Screen         = Screen;
-  DrawContext->GetCursorImage = GetCursorImage;
-  DrawContext->ExitLoop       = ExitLoop;
+  DrawContext->Screen.OffsetX     = 0;
+  DrawContext->Screen.OffsetY     = 0;
+  DrawContext->Screen.Width       = OutputInfo->HorizontalResolution;
+  DrawContext->Screen.Height      = OutputInfo->VerticalResolution;
+  DrawContext->Screen.Opacity     = 0xFF;
+  DrawContext->Screen.Draw        = ViewContext->Draw;
+  DrawContext->Screen.KeyEvent    = ViewContext->KeyEvent;
+  DrawContext->Screen.PtrEvent    = ViewContext->PtrEvent;
+  DrawContext->Screen.NumChildren = ViewContext->NumChildren;
+  DrawContext->Screen.Children    = ViewContext->Children;
+
+  DrawContext->GetCursorImage = ViewContext->GetCursorImage;
+  DrawContext->ExitLoop       = ViewContext->ExitLoop;
   DrawContext->GuiContext     = GuiContext;
   InitializeListHead (&DrawContext->Animations);
 }
 
 VOID
 GuiViewDeinitialize (
-  IN OUT    GUI_DRAWING_CONTEXT   *DrawContext
+  IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
+  OUT    BOOT_PICKER_GUI_CONTEXT *GuiContext
   )
 {
-  ZeroMem (DrawContext, sizeof (*DrawContext));
-}
+  GUI_PTR_POSITION                           CursorPosition;
+  CONST EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *OutputInfo;
 
-CONST GUI_SCREEN_CURSOR *
-GuiViewCurrentCursor (
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext
-  )
-{
-  return &mScreenViewCursor;
+  if (mPointerContext != NULL) {
+    OutputInfo = GuiOutputGetInfo (mOutputContext);
+    GuiPointerGetPosition (mPointerContext, &CursorPosition);
+    GuiContext->CursorOffsetX = (INT32) ((INT64) CursorPosition.Pos.X - OutputInfo->HorizontalResolution / 2);
+    GuiContext->CursorOffsetY = (INT32) ((INT64) CursorPosition.Pos.Y - OutputInfo->VerticalResolution / 2);
+  }
+
+  ZeroMem (DrawContext, sizeof (*DrawContext));
 }
 
 VOID
@@ -1101,26 +961,45 @@ GuiGetBaseCoords (
   GUI_OBJ_CHILD *ChildObj;
   INT64         X;
   INT64         Y;
+  UINT32        Index;
 
   ASSERT (This != NULL);
   ASSERT (DrawContext != NULL);
-  ASSERT (DrawContext->Screen->OffsetX == 0);
-  ASSERT (DrawContext->Screen->OffsetY == 0);
+  ASSERT (DrawContext->Screen.OffsetX == 0);
+  ASSERT (DrawContext->Screen.OffsetY == 0);
   ASSERT (BaseX != NULL);
   ASSERT (BaseY != NULL);
 
   X   = 0;
   Y   = 0;
   Obj = This;
-  while (Obj != DrawContext->Screen) {
+  do {
     X += Obj->OffsetX;
     Y += Obj->OffsetY;
 
     ChildObj = BASE_CR (Obj, GUI_OBJ_CHILD, Obj);
     Obj      = ChildObj->Parent;
-    ASSERT (Obj != NULL);
-    ASSERT (IsNodeInList (&Obj->Children, &ChildObj->Link));
+
+    DEBUG_CODE_BEGIN ();
+    if (Obj != NULL) {
+      for (Index = 0; Index < Obj->NumChildren; ++Index) {
+        if (Obj->Children[Index] == ChildObj) {
+          break;
+        }
+      }
+      ASSERT (Index != Obj->NumChildren);
+    }
+    DEBUG_CODE_END ();
+  } while (Obj != NULL);
+
+  DEBUG_CODE_BEGIN ();
+  for (Index = 0; Index < DrawContext->Screen.NumChildren; ++Index) {
+    if (DrawContext->Screen.Children[Index] == ChildObj) {
+      break;
+    }
   }
+  ASSERT (Index != DrawContext->Screen.NumChildren);
+  DEBUG_CODE_END ();
 
   *BaseX = X;
   *BaseY = Y;
@@ -1128,30 +1007,28 @@ GuiGetBaseCoords (
 
 VOID
 GuiDrawLoop (
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     UINT32               TimeOutSeconds
+  IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   )
 {
-  EFI_STATUS          Status;
   BOOLEAN             Result;
 
-  INTN                InputKey;
-  BOOLEAN             Modifier;
-  GUI_POINTER_STATE   PointerState;
-  GUI_OBJ             *HoldObject;
-  INT64               HoldObjBaseX;
-  INT64               HoldObjBaseY;
-  CONST LIST_ENTRY    *AnimEntry;
-  CONST GUI_ANIMATION *Animation;
-  UINT64              LoopStartTsc;
-  UINT64              LastTsc;
-  UINT64              NewLastTsc;
+  GUI_KEY_EVENT        KeyEvent;
+  GUI_PTR_EVENT        PointerEvent;
+  GUI_OBJ              *TempObject;
+  GUI_OBJ              *HoldObject;
+  INT64                HoldObjBaseX;
+  INT64                HoldObjBaseY;
+  CONST LIST_ENTRY     *AnimEntry;
+  GUI_ANIMATION        *Animation;
+  UINT64               LoopStartTsc;
+  UINT64               LastTsc;
+  UINT64               NewLastTsc;
 
   ASSERT (DrawContext != NULL);
 
-  mNumValidDrawReqs = 0;
-  HoldObject        = NULL;
-
+  mNumValidDrawReqs      = 0;
+  DrawContext->FrameTime = 0;
+  HoldObject             = NULL;
   //
   // Clear previous inputs.
   //
@@ -1159,6 +1036,11 @@ GuiDrawLoop (
     GuiPointerReset (mPointerContext);
   }
   GuiKeyReset (mKeyContext);
+
+  //
+  // Pointer state will be implicitly initialised on the first call in the loop.
+  //
+
   //
   // Main drawing loop, time and derieve sub-frequencies as required.
   //
@@ -1166,70 +1048,64 @@ GuiDrawLoop (
   do {
     if (mPointerContext != NULL) {
       //
+      // Restore the rectangle previously covered by the cursor.
+      // The new cursor is drawn right before flushing the screen.
+      //
+      GuiRequestDraw (
+        mPointerOldDrawBaseX,
+        mPointerOldDrawBaseY,
+        mPointerOldDrawWidth,
+        mPointerOldDrawHeight
+        );
+      //
       // Process pointer events.
       //
-      Status = GuiPointerGetState (mPointerContext, &PointerState);
-      if (!EFI_ERROR (Status)) {
-        mScreenViewCursor.X = PointerState.X;
-        mScreenViewCursor.Y = PointerState.Y;
-
-        if (HoldObject == NULL && PointerState.PrimaryDown) {
-          HoldObject = GuiObjDelegatePtrEvent (
-                          DrawContext->Screen,
-                          DrawContext,
-                          DrawContext->GuiContext,
-                          GuiPointerPrimaryDown,
-                          0,
-                          0,
-                          PointerState.X,
-                          PointerState.Y
-                          );
+      Result = GuiPointerGetEvent (mPointerContext, &PointerEvent);
+      if (Result) {
+        if (PointerEvent.Type == GuiPointerPrimaryUp) {
+          //
+          // 'Button down' must have caught and set an interaction object, but
+          // it may be NULL for objects that solely delegate pointer events.
+          //
+          if (HoldObject != NULL) {
+            GuiGetBaseCoords (
+              HoldObject,
+              DrawContext,
+              &HoldObjBaseX,
+              &HoldObjBaseY
+              );
+            HoldObject->PtrEvent (
+              HoldObject,
+              DrawContext,
+              DrawContext->GuiContext,
+              HoldObjBaseX,
+              HoldObjBaseY,
+              &PointerEvent
+              );
+            HoldObject = NULL;
+          }
+        } else {
+          //
+          // HoldObject == NULL cannot be tested here as double-click may arrive
+          // before button up.
+          //
+          ASSERT (PointerEvent.Type != GuiPointerPrimaryUp);
+          TempObject = DrawContext->Screen.PtrEvent (
+            &DrawContext->Screen,
+            DrawContext,
+            DrawContext->GuiContext,
+            0,
+            0,
+            &PointerEvent
+            );
+          if (PointerEvent.Type == GuiPointerPrimaryDown) {
+            HoldObject = TempObject;
+          }
         }
-      }
-
-      if (HoldObject != NULL) {
-        GuiGetBaseCoords (
-          HoldObject,
-          DrawContext,
-          &HoldObjBaseX,
-          &HoldObjBaseY
-          );
-        HoldObject->PtrEvent (
-                      HoldObject,
-                      DrawContext,
-                      DrawContext->GuiContext,
-                      !PointerState.PrimaryDown ? GuiPointerPrimaryUp : GuiPointerPrimaryHold,
-                      HoldObjBaseX,
-                      HoldObjBaseY,
-                      (INT64)PointerState.X - HoldObjBaseX,
-                      (INT64)PointerState.Y - HoldObjBaseY
-                      );
-        if (!PointerState.PrimaryDown) {
-          HoldObject = NULL;
-        }
-      }
-    }
-
-    if (mKeyContext != NULL) {
-      //
-      // Process key events. Only allow one key at a time for now.
-      //
-      Status = GuiKeyRead (mKeyContext, &InputKey, &Modifier);
-      if (!EFI_ERROR (Status)) {
-        ASSERT (DrawContext->Screen->KeyEvent != NULL);
-        DrawContext->Screen->KeyEvent (
-                               DrawContext->Screen,
-                               DrawContext,
-                               DrawContext->GuiContext,
-                               0,
-                               0,
-                               InputKey,
-                               Modifier
-                               );
         //
-        // If detected key press then disable menu timeout
+        // If detected pointer press then disable menu timeout
         //
-        if (TimeOutSeconds > 0) {
+        if (DrawContext->TimeOutSeconds > 0) {
           //
           // Voice only unrelated key press.
           //
@@ -1242,27 +1118,80 @@ GuiDrawLoop (
               );
           }
 
-          TimeOutSeconds = 0;
+          DrawContext->TimeOutSeconds = 0;
         }
+      } else if (HoldObject != NULL) {
+        //
+        // If there are no events to process, update the cursor position with
+        // the interaction object for visual effects.
+        //
+        PointerEvent.Type = GuiPointerPrimaryDown;
+        GuiPointerGetPosition (mPointerContext, &PointerEvent.Pos);
+        GuiGetBaseCoords (
+          HoldObject,
+          DrawContext,
+          &HoldObjBaseX,
+          &HoldObjBaseY
+          );
+        HoldObject->PtrEvent (
+          HoldObject,
+          DrawContext,
+          DrawContext->GuiContext,
+          HoldObjBaseX,
+          HoldObjBaseY,
+          &PointerEvent
+          );
       }
     }
 
-    STATIC UINT64 FrameTime = 0;
+    if (mKeyContext != NULL) {
+      //
+      // Process key events. Only allow one key at a time for now.
+      //
+      Result = GuiKeyGetEvent (mKeyContext, &KeyEvent);
+      if (Result) {
+        DrawContext->Screen.KeyEvent (
+          &DrawContext->Screen,
+          DrawContext,
+          DrawContext->GuiContext,
+          &KeyEvent
+          );
+        //
+        // If detected key press then disable menu timeout
+        //
+        if (DrawContext->TimeOutSeconds > 0) {
+          //
+          // Voice only unrelated key press.
+          //
+          if (!DrawContext->GuiContext->ReadyToBoot
+            && DrawContext->GuiContext->PickerContext->PickerAudioAssist) {
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileAbortTimeout,
+              FALSE
+              );
+          }
+
+          DrawContext->TimeOutSeconds = 0;
+        }
+      }
+    }
     //
     // Process queued animations.
     //
     AnimEntry = GetFirstNode (&DrawContext->Animations);
     while (!IsNull (&DrawContext->Animations, AnimEntry)) {
       Animation = BASE_CR (AnimEntry, GUI_ANIMATION, Link);
-      Result = Animation->Animate (Animation->Context, DrawContext, FrameTime);
+      Result = Animation->Animate (Animation->Context, DrawContext, DrawContext->FrameTime);
 
       AnimEntry = GetNextNode (&DrawContext->Animations, AnimEntry);
 
       if (Result) {
         RemoveEntryList (&Animation->Link);
+        InitializeListHead (&Animation->Link);
       }
     }
-    ++FrameTime;
+    ++DrawContext->FrameTime;
     //
     // Flush the changes performed in this refresh iteration.
     //
@@ -1277,23 +1206,79 @@ GuiDrawLoop (
         1000000
         ));
       if (DrawContext->GuiContext->AudioPlaybackTimeout <= 0) {
-        DrawContext->GuiContext->PickerContext->PlayAudioFile (
-          DrawContext->GuiContext->PickerContext,
-          OcVoiceOverAudioFileSelected,
-          FALSE
-          );
-        DrawContext->GuiContext->PickerContext->PlayAudioEntry (
-          DrawContext->GuiContext->PickerContext,
-          DrawContext->GuiContext->BootEntry
-          );
+        switch (DrawContext->GuiContext->VoAction) {
+          case CanopyVoSelectedEntry:
+          {
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileSelected,
+              FALSE
+              );
+            DrawContext->GuiContext->PickerContext->PlayAudioEntry (
+              DrawContext->GuiContext->PickerContext,
+              DrawContext->GuiContext->BootEntry
+              );
+            break;
+          }
+
+          case CanopyVoFocusPassword:
+          {
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileEnterPassword,
+              TRUE
+              );
+            break;
+          }
+
+          case CanopyVoFocusShutDown:
+          {
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileSelected,
+              FALSE
+              );
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileShutDown,
+              TRUE
+              );
+            break;
+          }
+
+          case CanopyVoFocusRestart:
+          {
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileSelected,
+              FALSE
+              );
+            DrawContext->GuiContext->PickerContext->PlayAudioFile (
+              DrawContext->GuiContext->PickerContext,
+              OcVoiceOverAudioFileRestart,
+              TRUE
+              );
+            break;
+          }
+
+          default:
+          {
+            ASSERT (FALSE);
+            break;
+          }
+        }
+        //
+        // Avoid playing twice if we reach precisely 0.
+        //
+        DrawContext->GuiContext->AudioPlaybackTimeout = -1;
       }
     }
 
     //
     // Exit early if reach timer timeout and timer isn't disabled due to key event
     //
-    if (TimeOutSeconds > 0
-      && GetTimeInNanoSecond (NewLastTsc - LoopStartTsc) >= TimeOutSeconds * 1000000000ULL) {
+    if (DrawContext->TimeOutSeconds > 0
+      && GetTimeInNanoSecond (NewLastTsc - LoopStartTsc) >= DrawContext->TimeOutSeconds * 1000000000ULL) {
       if (DrawContext->GuiContext->PickerContext->PickerAudioAssist) {
         DrawContext->GuiContext->PickerContext->PlayAudioFile (
           DrawContext->GuiContext->PickerContext,
@@ -1306,7 +1291,7 @@ GuiDrawLoop (
     }
 
     LastTsc = NewLastTsc;
-  } while (!DrawContext->ExitLoop (DrawContext->GuiContext));
+  } while (!DrawContext->ExitLoop (DrawContext, DrawContext->GuiContext));
 }
 
 VOID
@@ -1323,319 +1308,10 @@ GuiClearScreen (
     0,
     0,
     0,
-    DrawContext->Screen->Width,
-    DrawContext->Screen->Height,
+    DrawContext->Screen.Width,
+    DrawContext->Screen.Height,
     0
     );
-}
-
-EFI_STATUS
-GuiIcnsToImageIcon (
-  OUT GUI_IMAGE  *Image,
-  IN  VOID       *IcnsImage,
-  IN  UINT32     IcnsImageSize,
-  IN  UINT8      Scale,
-  IN  UINT32     MatchWidth,
-  IN  UINT32     MatchHeight,
-  IN  BOOLEAN    AllowLess
-  )
-{
-  EFI_STATUS         Status;
-  UINT32             Offset;
-  UINT32             RecordLength;
-  UINT32             ImageSize;
-  UINT32             DecodedBytes;
-  APPLE_ICNS_RECORD  *Record;
-  APPLE_ICNS_RECORD  *RecordIT32;
-  APPLE_ICNS_RECORD  *RecordT8MK;
-
-  ASSERT (Scale == 1 || Scale == 2);
-
-  //
-  // We do not need to support 'it32' 128x128 icon format,
-  // because Finder automatically converts the icons to PNG-based
-  // when assigning volume icon.
-  //
-
-  if (IcnsImageSize < sizeof (APPLE_ICNS_RECORD)*2) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  Record = IcnsImage;
-  if (Record->Type != APPLE_ICNS_MAGIC || SwapBytes32 (Record->Size) != IcnsImageSize) {
-    return EFI_SECURITY_VIOLATION;
-  }
-
-  RecordIT32 = NULL;
-  RecordT8MK = NULL;
-
-  Offset  = sizeof (APPLE_ICNS_RECORD);
-  while (Offset < IcnsImageSize - sizeof (APPLE_ICNS_RECORD)) {
-    Record       = (APPLE_ICNS_RECORD *) ((UINT8 *) IcnsImage + Offset);
-    RecordLength = SwapBytes32 (Record->Size);
-
-    //
-    // 1. Record smaller than its header and 1 32-bit word is invalid.
-    //    32-bit is required by some entries like IT32 (see below).
-    // 2. Record overflowing UINT32 is invalid.
-    // 3. Record larger than file size is invalid.
-    //
-    if (RecordLength < sizeof (APPLE_ICNS_RECORD) + sizeof (UINT32)
-      || OcOverflowAddU32 (Offset, RecordLength, &Offset)
-      || Offset > IcnsImageSize) {
-      return EFI_SECURITY_VIOLATION;
-    }
-
-    if ((Scale == 1 && Record->Type == APPLE_ICNS_IC07)
-      || (Scale == 2 && Record->Type == APPLE_ICNS_IC13)) {
-      Status = GuiPngToImage (
-        Image,
-        Record->Data,
-        RecordLength - sizeof (APPLE_ICNS_RECORD),
-        TRUE
-        );
-
-      if (!EFI_ERROR (Status) && MatchWidth > 0 && MatchHeight > 0) {
-        if (AllowLess
-          ? (Image->Width >  MatchWidth * Scale || Image->Height >  MatchWidth * Scale
-          || Image->Width == 0 || Image->Height == 0)
-          : (Image->Width != MatchWidth * Scale || Image->Height != MatchHeight * Scale)) {
-          FreePool (Image->Buffer);
-          DEBUG ((
-            DEBUG_INFO,
-            "OCUI: Expected %dx%d, actual %dx%d, allow less: %d\n",
-             MatchWidth * Scale,
-             MatchHeight * Scale,
-             Image->Width,
-             Image->Height,
-             AllowLess
-            ));
-          Status = EFI_UNSUPPORTED;
-        }
-      }
-
-      return Status;
-    }
-
-    if (Scale == 1) {
-      if (Record->Type == APPLE_ICNS_IT32) {
-        RecordIT32 = Record;
-      } else if (Record->Type == APPLE_ICNS_T8MK) {
-        RecordT8MK = Record;
-      }
-
-      if (RecordT8MK != NULL && RecordIT32 != NULL) {
-        Image->Width  = MatchWidth;
-        Image->Height = MatchHeight;
-        ImageSize     = (MatchWidth * MatchHeight) * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL);
-        Image->Buffer = AllocateZeroPool (ImageSize);
-
-        if (Image->Buffer == NULL) {
-          return EFI_OUT_OF_RESOURCES;
-        }
-
-        //
-        // We have to add an additional UINT32 for IT32, since it has a reserved field.
-        //
-        DecodedBytes = DecompressMaskedRLE24 (
-          (UINT8 *) Image->Buffer,
-          ImageSize,
-          RecordIT32->Data + sizeof (UINT32),
-          SwapBytes32 (RecordIT32->Size) - sizeof (APPLE_ICNS_RECORD) - sizeof (UINT32),
-          RecordT8MK->Data,
-          SwapBytes32 (RecordT8MK->Size) - sizeof (APPLE_ICNS_RECORD),
-          TRUE
-          );
-
-        if (DecodedBytes != ImageSize) {
-          FreePool (Image->Buffer);
-          return EFI_UNSUPPORTED;
-        }
-
-        return EFI_SUCCESS;
-      }
-    }
-  }
-
-  return EFI_NOT_FOUND;
-}
-
-EFI_STATUS
-GuiLabelToImage (
-  OUT GUI_IMAGE *Image,
-  IN  VOID      *RawData,
-  IN  UINT32    DataLength,
-  IN  UINT8     Scale,
-  IN  BOOLEAN   Inverted
-  )
-{
-  APPLE_DISK_LABEL  *Label;
-  UINT32            PixelIdx;
-
-  ASSERT (RawData != NULL);
-  ASSERT (Scale == 1 || Scale == 2);
-
-  if (DataLength < sizeof (APPLE_DISK_LABEL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  Label = RawData;
-  Image->Width  = SwapBytes16 (Label->Width);
-  Image->Height = SwapBytes16 (Label->Height);
-
-  if (Image->Width > APPLE_DISK_LABEL_MAX_WIDTH * Scale
-    || Image->Height > APPLE_DISK_LABEL_MAX_HEIGHT * Scale
-    || DataLength != sizeof (APPLE_DISK_LABEL) + Image->Width * Image->Height) {
-    DEBUG ((DEBUG_INFO, "OCUI: Invalid label has %dx%d dims at %u size\n", Image->Width, Image->Height, DataLength));
-    return EFI_SECURITY_VIOLATION;
-  }
-
-  Image->Buffer = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *) AllocatePool (
-    Image->Width * Image->Height * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)
-    );
-
-  if (Image->Buffer == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  if (Inverted) {
-    for (PixelIdx = 0; PixelIdx < Image->Width * Image->Height; PixelIdx++) {
-      Image->Buffer[PixelIdx].Blue     = 0;
-      Image->Buffer[PixelIdx].Green    = 0;
-      Image->Buffer[PixelIdx].Red      = 0;
-      Image->Buffer[PixelIdx].Reserved = 255 -  gAppleDiskLabelImagePalette[Label->Data[PixelIdx]];
-    }
-  } else {
-    for (PixelIdx = 0; PixelIdx < Image->Width * Image->Height; PixelIdx++) {
-      Image->Buffer[PixelIdx].Blue     = 255 -  gAppleDiskLabelImagePalette[Label->Data[PixelIdx]];
-      Image->Buffer[PixelIdx].Green    = 255 -  gAppleDiskLabelImagePalette[Label->Data[PixelIdx]];
-      Image->Buffer[PixelIdx].Red      = 255 -  gAppleDiskLabelImagePalette[Label->Data[PixelIdx]];
-      Image->Buffer[PixelIdx].Reserved = 255 -  gAppleDiskLabelImagePalette[Label->Data[PixelIdx]];
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
-GuiPngToImage (
-  OUT GUI_IMAGE  *Image,
-  IN  VOID       *ImageData,
-  IN  UINTN      ImageDataSize,
-  IN  BOOLEAN    PremultiplyAlpha
-  )
-{
-  EFI_STATUS                       Status;
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL    *BufferWalker;
-  UINTN                            Index;
-  UINT8                            TmpChannel;
-
-  Status = OcDecodePng (
-    ImageData,
-    ImageDataSize,
-    (VOID **) &Image->Buffer,
-    &Image->Width,
-    &Image->Height,
-    NULL
-    );
-
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "OCUI: DecodePNG - %r\n", Status));
-    return Status;
-  }
-
-  if (PremultiplyAlpha) {
-    BufferWalker = Image->Buffer;
-    for (Index = 0; Index < (UINTN) Image->Width * Image->Height; ++Index) {
-      TmpChannel             = (UINT8) ((BufferWalker->Blue * BufferWalker->Reserved) / 0xFF);
-      BufferWalker->Blue     = (UINT8) ((BufferWalker->Red * BufferWalker->Reserved) / 0xFF);
-      BufferWalker->Green    = (UINT8) ((BufferWalker->Green * BufferWalker->Reserved) / 0xFF);
-      BufferWalker->Red      = TmpChannel;
-      ++BufferWalker;
-    }
-  }
-
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
-GuiCreateHighlightedImage (
-  OUT GUI_IMAGE                            *SelectedImage,
-  IN  CONST GUI_IMAGE                      *SourceImage,
-  IN  CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *HighlightPixel
-  )
-{
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL PremulPixel;
-
-  EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Buffer;
-  UINT32                        ColumnOffset;
-  BOOLEAN                       OneSet;
-  UINT32                        FirstUnsetX;
-  UINT32                        IndexY;
-  UINT32                        RowOffset;
-
-  ASSERT (SelectedImage != NULL);
-  ASSERT (SourceImage != NULL);
-  ASSERT (SourceImage->Buffer != NULL);
-  ASSERT (HighlightPixel != NULL);
-  //
-  // The multiplication cannot wrap around because the original allocation sane.
-  //
-  Buffer = AllocateCopyPool (
-             SourceImage->Width * SourceImage->Height * sizeof (*SourceImage->Buffer),
-             SourceImage->Buffer
-             );
-  if (Buffer == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  PremulPixel.Blue     = (UINT8)((HighlightPixel->Blue  * HighlightPixel->Reserved) / 0xFF);
-  PremulPixel.Green    = (UINT8)((HighlightPixel->Green * HighlightPixel->Reserved) / 0xFF);
-  PremulPixel.Red      = (UINT8)((HighlightPixel->Red   * HighlightPixel->Reserved) / 0xFF);
-  PremulPixel.Reserved = HighlightPixel->Reserved;
-
-  for (
-    IndexY = 0, RowOffset = 0;
-    IndexY < SourceImage->Height;
-    ++IndexY, RowOffset += SourceImage->Width
-    ) {
-    FirstUnsetX = 0;
-    OneSet      = FALSE;
-
-    for (ColumnOffset = 0; ColumnOffset < SourceImage->Width; ++ColumnOffset) {
-      if (SourceImage->Buffer[RowOffset + ColumnOffset].Reserved != 0) {
-        OneSet = TRUE;
-        GuiBlendPixel (
-          &Buffer[RowOffset + ColumnOffset],
-          &PremulPixel,
-          0xFF
-          );
-        if (FirstUnsetX != 0) {
-          //
-          // Set all fully transparent pixels between two not fully transparent
-          // pixels to the highlighter pixel.
-          //
-          while (FirstUnsetX < ColumnOffset) {
-            CopyMem (
-              &Buffer[RowOffset + FirstUnsetX],
-              &PremulPixel,
-              sizeof (*Buffer)
-              );
-            ++FirstUnsetX;
-          }
-
-          FirstUnsetX = 0;
-        }
-      } else if (FirstUnsetX == 0 && OneSet) {
-        FirstUnsetX = ColumnOffset;
-      }
-    }
-  }
-
-  SelectedImage->Width  = SourceImage->Width;
-  SelectedImage->Height = SourceImage->Height;
-  SelectedImage->Buffer = Buffer;
-  return EFI_SUCCESS;
 }
 
 /// A sine approximation via a third-order approx.

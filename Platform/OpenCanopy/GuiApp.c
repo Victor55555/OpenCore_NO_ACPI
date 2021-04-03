@@ -31,9 +31,7 @@ GLOBAL_REMOVE_IF_UNREFERENCED BOOT_PICKER_GUI_CONTEXT mGuiContext;
 //
 // FIXME: Should not be global here.
 //
-STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL mBackgroundPixel;
 STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL mHighlightPixel = {0xAF, 0xAF, 0xAF, 0x32};
-CONST GUI_IMAGE mBackgroundImage = { 1, 1, &mBackgroundPixel };
 
 STATIC
 CONST CHAR8 *
@@ -55,8 +53,16 @@ mIconNames[ICON_NUM_TOTAL] = {
   [ICON_CURSOR]             = "Cursor",
   [ICON_SELECTED]           = "Selected",
   [ICON_SELECTOR]           = "Selector",
+  [ICON_SET_DEFAULT]        = "SetDefault",
   [ICON_LEFT]               = "Left",
   [ICON_RIGHT]              = "Right",
+  [ICON_SHUT_DOWN]          = "ShutDown",
+  [ICON_RESTART]            = "Restart",
+  [ICON_BUTTON_FOCUS]       = "BtnFocus",
+  [ICON_PASSWORD]           = "Password",
+  [ICON_DOT]                = "Dot",
+  [ICON_ENTER]              = "Enter",
+  [ICON_LOCK]               = "Lock",
   [ICON_GENERIC_HDD]        = "HardDrive",
   [ICON_APPLE]              = "Apple",
   [ICON_APPLE_RECOVERY]     = "AppleRecv",
@@ -322,14 +328,6 @@ InternalContextConstruct (
     Context->BackgroundColor.Raw = APPLE_COLOR_SYRAH_BLACK;
   }
 
-  //
-  // Set background colour with full opacity.
-  //
-  mBackgroundPixel.Red      = Context->BackgroundColor.Pixel.Red;
-  mBackgroundPixel.Green    = Context->BackgroundColor.Pixel.Green;
-  mBackgroundPixel.Blue     = Context->BackgroundColor.Pixel.Blue;
-  mBackgroundPixel.Reserved = 0xFF;
-
   if (AsciiStrCmp (Picker->PickerVariant, "Auto") == 0) {
     if (Context->BackgroundColor.Raw == APPLE_COLOR_LIGHT_GRAY) {
       Prefix = "Old";
@@ -366,6 +364,10 @@ InternalContextConstruct (
       + Context->BackgroundColor.Pixel.Green * 587U
       + Context->BackgroundColor.Pixel.Blue * 114U) >= 186000;
   }
+  //
+  // Set background colour with full opacity.
+  //
+  Context->BackgroundColor.Pixel.Reserved = 0xFF;
 
   for (Index = 0; Index < ICON_NUM_TOTAL; ++Index) {
     AllowLessSize = FALSE;
@@ -376,13 +378,37 @@ InternalContextConstruct (
     } else if (Index == ICON_SELECTED) {
       ImageWidth  = BOOT_SELECTOR_BACKGROUND_DIMENSION;
       ImageHeight = BOOT_SELECTOR_BACKGROUND_DIMENSION;
-    } else if (Index == ICON_SELECTOR) {
+    } else if (Index == ICON_SELECTOR || Index == ICON_SET_DEFAULT) {
       ImageWidth  = BOOT_SELECTOR_BUTTON_WIDTH;
       ImageHeight = BOOT_SELECTOR_BUTTON_HEIGHT;
       AllowLessSize = TRUE;
     } else if (Index == ICON_LEFT || Index == ICON_RIGHT) {
       ImageWidth  = BOOT_SCROLL_BUTTON_DIMENSION;
       ImageHeight = BOOT_SCROLL_BUTTON_DIMENSION;
+    } else if (Index == ICON_SHUT_DOWN || Index == ICON_RESTART) {
+      ImageWidth  = BOOT_ACTION_BUTTON_DIMENSION;
+      ImageHeight = BOOT_ACTION_BUTTON_DIMENSION;
+      AllowLessSize = TRUE;
+    } else if (Index == ICON_BUTTON_FOCUS) {
+      ImageWidth  = BOOT_ACTION_BUTTON_FOCUS_DIMENSION;
+      ImageHeight = BOOT_ACTION_BUTTON_FOCUS_DIMENSION;
+      AllowLessSize = TRUE;
+    } else if (Index == ICON_PASSWORD) {
+      ImageWidth  = PASSWORD_BOX_WIDTH;
+      ImageHeight = PASSWORD_BOX_HEIGHT;
+      AllowLessSize = TRUE;
+    } else if (Index == ICON_LOCK) {
+      ImageWidth  = PASSWORD_LOCK_DIMENSION;
+      ImageHeight = PASSWORD_LOCK_DIMENSION;
+      AllowLessSize = TRUE;
+    } else if (Index == ICON_ENTER) {
+      ImageWidth  = PASSWORD_ENTER_WIDTH;
+      ImageHeight = PASSWORD_ENTER_HEIGHT;
+      AllowLessSize = TRUE;
+    } else if (Index == ICON_DOT) {
+      ImageWidth  = PASSWORD_DOT_DIMENSION;
+      ImageHeight = PASSWORD_DOT_DIMENSION;
+      AllowLessSize = TRUE;
     } else {
       ImageWidth  = BOOT_ENTRY_ICON_DIMENSION;
       ImageHeight = BOOT_ENTRY_ICON_DIMENSION;
@@ -400,7 +426,7 @@ InternalContextConstruct (
       AllowLessSize
       );
     if (!EFI_ERROR (Status)) {
-      if (Index == ICON_SELECTOR || Index == ICON_LEFT || Index == ICON_RIGHT) {
+      if (Index == ICON_SELECTOR || Index == ICON_SET_DEFAULT || Index == ICON_LEFT || Index == ICON_RIGHT || Index == ICON_SHUT_DOWN || Index == ICON_RESTART || Index == ICON_ENTER) {
         Status = GuiCreateHighlightedImage (
           &Context->Icons[Index][ICON_TYPE_HELD],
           &Context->Icons[Index][ICON_TYPE_BASE],
@@ -461,7 +487,8 @@ InternalContextConstruct (
       FontImage,
       FontImageSize,
       FontData,
-      FontDataSize
+      FontDataSize,
+      Context->Scale 
       );
     if (Context->FontContext.BmfContext.Height != BOOT_ENTRY_LABEL_HEIGHT * Context->Scale) {
         DEBUG((
@@ -487,12 +514,12 @@ InternalContextConstruct (
 
 CONST GUI_IMAGE *
 InternalGetCursorImage (
-  IN OUT GUI_SCREEN_CURSOR       *This,
-  IN     BOOT_PICKER_GUI_CONTEXT *Context
+  IN BOOT_PICKER_GUI_CONTEXT *Context
   )
 {
-  ASSERT (This != NULL);
   ASSERT (Context != NULL);
-
+  //
+  // ATTENTION: All images must have the same dimensions.
+  //
   return &Context->Icons[ICON_CURSOR][ICON_TYPE_BASE];
 }

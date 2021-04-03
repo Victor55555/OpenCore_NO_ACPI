@@ -36,7 +36,7 @@ AIKProtocolArriveHandler (
   Keycode = (AIK_SELF *) Context;
 
   if (Keycode == NULL || Keycode->OurJobIsDone) {
-    DEBUG ((DEBUG_INFO, "AIKProtocolArriveHandler got null handler or called when done\n"));
+    DEBUG ((DEBUG_INFO, "AIK: ProtocolArriveHandler got null handler or called when done\n"));
     return;
   }
 
@@ -47,7 +47,7 @@ AIKProtocolArriveHandler (
     //
     AIKProtocolArriveUninstall (Keycode);
   } else {
-    DEBUG ((DEBUG_INFO, "AIKProtocolArriveHandler AIKInstall failed - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIK: ProtocolArriveHandler AIKInstall failed - %r\n", Status));
   }
 }
 
@@ -106,7 +106,7 @@ AIKPollKeyboardHandler (
 
   Keycode = (AIK_SELF *) Context;
   if (Keycode == NULL || Keycode->OurJobIsDone) {
-    DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler got null handler or called when done\n"));
+    DEBUG ((DEBUG_INFO, "AIK: PollKeyboardHandler got null handler or called when done\n"));
     return;
   }
 
@@ -174,8 +174,7 @@ AIKInstall (
 
   Status = AIKTargetInstall (
              &Keycode->Target,
-             Keycode->KeyForgotThreshold,
-             Keycode->KeyMergeThreshold
+             Keycode->KeyForgotThreshold
              );
 
   if (EFI_ERROR (Status)) {
@@ -206,12 +205,12 @@ AIKInstall (
   if (!EFI_ERROR (Status)) {
     Status = gBS->SetTimer (Keycode->PollKeyboardEvent, TimerPeriodic, AIK_KEY_POLL_INTERVAL);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler timer setting failed - %r\n", Status));
+      DEBUG ((DEBUG_INFO, "AIK: PollKeyboardHandler timer setting failed - %r\n", Status));
       gBS->CloseEvent (Keycode->PollKeyboardEvent);
       Keycode->PollKeyboardEvent = NULL;
     }
   } else {
-    DEBUG ((DEBUG_INFO, "AIKPollKeyboardHandler event creation failed - %r\n", Status));
+    DEBUG ((DEBUG_INFO, "AIK: PollKeyboardHandler event creation failed - %r\n", Status));
   }
 
   if (EFI_ERROR (Status)) {
@@ -245,7 +244,6 @@ EFI_STATUS
 OcAppleGenericInputKeycodeInit (
   IN OC_INPUT_KEY_MODE  Mode,
   IN UINT8              KeyForgotThreshold,
-  IN UINT8              KeyMergeThreshold,
   IN BOOLEAN            KeySwap,
   IN BOOLEAN            KeyFiltering
   )
@@ -256,19 +254,24 @@ OcAppleGenericInputKeycodeInit (
 
   gAikSelf.Mode               = Mode;
   gAikSelf.KeyForgotThreshold = KeyForgotThreshold;
-  gAikSelf.KeyMergeThreshold  = KeyMergeThreshold;
   gAikSelf.KeyFiltering       = KeyFiltering;
   Status = AIKInstall (&gAikSelf);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_INFO, "AIKInstall failed - %r\n", Status));
 
+  if (EFI_ERROR (Status)) {
     //
     // No AppleKeyMapAggregator present, install on its availability.
     //
     Status = AIKProtocolArriveInstall (&gAikSelf);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_INFO, "AIK is NOT waiting for protocols - %r\n", Status));
+      //
+      // Note: Even with no kb support (e.g. detachable keyboard) system can still boot via timeout
+      //
+      DEBUG ((DEBUG_INFO, "AIK: NOT waiting for protocols - %r\n", Status));
     }
+  }
+
+  if (!EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "AIK: Using %d (%d0ms)\n", KeyForgotThreshold, KeyForgotThreshold));
   }
 
   return Status;

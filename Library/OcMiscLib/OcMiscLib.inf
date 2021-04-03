@@ -39,6 +39,7 @@
 
 [LibraryClasses]
   BaseLib
+  HobLib
   IoLib
   UefiLib
   OcFileLib
@@ -46,9 +47,8 @@
   OcStringLib
 
 [Sources]
+  ConsoleUtils.c
   DataPatcher.c
-  DirectReset.c
   ImageRunner.c
-  ReleaseUsbOwnership.c
+  PlatformInfo.c
   ProtocolSupport.c
-  Math.c

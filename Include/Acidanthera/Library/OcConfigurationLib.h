@@ -60,6 +60,8 @@
   _(BOOLEAN                     , Enabled          ,     , FALSE                       , ()                   ) \
   _(OC_STRING                   , Comment          ,     , OC_STRING_CONSTR ("", _, __), OC_DESTR (OC_STRING) ) \
   _(OC_DATA                     , Find             ,     , OC_EDATA_CONSTR (_, __)     , OC_DESTR (OC_DATA)   ) \
+  _(OC_STRING                   , Base             ,     , OC_STRING_CONSTR ("", _, __), OC_DESTR (OC_STRING) ) \
+  _(UINT32                      , BaseSkip         ,     , 0                           , ()                   ) \
   _(UINT32                      , Limit            ,     , 0                           , ()                   ) \
   _(OC_DATA                     , Mask             ,     , OC_EDATA_CONSTR (_, __)     , OC_DESTR (OC_DATA)   ) \
   _(OC_DATA                     , Replace          ,     , OC_EDATA_CONSTR (_, __)     , OC_DESTR (OC_DATA)   ) \
@@ -141,6 +143,7 @@
   _(BOOLEAN                     , EnableForAll              ,     , FALSE  , ()) \
   _(BOOLEAN                     , EnableSafeModeSlide       ,     , FALSE  , ()) \
   _(BOOLEAN                     , EnableWriteUnprotector    ,     , FALSE  , ()) \
+  _(BOOLEAN                     , ForceBooterSignature      ,     , FALSE  , ()) \
   _(BOOLEAN                     , ForceExitBootServices     ,     , FALSE  , ()) \
   _(BOOLEAN                     , ProtectMemoryRegions      ,     , FALSE  , ()) \
   _(BOOLEAN                     , ProtectSecureBoot         ,     , FALSE  , ()) \
@@ -583,6 +586,18 @@ typedef enum {
   OC_DECLARE (OC_UEFI_APFS)
 
 ///
+/// AppleInput is a set of options to configure OpenCore's reverse engingeered then customised implementation of the AppleEvent protocol.
+///
+#define OC_UEFI_APPLEINPUT_FIELDS(_, __) \
+  _(OC_STRING                   , AppleEvent         ,     , OC_STRING_CONSTR ("Auto", _, __)  , OC_DESTR (OC_STRING) ) \
+  _(OC_STRING                   , CustomDelays       ,     , OC_STRING_CONSTR ("Auto", _, __)  , OC_DESTR (OC_STRING) ) \
+  _(UINT16                      , KeyInitialDelay    ,     , 0                                 , ()) \
+  _(UINT16                      , KeySubsequentDelay ,     , 1                                 , ()) \
+  _(UINT16                      , PointerSpeedDiv    ,     , 1                                 , ()) \
+  _(UINT16                      , PointerSpeedMul    ,     , 0                                 , ())
+  OC_DECLARE (OC_UEFI_APPLEINPUT)
+
+///
 /// Audio is a set of options for sound configuration.
 ///
 #define OC_UEFI_AUDIO_FIELDS(_, __) \
@@ -593,7 +608,8 @@ typedef enum {
   _(BOOLEAN                     , AudioSupport       ,     , FALSE                             , ()) \
   _(UINT8                       , AudioCodec         ,     , 0                                 , ()) \
   _(UINT8                       , AudioOut           ,     , 0                                 , ()) \
-  _(UINT8                       , MinimumVolume      ,     , 0                                 , ())
+  _(UINT8                       , MinimumVolume      ,     , 0                                 , ()) \
+  _(BOOLEAN                     , ResetTrafficClass  ,     , FALSE                             , ())
   OC_DECLARE (OC_UEFI_AUDIO)
 
 ///
@@ -604,7 +620,6 @@ typedef enum {
   _(OC_STRING                   , PointerSupportMode ,     , OC_STRING_CONSTR ("", _, __)      , OC_DESTR (OC_STRING)) \
   _(UINT32                      , TimerResolution    ,     , 0                                 , ()) \
   _(UINT8                       , KeyForgetThreshold ,     , 0                                 , ()) \
-  _(UINT8                       , KeyMergeThreshold  ,     , 0                                 , ()) \
   _(BOOLEAN                     , KeySupport         ,     , FALSE                             , ()) \
   _(BOOLEAN                     , KeyFiltering       ,     , FALSE                             , ()) \
   _(BOOLEAN                     , KeySwap            ,     , FALSE                             , ()) \
@@ -637,7 +652,6 @@ typedef enum {
   _(BOOLEAN                     , AppleAudio                  ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleBootPolicy             ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleDebugLog               ,     , FALSE  , ()) \
-  _(BOOLEAN                     , AppleEvent                  ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleFramebufferInfo        ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleImageConversion        ,     , FALSE  , ()) \
   _(BOOLEAN                     , AppleImg4Verification       ,     , FALSE  , ()) \
@@ -660,6 +674,7 @@ typedef enum {
 #define OC_UEFI_QUIRKS_FIELDS(_, __) \
   _(UINT32                      , ExitBootServicesDelay       ,     , 0      , ()) \
   _(UINT32                      , TscSyncTimeout              ,     , 0      , ()) \
+  _(BOOLEAN                     , ActivateHpetSupport         ,     , FALSE  , ()) \
   _(BOOLEAN                     , DisableSecurityPolicy       ,     , FALSE  , ()) \
   _(BOOLEAN                     , IgnoreInvalidFlexRatio      ,     , FALSE  , ()) \
   _(BOOLEAN                     , ReleaseUsbOwnership         ,     , FALSE  , ()) \
@@ -688,6 +703,7 @@ typedef enum {
 #define OC_UEFI_CONFIG_FIELDS(_, __) \
   _(BOOLEAN                     , ConnectDrivers    ,     , FALSE                                          , ()) \
   _(OC_UEFI_APFS                , Apfs              ,     , OC_CONSTR2 (OC_UEFI_APFS, _, __)               , OC_DESTR (OC_UEFI_APFS)) \
+  _(OC_UEFI_APPLEINPUT          , AppleInput        ,     , OC_CONSTR2 (OC_UEFI_APPLEINPUT, _, __)         , OC_DESTR (OC_UEFI_APPLEINPUT)) \
   _(OC_UEFI_AUDIO               , Audio             ,     , OC_CONSTR2 (OC_UEFI_AUDIO, _, __)              , OC_DESTR (OC_UEFI_AUDIO)) \
   _(OC_UEFI_DRIVER_ARRAY        , Drivers           ,     , OC_CONSTR2 (OC_UEFI_DRIVER_ARRAY, _, __)       , OC_DESTR (OC_UEFI_DRIVER_ARRAY)) \
   _(OC_UEFI_INPUT               , Input             ,     , OC_CONSTR2 (OC_UEFI_INPUT, _, __)              , OC_DESTR (OC_UEFI_INPUT)) \

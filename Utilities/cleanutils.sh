@@ -1,5 +1,6 @@
 #!/bin/bash
 UTILS=(
+    "acdtinfo"
     "AppleEfiSignTool"
     "EfiResTool"
     "LogoutHook"
@@ -7,6 +8,7 @@ UTILS=(
     "icnspack"
     "macserial"
     "ocvalidate"
+    "ocpasswordgen"
     "TestBmf"
     "TestDiskImage"
     "TestHelloWorld"

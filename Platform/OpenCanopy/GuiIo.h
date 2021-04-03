@@ -16,13 +16,6 @@ typedef struct GUI_OUTPUT_CONTEXT_  GUI_OUTPUT_CONTEXT;
 typedef struct GUI_POINTER_CONTEXT_ GUI_POINTER_CONTEXT;
 typedef struct GUI_KEY_CONTEXT_     GUI_KEY_CONTEXT;
 
-typedef struct {
-  UINT32  X;
-  UINT32  Y;
-  BOOLEAN PrimaryDown;
-  BOOLEAN SecondaryDown;
-} GUI_POINTER_STATE;
-
 GUI_OUTPUT_CONTEXT *
 GuiOutputConstruct (
   VOID
@@ -53,10 +46,22 @@ GuiOutputDestruct (
   IN GUI_OUTPUT_CONTEXT  *Context
   );
 
-EFI_STATUS
-GuiPointerGetState (
+BOOLEAN
+GuiPointerGetEvent (
   IN OUT GUI_POINTER_CONTEXT  *Context,
-  OUT    GUI_POINTER_STATE    *State
+  OUT    GUI_PTR_EVENT        *Event
+  );
+
+VOID
+GuiPointerGetPosition (
+  IN OUT GUI_POINTER_CONTEXT  *Context,
+  OUT    GUI_PTR_POSITION     *Position
+  );
+
+VOID
+GuiPointerSetPosition (
+  IN OUT GUI_POINTER_CONTEXT     *Context,
+  IN     CONST GUI_PTR_POSITION  *Position
   );
 
 VOID
@@ -66,11 +71,11 @@ GuiPointerReset (
 
 GUI_POINTER_CONTEXT *
 GuiPointerConstruct (
-  IN OC_PICKER_CONTEXT  *PickerContext,
-  IN UINT32             DefaultX,
-  IN UINT32             DefaultY,
-  IN UINT32             Width,
-  IN UINT32             Height
+  IN UINT32  DefaultX,
+  IN UINT32  DefaultY,
+  IN UINT32  Width,
+  IN UINT32  Height,
+  IN UINT8   UiScale
   );
 
 VOID
@@ -89,12 +94,10 @@ GuiKeyReset (
   IN OUT GUI_KEY_CONTEXT  *Context
   );
 
-EFI_STATUS
-EFIAPI
-GuiKeyRead (
+BOOLEAN
+GuiKeyGetEvent (
   IN OUT GUI_KEY_CONTEXT  *Context,
-  OUT    INTN             *KeyIndex,
-  OUT    BOOLEAN          *Modifier
+  OUT    GUI_KEY_EVENT    *Event
   );
 
 VOID

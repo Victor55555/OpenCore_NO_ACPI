@@ -31,7 +31,7 @@
   OpenCore version reported to log and NVRAM.
   OPEN_CORE_VERSION must follow X.Y.Z format, where X.Y.Z are single digits.
 **/
-#define OPEN_CORE_VERSION          "0.6.7"
+#define OPEN_CORE_VERSION          "0.6.8"
 
 /**
   OpenCore build type reported to log and NVRAM.
@@ -195,12 +195,14 @@ OcLoadPlatformSupport (
   @param[in]  Storage   OpenCore storage.
   @param[in]  Config    OpenCore configuration.
   @param[in]  CpuInfo   CPU information.
+  @param[out] Signature OpenCore SHA-1 booter signature, all zero when unavailable.
 **/
 VOID
 OcLoadUefiSupport (
   IN OC_STORAGE_CONTEXT  *Storage,
   IN OC_GLOBAL_CONFIG    *Config,
-  IN OC_CPU_INFO         *CpuInfo
+  IN OC_CPU_INFO         *CpuInfo,
+  IN UINT8               *Signature
   );
 
 /**
@@ -276,11 +278,12 @@ OcMiscEarlyInit (
 /**
   Load middle miscellaneous support like device path.
 
-  @param[in]  Storage    OpenCore storage.
-  @param[in]  Config     OpenCore configuration.
-  @param[in]  RootPath   Root load path.
-  @param[in]  LoadPath   OpenCore loading path.
-  @param[in]  LoadHandle OpenCore loading handle.
+  @param[in]  Storage        OpenCore storage.
+  @param[in]  Config         OpenCore configuration.
+  @param[in]  RootPath       Root load path (e.g. path to OC directory).
+  @param[in]  LoadPath       OpenCore loading device path (absolute).
+  @param[in]  StorageHandle  OpenCore storage loading handle (e.g. FS handle).
+  @param[out] Signature      OpenCore SHA-1 booter signature, optional.
 
   @retval EFI_SUCCESS on success, informational.
 **/
@@ -290,7 +293,8 @@ OcMiscMiddleInit (
   IN  OC_GLOBAL_CONFIG          *Config,
   IN  CONST CHAR16              *RootPath,
   IN  EFI_DEVICE_PATH_PROTOCOL  *LoadPath,
-  IN  EFI_HANDLE                LoadHandle
+  IN  EFI_HANDLE                StorageHandle,
+  OUT UINT8                     *Signature  OPTIONAL
   );
 
 /**
@@ -361,8 +365,8 @@ OcPlatformIs64BitSupported (
   IN UINT32     KernelVersion
   );
 
-  VOID
-OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
-  );
+// VOID
+// OcLoadBooterUefiSupport (
+//   IN OC_GLOBAL_CONFIG  *Config
+//   );
 #endif // OC_MAIN_LIB

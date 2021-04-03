@@ -66,8 +66,38 @@ STATIC KEY_STROKE_INFORMATION mKeyStrokeInfo[10];
 // mCLockChanged
 STATIC BOOLEAN mCLockChanged = FALSE;
 
+// mKeyInitialDelay
+// mKeySubsequentDelay
+// Apple implementation default values
+STATIC UINTN mKeyInitialDelay = 50;
+STATIC UINTN mKeySubsequentDelay = 5;
+
 // mAppleKeyMapAggregator
 STATIC APPLE_KEY_MAP_AGGREGATOR_PROTOCOL *mKeyMapAggregator = NULL;
+
+// InternalSetKeyDelays
+VOID
+InternalSetKeyDelays (
+  IN  UINT16          KeyInitialDelay,
+  IN  UINT16          KeySubsequentDelay
+  )
+{
+  //
+  // Zero is meaningful
+  //
+  mKeyInitialDelay    = KeyInitialDelay;
+
+  //
+  // Zero is meaningless (also div by zero expception): warn and use 1
+  //
+  if (KeySubsequentDelay == 0) {
+    KeySubsequentDelay = 1;
+    DEBUG ((DEBUG_WARN, "OCAE: Illegal KeySubsequentDelay value 0, using 1\n"));
+  }
+  mKeySubsequentDelay = KeySubsequentDelay;
+  
+  DEBUG ((DEBUG_INFO, "OCAE: Using %d (%d0ms) and %d (%d0ms)\n", mKeyInitialDelay, mKeyInitialDelay, mKeySubsequentDelay, mKeySubsequentDelay));
+}
 
 // InternalGetAppleKeyStrokes
 STATIC
@@ -492,9 +522,9 @@ InternalGetCurrentKeyStroke (
 
     if (KeyInfo != NULL) {
       AcceptStroke = (BOOLEAN)(
-                       (KeyInfo->NumberOfStrokes < (KEY_STROKE_DELAY * 10))
+                       (KeyInfo->NumberOfStrokes < mKeyInitialDelay)
                          ? (KeyInfo->NumberOfStrokes == 0)
-                         : ((KeyInfo->NumberOfStrokes % KEY_STROKE_DELAY) == 0)
+                         : (((KeyInfo->NumberOfStrokes - mKeyInitialDelay) % mKeySubsequentDelay) == 0)
                        );
 
       if (AcceptStroke) {

@@ -37,6 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/OcCpuLib.h>
 #include <Library/OcDataHubLib.h>
 #include <Library/OcDebugLogLib.h>
+#include <Library/OcDeviceMiscLib.h>
 #include <Library/OcDevicePropertyLib.h>
 #include <Library/OcDriverConnectionLib.h>
 #include <Library/OcFirmwareVolumeLib.h>
@@ -296,6 +297,12 @@ OcReinstallProtocols (
   IN OC_GLOBAL_CONFIG    *Config
   )
 {
+  CONST CHAR8   *AppleEventMode;
+  CONST CHAR8   *CustomDelaysMode;
+  BOOLEAN       InstallAppleEvent;
+  BOOLEAN       OverrideAppleEvent;
+  BOOLEAN       UseCustomDelays;
+
   if (OcAudioInstallProtocols (Config->Uefi.ProtocolOverrides.AppleAudio) == NULL) {
     DEBUG ((DEBUG_INFO, "OC: Disabling audio in favour of firmware implementation\n"));
   }
@@ -340,8 +347,46 @@ OcReinstallProtocols (
     DEBUG ((DEBUG_ERROR, "OC: Failed to install key map protocols\n"));
   }
 
-  if (OcAppleEventInstallProtocol (Config->Uefi.ProtocolOverrides.AppleEvent) == NULL) {
-    DEBUG ((DEBUG_ERROR, "OC: Failed to install key event protocol\n"));
+  InstallAppleEvent   = TRUE;
+  OverrideAppleEvent  = FALSE;
+  UseCustomDelays     = Config->Uefi.Input.KeySupport;
+
+  AppleEventMode = OC_BLOB_GET (&Config->Uefi.AppleInput.AppleEvent);
+
+  if (AsciiStrCmp (AppleEventMode, "Auto") == 0) {
+  } else if (AsciiStrCmp (AppleEventMode, "OEM") == 0) {
+    InstallAppleEvent = FALSE;
+  } else if (AsciiStrCmp (AppleEventMode, "Builtin") == 0) {
+    OverrideAppleEvent = TRUE;
+  } else {
+    DEBUG ((DEBUG_WARN, "OC: Invalid AppleInput AppleEvent setting %a, using Auto\n", AppleEventMode));
+  }
+
+  CustomDelaysMode = OC_BLOB_GET (&Config->Uefi.AppleInput.CustomDelays);
+
+  if (AsciiStrCmp (CustomDelaysMode, "Auto") == 0) {
+  } else if (AsciiStrCmp (CustomDelaysMode, "Enabled") == 0) {
+    UseCustomDelays = TRUE;
+  } else if (AsciiStrCmp (CustomDelaysMode, "Disabled") == 0) {
+    UseCustomDelays = FALSE;
+  } else {
+    DEBUG ((DEBUG_WARN, "OC: Invalid AppleInput CustomDelays setting %a, using Auto\n", CustomDelaysMode));
+  }
+
+
+  if (InstallAppleEvent) {
+    if (OcAppleEventInstallProtocol (
+      OverrideAppleEvent,
+      UseCustomDelays,
+      Config->Uefi.AppleInput.KeyInitialDelay,
+      Config->Uefi.AppleInput.KeySubsequentDelay,
+      Config->Uefi.AppleInput.PointerSpeedDiv,
+      Config->Uefi.AppleInput.PointerSpeedMul
+      ) == NULL) {
+      DEBUG ((DEBUG_ERROR, "OC: Failed to install apple event protocol\n"));
+    }
+  } else {
+    DEBUG ((DEBUG_INFO, "OC: Allowing OEM apple event protocol to connect\n"));
   }
 
   if (OcFirmwareVolumeInstallProtocol (Config->Uefi.ProtocolOverrides.FirmwareVolume) == NULL) {
@@ -511,7 +556,9 @@ OcInstallPermissiveSecurityPolicy (
 
 VOID
 OcLoadBooterUefiSupport (
-  IN OC_GLOBAL_CONFIG  *Config
+  IN OC_GLOBAL_CONFIG  *Config,
+  IN OC_CPU_INFO       *CpuInfo,
+  IN UINT8             *Signature
   )
 {
   OC_ABC_SETTINGS        AbcSettings;
@@ -532,6 +579,8 @@ OcLoadBooterUefiSupport (
   AbcSettings.EnableSafeModeSlide    = Config->Booter.Quirks.EnableSafeModeSlide;
   AbcSettings.EnableWriteUnprotector = Config->Booter.Quirks.EnableWriteUnprotector;
   AbcSettings.ForceExitBootServices  = Config->Booter.Quirks.ForceExitBootServices;
+  AbcSettings.ForceBooterSignature   = Config->Booter.Quirks.ForceBooterSignature;
+  CopyMem (AbcSettings.BooterSignature, Signature, sizeof (AbcSettings.BooterSignature));
   AbcSettings.ProtectMemoryRegions   = Config->Booter.Quirks.ProtectMemoryRegions;
   AbcSettings.ProvideCustomSlide     = Config->Booter.Quirks.ProvideCustomSlide;
   AbcSettings.ProvideMaxSlide        = Config->Booter.Quirks.ProvideMaxSlide;
@@ -656,7 +705,7 @@ OcLoadBooterUefiSupport (
   AbcSettings.ExitBootServicesHandlers = mOcExitBootServicesHandlers;
   AbcSettings.ExitBootServicesHandlerContexts = mOcExitBootServicesContexts;
 
-  OcAbcInitialize (&AbcSettings);
+  OcAbcInitialize (&AbcSettings, CpuInfo);
 }
 
 VOID
@@ -711,7 +760,8 @@ VOID
 OcLoadUefiSupport (
   IN OC_STORAGE_CONTEXT  *Storage,
   IN OC_GLOBAL_CONFIG    *Config,
-  IN OC_CPU_INFO         *CpuInfo
+  IN OC_CPU_INFO         *CpuInfo,
+  IN UINT8               *Signature
   )
 {
   EFI_HANDLE            *DriversToConnect;
@@ -728,10 +778,13 @@ OcLoadUefiSupport (
   //
   // Setup Apple bootloader specific UEFI features.
   //
-  //OcLoadBooterUefiSupport (Config);
-  if (Config->Booter.Quirks.EnableForAll) {
-    OcLoadBooterUefiSupport (Config);
+//   if (Config->Booter.Quirks.EnableForAll) {
+  OcLoadBooterUefiSupport (Config, CpuInfo, Signature);
+//   }
+  if (Config->Uefi.Quirks.ActivateHpetSupport) {
+    ActivateHpetSupport ();
   }
+
   if (Config->Uefi.Quirks.IgnoreInvalidFlexRatio) {
     OcCpuCorrectFlexRatio (CpuInfo);
   }

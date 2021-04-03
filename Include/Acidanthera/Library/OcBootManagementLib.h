@@ -1,15 +1,7 @@
 /** @file
-  Copyright (C) 2019, vit9696. All rights reserved.
-
-  All rights reserved.
-
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (C) 2019, vit9696. All rights reserved.<BR>
+  Copyright (C) 2021, Mike Beaton. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-3-Clause
 **/
 
 #ifndef OC_BOOT_MANAGEMENT_LIB_H
@@ -19,17 +11,28 @@
 #include <IndustryStandard/AppleBootArgs.h>
 #include <IndustryStandard/AppleHid.h>
 #include <Library/OcAppleBootPolicyLib.h>
+#include <Library/OcAppleKeyMapLib.h>
 #include <Library/OcStringLib.h>
 #include <Library/OcStorageLib.h>
+#include <Library/OcTypingLib.h>
 #include <Protocol/AppleKeyMapAggregator.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/AppleBeepGen.h>
 #include <Protocol/OcAudio.h>
 
+#if defined(OC_TARGET_DEBUG) || defined(OC_TARGET_NOOPT)
+//#define BUILTIN_DEMONSTRATE_TYPING
+#endif
+
 /**
   Primary picker context.
 **/
 typedef struct OC_PICKER_CONTEXT_ OC_PICKER_CONTEXT;
+
+/**
+  Picker keyboard handling context.
+**/
+typedef struct OC_HOTKEY_CONTEXT_ OC_HOTKEY_CONTEXT;
 
 /**
   Default strings for use in the interfaces.
@@ -38,6 +41,7 @@ typedef struct OC_PICKER_CONTEXT_ OC_PICKER_CONTEXT;
 #define OC_MENU_RESET_NVRAM_ENTRY    L"Reset NVRAM"
 #define OC_MENU_UEFI_SHELL_ENTRY     L"UEFI Shell"
 #define OC_MENU_PASSWORD_REQUEST     L"Password: "
+#define OC_MENU_PASSWORD_PROCESSING  L"Verifying password..."
 #define OC_MENU_PASSWORD_RETRY_LIMIT L"Password retry limit exceeded."
 #define OC_MENU_CHOOSE_OS            L"Choose the Operating System: "
 #define OC_MENU_SHOW_AUXILIARY       L"Show Auxiliary"
@@ -45,6 +49,8 @@ typedef struct OC_PICKER_CONTEXT_ OC_PICKER_CONTEXT;
 #define OC_MENU_TIMEOUT              L"Timeout"
 #define OC_MENU_OK                   L"OK"
 #define OC_MENU_EXTERNAL             L" (external)"
+#define OC_MENU_SHUTDOWN             L"Shutting Down"
+#define OC_MENU_RESTART              L"Restarting"
 
 /**
   Paths allowed to be accessible by the interfaces.
@@ -62,10 +68,11 @@ typedef struct OC_PICKER_CONTEXT_ OC_PICKER_CONTEXT;
 #define OC_ATTR_USE_GENERIC_LABEL_IMAGE  BIT2
 #define OC_ATTR_HIDE_THEMED_ICONS        BIT3
 #define OC_ATTR_USE_POINTER_CONTROL      BIT4
+#define OC_ATTR_DEBUG_DISPLAY            BIT5
 #define OC_ATTR_ALL_BITS (\
   OC_ATTR_USE_VOLUME_ICON         | OC_ATTR_USE_DISK_LABEL_FILE | \
   OC_ATTR_USE_GENERIC_LABEL_IMAGE | OC_ATTR_HIDE_THEMED_ICONS   | \
-  OC_ATTR_USE_POINTER_CONTROL)
+  OC_ATTR_USE_POINTER_CONTROL     | OC_ATTR_DEBUG_DISPLAY )
 
 /**
   Default timeout for IDLE timeout during menu picker navigation
@@ -193,6 +200,10 @@ typedef struct OC_BOOT_ENTRY_ {
   // Set when this entry refers to a generic booter (e.g. BOOTx64.EFI).
   //
   BOOLEAN                   IsGeneric;
+  //
+  // Set when this entry refers to a custom boot entry.
+  //
+  BOOLEAN                   IsCustom;
   //
   // Should make this option default boot option.
   //
@@ -489,6 +500,32 @@ typedef enum {
 } OC_PRIVILEGE_LEVEL;
 
 /**
+  OC picker codes.
+**/
+typedef INTN                    OC_KEY_CODE;
+
+/**
+  OC picker modifiers.
+**/
+typedef UINT16                  OC_MODIFIER_MAP;
+
+/**
+  OC picker modifiers.
+**/
+typedef UINTN                   OC_PICKER_KEY_MAP;
+
+/**
+  Full picker key info.
+  Note: Typing is 'orthogonal' to actions, and the presence or absence of a next
+  typing key should be detected by UnicodeChar != CHAR_NULL.
+**/
+typedef struct {
+  OC_KEY_CODE         OcKeyCode;
+  OC_MODIFIER_MAP     OcModifiers;
+  CHAR16              UnicodeChar;
+} OC_PICKER_KEY_INFO;
+
+/**
   Request a privilege escalation, for example by prompting for a password.
 **/
 typedef
@@ -535,16 +572,45 @@ EFI_STATUS
   );
 
 /**
-  Get pressed key index.
+  Get picker pressed key info.
 **/
 typedef
-INTN
-(EFIAPI *OC_GET_KEY_INDEX) (
+VOID
+(EFIAPI *OC_GET_KEY_INFO) (
   IN OUT OC_PICKER_CONTEXT                  *Context,
-  IN     APPLE_KEY_MAP_AGGREGATOR_PROTOCOL  *KeyMap,
-     OUT BOOLEAN                            *SetDefault  OPTIONAL
+  IN     OC_PICKER_KEY_MAP                  KeyFilter,
+     OUT OC_PICKER_KEY_INFO                 *PickerKeyInfo
   );
 
+/**
+  Request end time in units appropriate for OC_WAIT_FOR_KEY_INFO.
+**/
+typedef
+UINT64
+(EFIAPI *OC_GET_KEY_WAIT_END_TIME) (
+  IN UINTN    Timeout
+  );
+
+/**
+  Wait for picker pressed key info. Use zero EndTime for no timeout.
+**/
+typedef
+BOOLEAN
+(EFIAPI *OC_WAIT_FOR_KEY_INFO) (
+  IN OUT OC_PICKER_CONTEXT                  *Context,
+  IN     UINT64                             EndTime,
+  IN     OC_PICKER_KEY_MAP                  KeyFilter,
+  IN OUT OC_PICKER_KEY_INFO                 *PickerKeyInfo
+  );
+
+/**
+  Flush picker typing buffer.
+**/
+typedef
+VOID
+(EFIAPI *OC_FLUSH_TYPING_BUFFER) (
+  IN OUT OC_PICKER_CONTEXT                  *Context
+  );
 
 /**
   Play audio file for context.
@@ -599,6 +665,46 @@ typedef enum {
   OcPickerBootApple         = 3,
   OcPickerBootAppleRecovery = 4,
 } OC_PICKER_CMD;
+
+/**
+  Instrument kb loop delay.
+
+  @param[in]      LoopDelayStart    Delay start in TSC asm ticks.
+  @param[in]      LoopDelayEnd      Delay end in TSC asm ticks. 
+**/
+typedef
+VOID
+(EFIAPI *OC_KB_DEBUG_INSTRUMENT_LOOP_DELAY) (
+  UINT64 LoopDelayStart,
+  UINT64 LoopDelayEnd
+  );
+
+/**
+  Running display of held keys.
+
+  @param[in]      NumKeysDown     Number of keys that went down.
+  @param[in]      NumKeysHeld     Number of keys held.
+  @param[in]      Modifiers       Key modifiers.
+**/
+typedef
+VOID
+(EFIAPI *OC_KB_DEBUG_SHOW) (
+  UINTN                     NumKeysDown,
+  UINTN                     NumKeysHeld,
+  APPLE_MODIFIER_MAP        Modifiers
+  );
+
+typedef struct {
+  OC_KB_DEBUG_INSTRUMENT_LOOP_DELAY  InstrumentLoopDelay;
+  OC_KB_DEBUG_SHOW                   Show;
+} OC_KB_DEBUG_CALLBACKS;
+
+typedef struct {
+  OC_PRIVILEGE_LEVEL CurrentLevel;
+  CONST UINT8        *Salt;
+  UINT32             SaltSize;
+  CONST UINT8        *Hash;
+} OC_PRIVILEGE_CONTEXT;
 
 /**
   Boot picker context describing picker behaviour.
@@ -666,13 +772,17 @@ struct OC_PICKER_CONTEXT_ {
   //
   OC_REQ_PRIVILEGE           RequestPrivilege;
   //
-  // Get pressed key index.
+  // Picker typing context.
   //
-  OC_GET_KEY_INDEX           GetKeyIndex;
+  OC_HOTKEY_CONTEXT          *HotKeyContext;
+  //
+  // Keyboard debug methods.
+  //
+  OC_KB_DEBUG_CALLBACKS      *KbDebug;
   //
   // Context to pass to RequestPrivilege, optional.
   //
-  VOID                       *PrivilegeContext;
+  OC_PRIVILEGE_CONTEXT       *PrivilegeContext;
   //
   // Additional suffix to include by the interface.
   //
@@ -784,6 +894,40 @@ struct OC_PICKER_CONTEXT_ {
   // Custom picker entries.  Absolute entries come first.
   //
   OC_PICKER_ENTRY            CustomEntries[];
+};
+
+/**
+  Boot picker keyboard handling context.
+**/
+struct OC_HOTKEY_CONTEXT_ {
+  //
+  // Get pressed key info.
+  //
+  OC_GET_KEY_INFO            GetKeyInfo;
+  //
+  // Request end time in units appropriate for WaitForKeyInfo.
+  //
+  OC_GET_KEY_WAIT_END_TIME   GetKeyWaitEndTime;
+  //
+  // Wait for pressed key info.
+  //
+  OC_WAIT_FOR_KEY_INFO       WaitForKeyInfo;
+  //
+  // Flush typing buffer.
+  //
+  OC_FLUSH_TYPING_BUFFER     FlushTypingBuffer;
+  //
+  // Apple Key Map protocol.
+  //
+  APPLE_KEY_MAP_AGGREGATOR_PROTOCOL  *KeyMap;
+  //
+  // Non-repeating key context.
+  //
+  OC_KEY_REPEAT_CONTEXT      *DoNotRepeatContext;
+  //
+  // Typing context.
+  //
+  OC_TYPING_CONTEXT          *TypingContext;
 };
 
 /**
@@ -909,13 +1053,6 @@ OcSetDefaultBootEntry (
   IN OC_BOOT_ENTRY      *Entry
   );
 
-typedef struct {
-  OC_PRIVILEGE_LEVEL CurrentLevel;
-  CONST UINT8        *Salt;
-  UINT32             SaltSize;
-  CONST UINT8        *Hash;
-} OC_PRIVILEGE_CONTEXT;
-
 /**
   Show simple password prompt and return verification status.
 
@@ -1028,60 +1165,74 @@ OcLoadPickerHotKeys (
   );
 
 /**
-  Default index mapping macros.
+  Key index mappings.
+  Non-negative values may also be returned to request a specific zero-indexed boot entry.
 **/
-#define OC_INPUT_STR            "123456789ABCDEFGHIJKLMNOPQRSTUVXWZ"
-#define OC_INPUT_MAX            L_STR_LEN (OC_INPUT_STR)
-#define OC_INPUT_ABORTED        -1        ///< Esc or 0
-#define OC_INPUT_INVALID        -2        ///< Some other key
-#define OC_INPUT_TIMEOUT        -3        ///< Timeout
-#define OC_INPUT_CONTINUE       -4        ///< Continue (press enter)
-#define OC_INPUT_UP             -5        ///< Move up
-#define OC_INPUT_DOWN           -6        ///< Move down
-#define OC_INPUT_LEFT           -7        ///< Move left
-#define OC_INPUT_RIGHT          -8        ///< Move right
-#define OC_INPUT_TOP            -9        ///< Move to top
-#define OC_INPUT_BOTTOM         -10       ///< Move to bottom
-#define OC_INPUT_MORE           -11       ///< Show more entries (press space)
-#define OC_INPUT_VOICE_OVER     -12       ///< Toggle VoiceOver (press CMD+F5)
-#define OC_INPUT_INTERNAL       -13       ///< Accepted internal hotkey (e.g. Apple)
-#define OC_INPUT_FUNCTIONAL(x) (-20 - (x))  ///< Functional hotkeys
+#define OC_INPUT_STR                  "123456789ABCDEFGHIJKLMNOPQRSTUVXWZ"
+#define OC_INPUT_MAX                  L_STR_LEN (OC_INPUT_STR)
+#define OC_INPUT_ABORTED              -1        ///< Esc or 0
+#define OC_INPUT_NO_ACTION            -2        ///< Some other key
+#define OC_INPUT_TIMEOUT              -3        ///< Timeout
+#define OC_INPUT_CONTINUE             -4        ///< Continue (press enter)
+#define OC_INPUT_UP                   -5        ///< Move up
+#define OC_INPUT_DOWN                 -6        ///< Move down
+#define OC_INPUT_LEFT                 -7        ///< Move left
+#define OC_INPUT_RIGHT                -8        ///< Move right
+#define OC_INPUT_TOP                  -9        ///< Move to top
+#define OC_INPUT_BOTTOM               -10       ///< Move to bottom
+#define OC_INPUT_MORE                 -11       ///< Show more entries (press space)
+#define OC_INPUT_VOICE_OVER           -12       ///< Toggle VoiceOver (press CMD+F5)
+#define OC_INPUT_INTERNAL             -13       ///< Accepted internal hotkey (e.g. Apple)
+#define OC_INPUT_TYPING_CLEAR_ALL     -14       ///< Clear current input while typing (press esc)
+#define OC_INPUT_TYPING_BACKSPACE     -15       ///< Clear last typed character while typing (press backspace)
+#define OC_INPUT_TYPING_LEFT          -16       ///< Move left while typing (UI does not have to support)
+#define OC_INPUT_TYPING_RIGHT         -17       ///< Move right while typing (UI does not have to support)
+#define OC_INPUT_TYPING_CONFIRM       -18       ///< Confirm input while typing (press enter)
+#define OC_INPUT_SWITCH_CONTEXT       -19       ///< Switch context (tab and shift+tab)
+#define OC_INPUT_FUNCTIONAL(x)        (-50 - (x))  ///< Function hotkeys
 
 /**
-  Obtains key index from user input.
-
-  @param[in,out]  Context      Picker context.
-  @param[in]      KeyMap       Apple Key Map Aggregator protocol.
-  @param[out]     SetDefault   Set boot option as default, optional.
-
-  @returns key index [0, OC_INPUT_MAX) or OC_INPUT_* value.
-  @returns OC_INPUT_TIMEOUT when no key is pressed.
-  @returns OC_INPUT_INVALID when unknown key is pressed.
+  Modifier mappings.
 **/
-INTN
-EFIAPI
-OcGetAppleKeyIndex (
-  IN OUT OC_PICKER_CONTEXT                  *Context,
-  IN     APPLE_KEY_MAP_AGGREGATOR_PROTOCOL  *KeyMap,
-     OUT BOOLEAN                            *SetDefault  OPTIONAL
+#define OC_MODIFIERS_NONE                     0
+#define OC_MODIFIERS_SET_DEFAULT              BIT0
+#define OC_MODIFIERS_REVERSE_SWITCH_CONTEXT   BIT1
+
+#define OC_PICKER_KEYS_TYPING                 BIT0
+#define OC_PICKER_KEYS_HOTKEYS                BIT1
+#define OC_PICKER_KEYS_VOICE_OVER             BIT2
+#define OC_PICKER_KEYS_TAB_CONTROL            BIT3
+
+#define OC_PICKER_KEYS_FOR_TYPING   \
+  (OC_PICKER_KEYS_TYPING | OC_PICKER_KEYS_VOICE_OVER | OC_PICKER_KEYS_TAB_CONTROL)
+
+#define OC_PICKER_KEYS_FOR_PICKER   \
+  (OC_PICKER_KEYS_HOTKEYS | OC_PICKER_KEYS_VOICE_OVER | OC_PICKER_KEYS_TAB_CONTROL)
+
+/**
+  Initialise picker keyboard handling.
+  Initialises necessary handlers and updates booter context based on this.
+  Call before looped calls to OcWaitForPickerKeyInfo or OcGetPickerKeyInfo.
+
+  @param[in,out]  Context       Picker context.
+
+  @retval EFI_SUCCESS           The keyboard handling within the context has been initialised.
+  @retval EFI_NOT_FOUND         Could not find a required protocol.
+  @retval other                 An error returned by a sub-operation.
+**/
+EFI_STATUS
+OcInitHotKeys (
+  IN OUT OC_PICKER_CONTEXT  *Context
   );
 
 /**
-  Waits for key index from user input.
+  Free picker keyboard handling resources.
 
-  @param[in,out]  Context      Picker context.
-  @param[in]      KeyMap       Apple Key Map Aggregator protocol.
-  @param[in]      Timeout      Timeout to wait for in milliseconds.
-  @param[out]     SetDefault   Set boot option as default, optional.
-
-  @returns key index [0, OC_INPUT_MAX) or OC_INPUT_* value.
+  @param[in]      Context       Picker context.
 **/
-INTN
-OcWaitForAppleKeyIndex (
-  IN OUT OC_PICKER_CONTEXT                  *Context,
-  IN     APPLE_KEY_MAP_AGGREGATOR_PROTOCOL  *KeyMap,
-  IN     UINTN                              Timeout,
-     OUT BOOLEAN                            *SetDefault  OPTIONAL
+VOID
+OcFreeHotKeys (
+  IN     OC_PICKER_CONTEXT  *Context
   );
 
 /**

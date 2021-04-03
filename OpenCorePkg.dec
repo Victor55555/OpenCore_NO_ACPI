@@ -26,6 +26,7 @@
   Include/Generic
   Include/Intel
   Include/Microsoft
+  Include/Nvidia
   Include/VMware
 
 [Includes.AArch64]
@@ -35,6 +36,7 @@
   # Include/Generic/AArch64
   # Include/Intel/AArch64
   # Include/Microsoft/AArch64
+  # Include/Nvidia/AArch64
   # Include/VMware/AArch64
 
 [Includes.Arm]
@@ -44,6 +46,7 @@
   # Include/Generic/Arm
   # Include/Intel/Arm
   # Include/Microsoft/Arm
+  # Include/Nvidia/Arm
   # Include/VMware/Arm
 
 [Includes.Ebc]
@@ -53,6 +56,7 @@
   # Include/Generic/Ebc
   # Include/Intel/Ebc
   # Include/Microsoft/Ebc
+  # Include/Nvidia/Ebc
   # Include/VMware/Ebc
 
 [Includes.Ia32]
@@ -62,6 +66,7 @@
   # Include/Generic/Ia32
   # Include/Intel/Ia32
   # Include/Microsoft/Ia32
+  # Include/Nvidia/Ia32
   # Include/VMware/Ia32
 
 [Includes.X64]
@@ -71,6 +76,7 @@
   # Include/Generic/X64
   # Include/Intel/X64
   # Include/Microsoft/X64
+  # Include/Nvidia/X64
   # Include/VMware/X64
 
 [Guids]
@@ -360,6 +366,9 @@
   gAppleFsbFrequencyPlatformInfoGuid         = { 0xD1A04D55, 0x75B9, 0x41A3, { 0x90, 0x36, 0x8F, 0x4A, 0x26, 0x1C, 0xBB, 0xA2 }}
 
   ## Include/Apple/Guid/ApplePlatformInfo.h
+  gAppleFsbFrequencyListPlatformInfoGuid     = { 0xF55EE371, 0xD19E, 0x4AAA, { 0xA9, 0x7B, 0xC1, 0xB1, 0x28, 0x4C, 0xB3, 0x7C }}
+
+  ## Include/Apple/Guid/ApplePlatformInfo.h
   gAppleKeyboardPlatformInfoGuid             = { 0x51871CB9, 0xE25D, 0x44B4, { 0x96, 0x99, 0x0E, 0xE8, 0x64, 0x4C, 0xED, 0x69 }}
 
   ## Include/Apple/Guid/ApplePlatformInfo.h
@@ -391,9 +400,6 @@
 
   ## Include/Apple/Guid/AppleDataHub.h
   gAppleMachinePersonalityDataRecordGuid     = { 0x2B6C7ADE, 0xC5DA, 0x474B, { 0xBA, 0x42, 0x06, 0xBD, 0xDD, 0x4E, 0x34, 0x97 }}
-
-  ## Include/Apple/Guid/AppleDataHub.h
-  gAppleFsbFrequencyDataRecordGuid           = { 0xD1A04D55, 0x75B9, 0x41A3, { 0x90, 0x36, 0x8F, 0x4A, 0x26, 0x1C, 0xBB, 0xA2 }}
 
   ## Include/Apple/Guid/AppleDataHub.h
   gAppleBoardIdDataRecordGuid                = { 0xB459BF16, 0x14ED, 0x5131, { 0x92, 0xB4, 0x5E, 0x19, 0xF0, 0x5B, 0xC0, 0xAD }}
@@ -512,6 +518,9 @@
 
   ## Include/Intel/Protocol/ConsoleControl.h
   gEfiConsoleControlProtocolGuid             = { 0xF42F7782, 0x012E, 0x4C12, { 0x99, 0x56, 0x49, 0xF9, 0x43, 0x04, 0xF7, 0x21 }}
+
+  ## Include/Intel/Protocol/CpuIo.h
+  gEfiCpuIoProtocolGuid                      = { 0xB0732526, 0x38C8, 0x4b40, { 0x88, 0x77, 0x61, 0xC7, 0xB0, 0x6A, 0xAC, 0x45 }}
 
   ## Include/Intel/Protocol/DataHub.h
   gEfiDataHubProtocolGuid                    = { 0xAE80D021, 0x618E, 0x11D4, { 0xBC, 0xD7, 0x00, 0x80, 0xC7, 0x3C, 0x88, 0x81 }}
@@ -809,6 +818,9 @@
 
   ##  @libraryclass
   OcDebugLogLib|Include/Acidanthera/Library/OcDebugLogLib.h
+
+  ##  @libraryclass
+  OcDeviceMiscLib|Include/Acidanthera/Library/OcDeviceMiscLib.h
 
   ##  @libraryclass
   OcDevicePathLib|Include/Acidanthera/Library/OcDevicePathLib.h

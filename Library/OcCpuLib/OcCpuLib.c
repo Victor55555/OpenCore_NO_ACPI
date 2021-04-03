@@ -21,6 +21,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/OcCpuLib.h>
+#include <Library/OcGuardLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <IndustryStandard/ProcessorInfo.h>
 #include <Register/Microcode.h>
@@ -272,6 +273,132 @@ ScanThreadCount (
 
 STATIC
 VOID
+SetMaxBusRatioAndMaxBusRatioDiv (
+  IN   OC_CPU_INFO        *CpuInfo  OPTIONAL,
+  OUT  UINT8              *MaxBusRatio,
+  OUT  UINT8              *MaxBusRatioDiv
+  )
+{
+  MSR_IA32_PERF_STATUS_REGISTER       PerfStatus;
+  MSR_NEHALEM_PLATFORM_INFO_REGISTER  PlatformInfo;
+  CPUID_VERSION_INFO_EAX              Eax;
+  UINT8                               CpuModel;
+
+  ASSERT (MaxBusRatio != NULL);
+  ASSERT (MaxBusRatioDiv != NULL);
+
+  if (CpuInfo != NULL) {
+    CpuModel = CpuInfo->Model;
+  } else {
+    //
+    // Assuming Intel machines used on Apple hardware.
+    //
+    AsmCpuid (
+      CPUID_VERSION_INFO,
+      &Eax.Uint32,
+      NULL,
+      NULL,
+      NULL
+      );
+    CpuModel = (UINT8) Eax.Bits.Model | (UINT8) (Eax.Bits.ExtendedModelId << 4U);
+  }
+
+  //
+  // Refer to Intel SDM (MSRs in Processors Based on Intel... table).
+  //
+  if (CpuModel >= CPU_MODEL_NEHALEM) {
+    PlatformInfo.Uint64 = AsmReadMsr64 (MSR_NEHALEM_PLATFORM_INFO);
+    *MaxBusRatio        = (UINT8) PlatformInfo.Bits.MaximumNonTurboRatio;
+    *MaxBusRatioDiv     = 0;
+  } else {
+    PerfStatus.Uint64 = AsmReadMsr64 (MSR_IA32_PERF_STATUS);
+    *MaxBusRatio      = (UINT8) (RShiftU64 (PerfStatus.Uint64, 40) & 0x1FU);
+    *MaxBusRatioDiv   = (UINT8) (RShiftU64 (PerfStatus.Uint64, 46) & BIT0);
+  }
+
+  //
+  // Fall back to 1 if *MaxBusRatio has zero.
+  //
+  if (*MaxBusRatio == 0) {
+    *MaxBusRatio = 1;
+  }
+}
+
+STATIC
+VOID
+ScanIntelFSBFrequency (
+  IN  OC_CPU_INFO        *CpuInfo
+  )
+{
+  UINT8  MaxBusRatio;
+  UINT8  MaxBusRatioDiv;
+
+  ASSERT (CpuInfo != NULL);
+
+  //
+  // Do not reset if CpuInfo->FSBFrequency is already set.
+  //
+  if (CpuInfo->FSBFrequency > 0) {
+    return;
+  }
+
+  SetMaxBusRatioAndMaxBusRatioDiv (CpuInfo, &MaxBusRatio, &MaxBusRatioDiv);
+
+  //
+  // There may be some quirks with virtual CPUs (VMware is fine).
+  // Formerly we checked Cpu->MinBusRatio > 0, and MaxBusRatio falls back to 1 if it is 0.
+  //
+  if (CpuInfo->CPUFrequency > 0) {
+    if (MaxBusRatioDiv == 0) {
+      CpuInfo->FSBFrequency = DivU64x32 (CpuInfo->CPUFrequency, MaxBusRatio);
+    } else {
+      CpuInfo->FSBFrequency = MultThenDivU64x64x32 (
+        CpuInfo->CPUFrequency,
+        2,
+        2 * MaxBusRatio + 1,
+        NULL
+        );
+    }
+  } else {
+    //
+    // TODO: It seems to be possible that CPU frequency == 0 here...
+    //
+    CpuInfo->FSBFrequency = 100000000; // 100 MHz
+  }
+
+  DEBUG ((
+    DEBUG_INFO,
+    "OCCPU: Intel TSC: %11LuHz, %5LuMHz; FSB: %11LuHz, %5LuMHz; MaxBusRatio: %u%a\n",
+    CpuInfo->CPUFrequency,
+    DivU64x32 (CpuInfo->CPUFrequency, 1000000),
+    CpuInfo->FSBFrequency,
+    DivU64x32 (CpuInfo->FSBFrequency, 1000000),
+    MaxBusRatio,
+    MaxBusRatioDiv != 0 ? ".5" : ""
+    ));
+}
+
+UINT64
+InternalConvertAppleFSBToTSCFrequency (
+  IN  UINT64        FSBFrequency
+  )
+{
+  UINT8  MaxBusRatio;
+  UINT8  MaxBusRatioDiv;
+
+  SetMaxBusRatioAndMaxBusRatioDiv (NULL, &MaxBusRatio, &MaxBusRatioDiv);
+
+  //
+  // When MaxBusRatioDiv is 1, the multiplier is MaxBusRatio + 0.5.
+  //
+  if (MaxBusRatioDiv == 1) {
+    return FSBFrequency * MaxBusRatio + FSBFrequency / 2;
+  }
+  return FSBFrequency * MaxBusRatio;
+}
+
+STATIC
+VOID
 ScanIntelProcessorApple (
   IN OUT OC_CPU_INFO  *Cpu
   )
@@ -280,12 +407,12 @@ ScanIntelProcessorApple (
 
   AppleMajorType = InternalDetectAppleMajorType (Cpu->BrandString);
   Cpu->AppleProcessorType = InternalDetectAppleProcessorType (
-                              Cpu->Model,
-                              Cpu->Stepping,
-                              AppleMajorType,
-                              Cpu->CoreCount,
-                              (Cpu->ExtFeatures & CPUID_EXTFEATURE_EM64T) != 0
-                              );
+    Cpu->Model,
+    Cpu->Stepping,
+    AppleMajorType,
+    Cpu->CoreCount,
+    (Cpu->ExtFeatures & CPUID_EXTFEATURE_EM64T) != 0
+    );
 
   DEBUG ((DEBUG_INFO, "OCCPU: Detected Apple Processor Type: %02X -> %04X\n", AppleMajorType, Cpu->AppleProcessorType));
 }
@@ -300,10 +427,6 @@ ScanIntelProcessor (
   CPUID_CACHE_PARAMS_EAX                            CpuidCacheEax;
   CPUID_CACHE_PARAMS_EBX                            CpuidCacheEbx;
   MSR_SANDY_BRIDGE_PKG_CST_CONFIG_CONTROL_REGISTER  PkgCstConfigControl;
-  MSR_IA32_PERF_STATUS_REGISTER                     PerfStatus;
-  MSR_NEHALEM_PLATFORM_INFO_REGISTER                PlatformInfo;
-  OC_CPU_GENERATION                                 CpuGeneration;
-  MSR_NEHALEM_TURBO_RATIO_LIMIT_REGISTER            TurboLimit;
   UINT16                                            CoreCount;
   CONST CHAR8                                       *TimerSourceType;
   UINTN                                             TimerAddr;
@@ -315,11 +438,13 @@ ScanIntelProcessor (
     return;
   }
 
+  Cpu->CpuGeneration = InternalDetectIntelProcessorGeneration (Cpu);
+
   //
   // Some virtual machines like QEMU 5.0 with KVM will fail to read this value.
   // REF: https://github.com/acidanthera/bugtracker/issues/914
   //
-  if (Cpu->Model >= CPU_MODEL_SANDYBRIDGE && !Cpu->Hypervisor) {
+  if (Cpu->CpuGeneration >= OcCpuGenerationSandyBridge && !Cpu->Hypervisor) {
     PkgCstConfigControl.Uint64 = AsmReadMsr64 (MSR_SANDY_BRIDGE_PKG_CST_CONFIG_CONTROL);
     Cpu->CstConfigLock = PkgCstConfigControl.Bits.CFGLock == 1;
   } else {
@@ -334,59 +459,6 @@ ScanIntelProcessor (
   // Things may be different in other hypervisors, but should work with QEMU/VMWare for now.
   //
   if (Cpu->CPUFrequencyFromVMT == 0) {
-    //
-    // TODO: this may not be accurate on some older processors.
-    //
-    if (Cpu->Model >= CPU_MODEL_NEHALEM) {
-      PerfStatus.Uint64 = AsmReadMsr64 (MSR_IA32_PERF_STATUS);
-      PlatformInfo.Uint64 = AsmReadMsr64 (MSR_NEHALEM_PLATFORM_INFO);
-      Cpu->MinBusRatio = (UINT8) PlatformInfo.Bits.MaximumEfficiencyRatio;
-      Cpu->MaxBusRatio = (UINT8) PlatformInfo.Bits.MaximumNonTurboRatio;
-      CpuGeneration = OcCpuGetGeneration ();
-
-      if (CpuGeneration == OcCpuGenerationNehalem
-        || CpuGeneration == OcCpuGenerationWestmere) {
-        Cpu->CurBusRatio = (UINT8) PerfStatus.Bits.State;
-      } else {
-        Cpu->CurBusRatio = (UINT8) (PerfStatus.Bits.State >> 8U);
-      }
-    } else {
-      PerfStatus.Uint64 = AsmReadMsr64 (MSR_IA32_PERF_STATUS);
-      Cpu->MaxBusRatio = (UINT8) (RShiftU64 (PerfStatus.Uint64, 8) & 0x1FU);
-      //
-      // Undocumented values:
-      // Non-integer bus ratio for the max-multi.
-      // Non-integer bus ratio for the current-multi.
-      //
-      // MaxBusRatioDiv = (UINT8) (RShiftU64 (PerfStatus.Uint64, 46) & 0x01U);
-      // CurrDiv = (UINT8) (RShiftU64 (PerfStatus.Uint64, 14) & 0x01U);
-      //
-    }
-
-    if (Cpu->Model >= CPU_MODEL_NEHALEM
-      && Cpu->Model != CPU_MODEL_NEHALEM_EX
-      && Cpu->Model != CPU_MODEL_WESTMERE_EX
-      && Cpu->Model != CPU_MODEL_BONNELL
-      && Cpu->Model != CPU_MODEL_BONNELL_MID) {
-      TurboLimit.Uint64 = AsmReadMsr64 (MSR_NEHALEM_TURBO_RATIO_LIMIT);
-      Cpu->TurboBusRatio1 = (UINT8) TurboLimit.Bits.Maximum1C;
-      Cpu->TurboBusRatio2 = (UINT8) TurboLimit.Bits.Maximum2C;
-      Cpu->TurboBusRatio3 = (UINT8) TurboLimit.Bits.Maximum3C;
-      Cpu->TurboBusRatio4 = (UINT8) TurboLimit.Bits.Maximum4C;
-    }
-
-    DEBUG ((
-      DEBUG_INFO,
-      "OCCPU: Ratio Min %d Max %d Current %d Turbo %d %d %d %d\n",
-      Cpu->MinBusRatio,
-      Cpu->MaxBusRatio,
-      Cpu->CurBusRatio,
-      Cpu->TurboBusRatio1,
-      Cpu->TurboBusRatio2,
-      Cpu->TurboBusRatio3,
-      Cpu->TurboBusRatio4
-      ));
-
     //
     // For logging purposes (the first call to these functions might happen
     // before logging is fully initialised), do not use the cached results in
@@ -415,16 +487,33 @@ ScanIntelProcessor (
       TimerAddr = InternalGetPmTimerAddr (&TimerSourceType);
       DEBUG ((DEBUG_INFO, "OCCPU: Timer address is %Lx from %a\n", (UINT64) TimerAddr, TimerSourceType));
       DEBUG_CODE_END ();
-      Cpu->CPUFrequencyFromTSC = InternalCalculateTSCFromPMTimer (Recalculate);
+      Cpu->CPUFrequencyFromApple = InternalCalculateTSCFromApplePlatformInfo (NULL, Recalculate);
+      if (Cpu->CPUFrequencyFromApple == 0 || Recalculate) {
+        Cpu->CPUFrequencyFromTSC   = InternalCalculateTSCFromPMTimer (Recalculate);
+      }
     }
 
     //
-    // Calculate CPU frequency based on ART if present, otherwise TSC
+    // Calculate CPU frequency firstly based on ART if present.
     //
-    Cpu->CPUFrequency = Cpu->CPUFrequencyFromART != 0 ? Cpu->CPUFrequencyFromART : Cpu->CPUFrequencyFromTSC;
+    if (Cpu->CPUFrequencyFromART != 0) {
+      Cpu->CPUFrequency = Cpu->CPUFrequencyFromART;
+    } else {
+      //
+      // If ART is not available, then try the value from Apple Platform Info.
+      //
+      if (Cpu->CPUFrequencyFromApple != 0) {
+        Cpu->CPUFrequency = Cpu->CPUFrequencyFromApple;
+      } else {
+        //
+        // If still not available, finally use TSC.
+        //
+        Cpu->CPUFrequency = Cpu->CPUFrequencyFromTSC;
+      }
+    }
 
     //
-    // Verify that our two CPU frequency calculations do not differ substantially.
+    // Verify that ART/TSC CPU frequency calculations do not differ substantially.
     //
     if (Cpu->CPUFrequencyFromART > 0 && Cpu->CPUFrequencyFromTSC > 0
       && ABS((INT64) Cpu->CPUFrequencyFromART - (INT64) Cpu->CPUFrequencyFromTSC) > OC_CPU_FREQUENCY_TOLERANCE) {
@@ -435,28 +524,29 @@ ScanIntelProcessor (
         Cpu->CPUFrequencyFromTSC
         ));
     }
-
     //
-    // There may be some quirks with virtual CPUs (VMware is fine).
-    // Formerly we checked Cpu->MinBusRatio > 0, but we have no MinBusRatio on Penryn.
+    // Verify that Apple/TSC CPU frequency calculations do not differ substantially.
     //
-    if (Cpu->CPUFrequency > 0 && Cpu->MaxBusRatio > Cpu->MinBusRatio) {
-      Cpu->FSBFrequency = DivU64x32 (Cpu->CPUFrequency, Cpu->MaxBusRatio);
-    } else {
-      //
-      // TODO: It seems to be possible that CPU frequency == 0 here...
-      //
-      Cpu->FSBFrequency = 100000000; // 100 Mhz
+    if (Cpu->CPUFrequencyFromApple > 0 && Cpu->CPUFrequencyFromTSC > 0
+      && ABS((INT64) Cpu->CPUFrequencyFromApple - (INT64) Cpu->CPUFrequencyFromTSC) > OC_CPU_FREQUENCY_TOLERANCE) {
+      DEBUG ((
+        DEBUG_WARN,
+        "OCCPU: Apple based CPU frequency differs substantially from TSC: %11LuHz != %11LuHz\n",
+        Cpu->CPUFrequencyFromApple,
+        Cpu->CPUFrequencyFromTSC
+        ));
     }
+
+    ScanIntelFSBFrequency (Cpu);
   }
   //
   // Calculate number of cores.
   // If we are under virtualization, then we should get the topology from CPUID the same was as with Penryn.
   //
   if (Cpu->MaxId >= CPUID_CACHE_PARAMS
-    && (Cpu->Model <= CPU_MODEL_PENRYN
-    || Cpu->Model == CPU_MODEL_BONNELL
-    || Cpu->Model == CPU_MODEL_BONNELL_MID
+    && (Cpu->CpuGeneration == OcCpuGenerationPrePenryn
+    || Cpu->CpuGeneration == OcCpuGenerationPenryn
+    || Cpu->CpuGeneration == OcCpuGenerationBonnel
     || Cpu->Hypervisor)) {
     AsmCpuidEx (CPUID_CACHE_PARAMS, 0, &CpuidCacheEax.Uint32, &CpuidCacheEbx.Uint32, NULL, NULL);
     if (CpuidCacheEax.Bits.CacheType != CPUID_CACHE_PARAMS_CACHE_TYPE_NULL) {
@@ -473,11 +563,11 @@ ScanIntelProcessor (
         Cpu->ThreadCount = Cpu->CoreCount;
       }
     }
-  } else if (Cpu->Model == CPU_MODEL_WESTMERE) {
+  } else if (Cpu->CpuGeneration == OcCpuGenerationWestmere) {
     Msr = AsmReadMsr64 (MSR_CORE_THREAD_COUNT);
     Cpu->CoreCount   = (UINT16)BitFieldRead64 (Msr, 16, 19);
     Cpu->ThreadCount = (UINT16)BitFieldRead64 (Msr, 0,  15);
-  } else if (Cpu->Model == CPU_MODEL_BANIAS || Cpu->Model == CPU_MODEL_DOTHAN) {
+  } else if (Cpu->CpuGeneration == OcCpuGenerationBanias) {
     //
     // Banias and Dothan (Pentium M and Celeron M) never had
     // multiple cores or threads, and do not support the MSR below.
@@ -513,6 +603,7 @@ ScanAmdProcessor (
   UINT8   CoreFrequencyID;
   UINT8   CoreDivisorID;
   UINT8   Divisor;
+  UINT8   MaxBusRatio;
   BOOLEAN Recalculate;
 
   //
@@ -526,13 +617,6 @@ ScanAmdProcessor (
   Recalculate = TRUE;
   DEBUG_CODE_END ();
 
-  //
-  // Faking an Intel Core i5 Processor.
-  // This value is purely cosmetic, but it makes sense to fake something
-  // that is somewhat representative of the kind of Processor that's actually
-  // in the system
-  //
-  Cpu->AppleProcessorType = AppleProcessorTypeCorei5Type5;
   //
   // get TSC Frequency calculated in OcTimerLib, unless we got it already from virtualization extensions.
   // FIXME(1): This code assumes the CPU operates in P0.  Either ensure it does
@@ -552,10 +636,23 @@ ScanAmdProcessor (
     Cpu->ThreadCount = (UINT16) (BitFieldRead32 (CpuidEcx, 0, 7) + 1);
   }
 
+  //
+  // Faking an Intel processor with matching core count if possible.
+  // This value is purely cosmetic, but it makes sense to fake something
+  // that is somewhat representative of the kind of Processor that's actually
+  // in the system
+  //
+  if (Cpu->ThreadCount >= 8) {
+    Cpu->AppleProcessorType = AppleProcessorTypeXeonW;
+  } else {
+    Cpu->AppleProcessorType = AppleProcessorTypeCorei5Type5;
+  }
+
   if (Cpu->Family == AMD_CPU_FAMILY) {
     Divisor         = 0;
     CoreFrequencyID = 0;
     CoreDivisorID   = 0;
+    MaxBusRatio     = 0;
 
     switch (Cpu->ExtFamily) {
       case AMD_CPU_EXT_FAMILY_17H:
@@ -569,7 +666,7 @@ ScanAmdProcessor (
             // Sometimes incorrect hypervisor configuration will lead to dividing by zero,
             // but these variables will not be used under hypervisor, so just skip these.
             //
-            Cpu->MaxBusRatio = (UINT8) (CoreFrequencyID / CoreDivisorID * 2);
+            MaxBusRatio = (UINT8) (CoreFrequencyID / CoreDivisorID * 2);
           }
         }
         //
@@ -577,8 +674,7 @@ ScanAmdProcessor (
         //
         if (Cpu->MaxExtId >= 0x8000001E) {
           AsmCpuid (0x8000001E, NULL, &CpuidEbx, NULL, NULL);
-          Cpu->CoreCount =
-            (UINT16) DivU64x32 (
+          Cpu->CoreCount = (UINT16) DivU64x32 (
               Cpu->ThreadCount,
               (BitFieldRead32 (CpuidEbx, 8, 15) + 1)
             );
@@ -602,7 +698,7 @@ ScanAmdProcessor (
             // Sometimes incorrect hypervisor configuration will lead to dividing by zero,
             // but these variables will not be used under hypervisor, so just skip these.
             //
-            Cpu->MaxBusRatio = (UINT8)((CoreFrequencyID + 0x10) / Divisor);
+            MaxBusRatio = (UINT8)((CoreFrequencyID + 0x10) / Divisor);
           }
         }
         //
@@ -621,7 +717,7 @@ ScanAmdProcessor (
       CoreFrequencyID,
       CoreDivisorID,
       Divisor,
-      Cpu->MaxBusRatio
+      MaxBusRatio
       ));
 
     //
@@ -631,20 +727,12 @@ ScanAmdProcessor (
       //
       // Sometimes incorrect hypervisor configuration will lead to dividing by zero.
       //
-      if (Cpu->MaxBusRatio == 0) {
-        Cpu->FSBFrequency = 100000000; // 100 Mhz like Intel part.
-        Cpu->MaxBusRatio = 1; // TODO: Maybe unsafe too, we need more investigation.
+      if (MaxBusRatio == 0) {
+        Cpu->FSBFrequency = 100000000; // 100 MHz like Intel part.
       } else {
-        Cpu->FSBFrequency = DivU64x32 (Cpu->CPUFrequency, Cpu->MaxBusRatio);
+        Cpu->FSBFrequency = DivU64x32 (Cpu->CPUFrequency, MaxBusRatio);
       }
-      //
-      // CPUPM is not supported on AMD, meaning the current
-      // and minimum bus ratio are equal to the maximum bus ratio
-      //
-      Cpu->CurBusRatio = Cpu->MaxBusRatio;
-      Cpu->MinBusRatio = Cpu->MaxBusRatio;
     }
-
   }
 }
 
@@ -790,24 +878,14 @@ OcCpuScanProcessor (
 
   if (Cpu->CPUFrequencyFromVMT > 0) {
     Cpu->CPUFrequency = Cpu->CPUFrequencyFromVMT;
-    //
-    // We can calculate Bus Ratio here
-    //
-    Cpu->MaxBusRatio = (UINT8) DivU64x32 (Cpu->CPUFrequency, (UINT32)Cpu->FSBFrequency);
-    //
-    // We don't have anything like turbo, so we just assign some variables here
-    //
-    Cpu->MinBusRatio = Cpu->MaxBusRatio;
-    Cpu->CurBusRatio = Cpu->MaxBusRatio;
 
     DEBUG ((
       DEBUG_INFO,
-      "OCCPU: VMWare TSC: %11LuHz, %5LuMHz; FSB: %11LuHz, %5LuMHz; BusRatio: %d\n",
+      "OCCPU: VMWare TSC: %11LuHz, %5LuMHz; FSB: %11LuHz, %5LuMHz\n",
       Cpu->CPUFrequency,
       DivU64x32 (Cpu->CPUFrequency, 1000000),
       Cpu->FSBFrequency,
-      DivU64x32 (Cpu->FSBFrequency, 1000000),
-      Cpu->MaxBusRatio
+      DivU64x32 (Cpu->FSBFrequency, 1000000)
       ));
   }
 
@@ -846,6 +924,15 @@ OcCpuScanProcessor (
     Cpu->CPUFrequencyFromTSC,
     DivU64x32 (Cpu->CPUFrequencyFromTSC, 1000000)
     ));
+
+  if (Cpu->CPUFrequencyFromApple > 0) {
+    DEBUG ((
+      DEBUG_INFO,
+      "OCCPU: CPUFrequencyFromApple %11LuHz %5LuMHz\n",
+      Cpu->CPUFrequencyFromApple,
+      DivU64x32 (Cpu->CPUFrequencyFromApple, 1000000)
+      ));
+  }
 
   DEBUG ((
     DEBUG_INFO,
@@ -1004,32 +1091,19 @@ OcCpuCorrectTscSync (
 }
 
 OC_CPU_GENERATION
-OcCpuGetGeneration (
-  VOID
+InternalDetectIntelProcessorGeneration (
+  IN OC_CPU_INFO  *CpuInfo
   )
 {
-  CPU_MICROCODE_PROCESSOR_SIGNATURE  Sig;
-  UINT32                             CpuFamily;
-  UINT32                             CpuModel;
-  OC_CPU_GENERATION                  CpuGeneration;
-
-  Sig.Uint32 = 0;
-
-  AsmCpuid (1, &Sig.Uint32, NULL, NULL, NULL);
-
-  CpuFamily = Sig.Bits.Family;
-  if (CpuFamily == 15) {
-    CpuFamily += Sig.Bits.ExtendedFamily;
-  }
-
-  CpuModel = Sig.Bits.Model;
-  if (CpuFamily == 15 || CpuFamily == 6) {
-    CpuModel |= Sig.Bits.ExtendedModel << 4;
-  }
+  OC_CPU_GENERATION CpuGeneration;
 
   CpuGeneration = OcCpuGenerationUnknown;
-  if (CpuFamily == 6) {
-    switch (CpuModel) {
+  if (CpuInfo->Family == 6) {
+    switch (CpuInfo->Model) {
+      case CPU_MODEL_BANIAS:
+      case CPU_MODEL_DOTHAN:
+        CpuGeneration = OcCpuGenerationBanias;
+        break;
       case CPU_MODEL_PENRYN:
         CpuGeneration = OcCpuGenerationPenryn;
         break;
@@ -1038,6 +1112,10 @@ OcCpuGetGeneration (
       case CPU_MODEL_DALES:
       case CPU_MODEL_NEHALEM_EX:
         CpuGeneration = OcCpuGenerationNehalem;
+        break;
+      case CPU_MODEL_BONNELL:
+      case CPU_MODEL_BONNELL_MID:
+        CpuGeneration = OcCpuGenerationBonnel;
         break;
       case CPU_MODEL_DALES_32NM:
       case CPU_MODEL_WESTMERE:
@@ -1073,7 +1151,7 @@ OcCpuGetGeneration (
         //
         // Kaby has 0x9 stepping, and Coffee use 0xA / 0xB stepping.
         //
-        if (Sig.Bits.Stepping == 9) {
+        if (CpuInfo->Stepping == 9) {
           CpuGeneration = OcCpuGenerationKabyLake;
         } else {
           CpuGeneration = OcCpuGenerationCoffeeLake;
@@ -1082,15 +1160,38 @@ OcCpuGetGeneration (
       case CPU_MODEL_CANNONLAKE:
         CpuGeneration = OcCpuGenerationCannonLake;
         break;
+      case CPU_MODEL_COMETLAKE_S:
+      case CPU_MODEL_COMETLAKE_U:
+        CpuGeneration = OcCpuGenerationCometLake;
+        break;
+      case CPU_MODEL_ROCKETLAKE_S:
+        CpuGeneration = OcCpuGenerationRocketLake;
+        break;
+      case CPU_MODEL_ICELAKE_Y:
+      case CPU_MODEL_ICELAKE_U:
+      case CPU_MODEL_ICELAKE_SP:
+        CpuGeneration = OcCpuGenerationIceLake;
+        break;
+      case CPU_MODEL_TIGERLAKE_U:
+        CpuGeneration = OcCpuGenerationTigerLake;
+        break;
+      default:
+        if (CpuInfo->Model < CPU_MODEL_PENRYN) {
+          CpuGeneration = OcCpuGenerationPrePenryn;
+        } else if (CpuInfo->Model >= CPU_MODEL_SANDYBRIDGE) {
+          CpuGeneration = OcCpuGenerationPostSandyBridge;
+        }
     }
+  } else {
+    CpuGeneration = OcCpuGenerationPrePenryn;
   }
 
   DEBUG ((
     DEBUG_VERBOSE,
     "OCCPU: Discovered CpuFamily %d CpuModel %d CpuStepping %d CpuGeneration %d\n",
-    CpuFamily,
-    CpuModel,
-    Sig.Bits.Stepping,
+    CpuInfo->Family,
+    CpuInfo->Model,
+    CpuInfo->Stepping,
     CpuGeneration
     ));
 

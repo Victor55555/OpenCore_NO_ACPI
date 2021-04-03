@@ -20,11 +20,31 @@ typedef struct _BOOT_PICKER_GUI_CONTEXT BOOT_PICKER_GUI_CONTEXT;
 
 enum {
   GuiPointerPrimaryDown,
-  GuiPointerPrimaryHold,
-  GuiPointerPrimaryUp
+  GuiPointerPrimaryUp,
+  GuiPointerPrimaryDoubleClick
 };
 
-typedef UINT8 GUI_PTR_EVENT;
+typedef union {
+  struct {
+    UINT32 X;
+    UINT32 Y;
+  }      Pos;
+  UINT64 Uint64;
+} GUI_PTR_POSITION;
+
+
+typedef struct {
+  UINT8            Type;
+  GUI_PTR_POSITION Pos;
+} GUI_PTR_EVENT;
+
+typedef OC_PICKER_KEY_INFO GUI_KEY_EVENT;
+
+struct GUI_KEY_CONTEXT_ {
+  OC_PICKER_CONTEXT *Context;
+  OC_PICKER_KEY_MAP KeyFilter;
+  OC_MODIFIER_MAP   OcModifiers;
+};
 
 typedef
 VOID
@@ -38,7 +58,7 @@ VOID
   IN     UINT32                  OffsetY,
   IN     UINT32                  Width,
   IN     UINT32                  Height,
-  IN     BOOLEAN                 RequestDraw
+  IN     UINT8                   Opacity
   );
 
 typedef
@@ -47,11 +67,9 @@ GUI_OBJ *
   IN OUT GUI_OBJ                 *This,
   IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
   IN     BOOT_PICKER_GUI_CONTEXT *Context,
-  IN     GUI_PTR_EVENT           Event,
   IN     INT64                   BaseX,
   IN     INT64                   BaseY,
-  IN     INT64                   OffsetX,
-  IN     INT64                   OffsetY
+  IN     CONST GUI_PTR_EVENT     *Event
   );
 
 typedef
@@ -60,10 +78,15 @@ VOID
   IN OUT GUI_OBJ                 *This,
   IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
   IN     BOOT_PICKER_GUI_CONTEXT *Context,
-  IN     INT64                   BaseX,
-  IN     INT64                   BaseY,
-  IN     INTN                    Key,
-  IN     BOOLEAN                 Modifier
+  IN     CONST GUI_KEY_EVENT     *KeyEvent
+  );
+
+typedef
+VOID
+(*GUI_OBJ_FOCUS)(
+  IN     CONST GUI_OBJ        *This,
+  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
+  IN     BOOLEAN              Focus
   );
 
 typedef
@@ -80,22 +103,26 @@ typedef struct {
   GUI_ANIMATE Animate;
 } GUI_ANIMATION;
 
+typedef struct GUI_OBJ_CHILD_ GUI_OBJ_CHILD;
+
 struct GUI_OBJ_ {
   INT64             OffsetX;
   INT64             OffsetY;
   UINT32            Width;
   UINT32            Height;
+  UINT8             Opacity;
   GUI_OBJ_DRAW      Draw;
-  GUI_OBJ_PTR_EVENT PtrEvent;
   GUI_OBJ_KEY_EVENT KeyEvent;
-  LIST_ENTRY        Children;
+  GUI_OBJ_PTR_EVENT PtrEvent;
+  GUI_OBJ_FOCUS     Focus;
+  UINT32            NumChildren;
+  GUI_OBJ_CHILD     **Children;
 };
 
-typedef struct {
-  LIST_ENTRY Link;
-  GUI_OBJ    *Parent;
+struct GUI_OBJ_CHILD_ {
   GUI_OBJ    Obj;
-} GUI_OBJ_CHILD;
+  GUI_OBJ    *Parent;
+};
 
 typedef struct {
   UINT32                        Width;
@@ -108,14 +135,14 @@ typedef struct GUI_SCREEN_CURSOR_ GUI_SCREEN_CURSOR;
 typedef
 CONST GUI_IMAGE *
 (*GUI_CURSOR_GET_IMAGE)(
-  IN OUT GUI_SCREEN_CURSOR       *This,
-  IN     BOOT_PICKER_GUI_CONTEXT *Context
+  IN BOOT_PICKER_GUI_CONTEXT *Context
   );
 
 typedef
 BOOLEAN
 (*GUI_EXIT_LOOP)(
-  IN BOOT_PICKER_GUI_CONTEXT *Context
+  IN OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN     BOOT_PICKER_GUI_CONTEXT  *Context
   );
 
 struct GUI_SCREEN_CURSOR_ {
@@ -123,16 +150,31 @@ struct GUI_SCREEN_CURSOR_ {
   UINT32 Y;
 };
 
+typedef struct {
+  GUI_OBJ_DRAW         Draw;
+  GUI_OBJ_PTR_EVENT    PtrEvent;
+  UINT32               NumChildren;
+  GUI_OBJ_CHILD        **Children;
+  GUI_OBJ_KEY_EVENT    KeyEvent;
+  GUI_CURSOR_GET_IMAGE GetCursorImage;
+  GUI_EXIT_LOOP        ExitLoop;
+  GUI_OBJ              **FocusList;
+  UINT8                NumFocusList;
+} GUI_VIEW_CONTEXT;
+
 struct GUI_DRAWING_CONTEXT_ {
   //
   // Scene objects
   //
-  GUI_OBJ                  *Screen;
+  GUI_OBJ                  Screen;
   GUI_CURSOR_GET_IMAGE     GetCursorImage;
   GUI_EXIT_LOOP            ExitLoop;
   LIST_ENTRY               Animations;
   BOOT_PICKER_GUI_CONTEXT  *GuiContext;
   UINT8                    Scale;
+  UINT8                    CursorOpacity;
+  UINT32                   TimeOutSeconds;
+  UINT64                   FrameTime;
 };
 
 EFI_STATUS
@@ -174,7 +216,7 @@ GuiObjDrawDelegate (
   IN     UINT32                  OffsetY,
   IN     UINT32                  Width,
   IN     UINT32                  Height,
-  IN     BOOLEAN                 RequestDraw
+  IN     UINT8                   Opacity
   );
 
 GUI_OBJ *
@@ -182,11 +224,9 @@ GuiObjDelegatePtrEvent (
   IN OUT GUI_OBJ                 *This,
   IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
   IN     BOOT_PICKER_GUI_CONTEXT *Context,
-  IN     GUI_PTR_EVENT           Event,
   IN     INT64                   BaseX,
   IN     INT64                   BaseY,
-  IN     INT64                   OffsetX,
-  IN     INT64                   OffsetY
+  IN     CONST GUI_PTR_EVENT     *Event
   );
 
 BOOLEAN
@@ -201,53 +241,53 @@ VOID
 GuiDrawToBuffer (
   IN     CONST GUI_IMAGE      *Image,
   IN     UINT8                Opacity,
-  IN     BOOLEAN              Fill,
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                BaseX,
   IN     INT64                BaseY,
   IN     UINT32               OffsetX,
   IN     UINT32               OffsetY,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
   );
 
 VOID
-GuiDrawScreen (
+GuiDrawToBufferFill (
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *Colour,
+  IN OUT GUI_DRAWING_CONTEXT                  *DrawContext,
+  IN     UINT32                               PosX,
+  IN     UINT32                               PosY,
+  IN     UINT32                               Width,
+  IN     UINT32                               Height
+  );
+
+VOID
+GuiRequestDraw (
+  IN UINT32  PosX,
+  IN UINT32  PosY,
+  IN UINT32  Width,
+  IN UINT32  Height
+  );
+
+VOID
+GuiRequestDrawCrop (
   IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
   IN     INT64                X,
   IN     INT64                Y,
   IN     UINT32               Width,
-  IN     UINT32               Height,
-  IN     BOOLEAN              RequestDraw
-  );
-
-VOID
-GuiRedrawObject (
-  IN OUT GUI_OBJ              *Obj,
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     INT64                BaseX,
-  IN     INT64                BaseY,
-  IN     BOOLEAN              RequestDraw
+  IN     UINT32               Height
   );
 
 VOID
 GuiViewInitialize (
-  OUT    GUI_DRAWING_CONTEXT     *DrawContext,
-  IN OUT GUI_OBJ                 *Screen,
-  IN     GUI_CURSOR_GET_IMAGE    CursorDraw,
-  IN     GUI_EXIT_LOOP           ExitLoop,
-  IN     BOOT_PICKER_GUI_CONTEXT *GuiContext
+  OUT GUI_DRAWING_CONTEXT      *DrawContext,
+  IN  BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN  CONST GUI_VIEW_CONTEXT   *ViewContext
   );
 
 VOID
 GuiViewDeinitialize (
-  IN OUT GUI_DRAWING_CONTEXT   *DrawContext
-  );
-
-CONST GUI_SCREEN_CURSOR *
-GuiViewCurrentCursor (
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext
+  IN OUT GUI_DRAWING_CONTEXT   *DrawContext,
+  OUT    BOOT_PICKER_GUI_CONTEXT *GuiContext
   );
 
 VOID
@@ -257,8 +297,7 @@ GuiRedrawAndFlushScreen (
 
 VOID
 GuiDrawLoop (
-  IN OUT GUI_DRAWING_CONTEXT  *DrawContext,
-  IN     UINT32               TimeoutSeconds
+  IN OUT GUI_DRAWING_CONTEXT  *DrawContext
   );
 
 VOID
@@ -269,9 +308,9 @@ GuiClearScreen (
 
 EFI_STATUS
 GuiLibConstruct (
-  IN OC_PICKER_CONTEXT  *PickerContext,
-  IN UINT32             CursorDefaultX,
-  IN UINT32             CursorDefaultY
+  IN BOOT_PICKER_GUI_CONTEXT  *GuiContext,
+  IN INT32                    CursorOffsetX,
+  IN INT32                    CursorOffsetY
   );
 
 VOID
@@ -281,6 +320,19 @@ GuiLibDestruct (
 
 VOID
 GuiBlendPixel (
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel,
+  IN     UINT8                                Opacity
+  );
+
+VOID
+GuiBlendPixelSolid (
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
+  IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel
+  );
+
+VOID
+GuiBlendPixelOpaque (
   IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL        *BackPixel,
   IN     CONST EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *FrontPixel,
   IN     UINT8                                Opacity
@@ -304,6 +356,8 @@ typedef struct {
   UINT64            Duration;
   UINT32            StartValue;
   UINT32            EndValue;
+  // FIXME: This probably belongs into some animation context.
+  UINT32            HoldTime;
 } GUI_INTERPOLATION;
 
 UINT32
