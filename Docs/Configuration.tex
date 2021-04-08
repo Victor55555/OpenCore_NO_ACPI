@@ -3219,7 +3219,7 @@ the default boot entry choice will remain changed until the next manual reconfig
   \item \texttt{0x0010} --- \texttt{OC\_ATTR\_USE\_POINTER\_CONTROL}, enables pointer control
   in the OpenCore picker when available. For example, this could make use of mouse or trackpad to
   control UI elements.
-  \item \texttt{0x0020} --- \texttt{OC\_ATTR\_DEBUG\_DISPLAY}, enable display of additional
+  \item \texttt{0x0020} --- \texttt{OC\_ATTR\_SHOW\_DEBUG\_DISPLAY}, enable display of additional
   timing and debug information, in Builtin picker in \texttt{DEBUG} and \texttt{NOOPT}
   builds only.
   \end{itemize}
@@ -6158,7 +6158,7 @@ functioning. Feature highlights:
   \tightlist
   \item \texttt{Auto} --- Use OEM Apple Event implementation if available, connected and
   recent enough to be used, otherwise use OC reimplementation.
-  One some Macs (e.g. Mac Pro) this will find the Apple implementation. On both older and
+  On some Macs (e.g. Mac Pro) this will find the Apple implementation. On both older and
   newer Macs than this, this option will always or often use the OC implementation. On older Macs
   this is because the implementation available is too old to be used, on newer Macs it is
   because of optimisations added by Apple which do not connect the Apple Event protocol
