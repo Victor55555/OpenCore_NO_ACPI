@@ -150,7 +150,6 @@ CheckUEFIAppleInput (
   UINT32          ErrorCount;
   OC_UEFI_CONFIG  *UserUefi;
   CONST CHAR8     *AppleEvent;
-  CONST CHAR8     *CustomDelays;
 
   ErrorCount      = 0;
   UserUefi        = &Config->Uefi;
@@ -161,27 +160,18 @@ CheckUEFIAppleInput (
   if (AsciiStrCmp (AppleEvent, "Auto") != 0
     && AsciiStrCmp (AppleEvent, "Builtin") != 0
     && AsciiStrCmp (AppleEvent, "OEM") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->AppleInput->AppleEvent is illegal (Can only be Auto, Builtin, OEM)!\n"));
+    DEBUG ((DEBUG_WARN, "UEFI->AppleInput->AppleEvent 是非法的 (只能是 Auto, Builtin, OEM)!\n"));
     ++ErrorCount;
   }
 
-  CustomDelays = OC_BLOB_GET (&UserUefi->AppleInput.CustomDelays);
-  if (AsciiStrCmp (CustomDelays, "Auto") != 0
-    && AsciiStrCmp (CustomDelays, "Enabled") != 0
-    && AsciiStrCmp (CustomDelays, "Disabled") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->AppleInput->CustomDelays is illegal (Can only be Auto, Enabled, Disabled)!\n"));
-    ++ErrorCount;
-  }
-
-  if (UserUefi->Input.KeySupport
-    && AsciiStrCmp (CustomDelays, "Disabled") != 0) {
+  if (UserUefi->Input.KeySupport && UserUefi->AppleInput.CustomDelays) {
     if (UserUefi->AppleInput.KeyInitialDelay != 0
       && UserUefi->AppleInput.KeyInitialDelay < UserUefi->Input.KeyForgetThreshold) {
-      DEBUG ((DEBUG_WARN, "KeyInitialDelay is enabled in KeySupport mode, is non-zero and is less than the KeyForgetThreshold value (likely to result in uncontrolled key repeats); use zero (0) instead!\n"));
+      DEBUG ((DEBUG_WARN, "在KeySupport模式下启用KeyInitialDelay, 不为零且小于KeyForgetThreshold值 (可能导致不受控制的重复按键); 使用零（0）代替!\n"));
       ++ErrorCount;
     }
     if (UserUefi->AppleInput.KeySubsequentDelay < UserUefi->Input.KeyForgetThreshold) {
-      DEBUG ((DEBUG_WARN, "KeySubsequentDelay is enabled in KeySupport mode and is less than the KeyForgetThreshold value (likely to result in uncontrolled key repeats); use the KeyForgetThreshold value, or greater, instead!\n"));
+      DEBUG ((DEBUG_WARN, "KeySubsequentDelay在KeySupport模式下启用，并且小于KeyForgetThreshold值 (可能导致不受控制的重复按键); 使用KeyForgetThreshold值或更大的值代替!\n"));
       ++ErrorCount;
     }
   }
