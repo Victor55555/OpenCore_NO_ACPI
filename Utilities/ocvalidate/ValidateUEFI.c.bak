@@ -150,6 +150,7 @@ CheckUEFIAppleInput (
   UINT32          ErrorCount;
   OC_UEFI_CONFIG  *UserUefi;
   CONST CHAR8     *AppleEvent;
+  CONST CHAR8     *CustomDelays;
 
   ErrorCount      = 0;
   UserUefi        = &Config->Uefi;
@@ -164,7 +165,16 @@ CheckUEFIAppleInput (
     ++ErrorCount;
   }
 
-  if (UserUefi->Input.KeySupport && UserUefi->AppleInput.CustomDelays) {
+  CustomDelays = OC_BLOB_GET (&UserUefi->AppleInput.CustomDelays);
+  if (AsciiStrCmp (CustomDelays, "Auto") != 0
+    && AsciiStrCmp (CustomDelays, "Enabled") != 0
+    && AsciiStrCmp (CustomDelays, "Disabled") != 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->AppleInput->CustomDelays 是非法的l (只能是 Auto, Enabled, Disabled)!\n"));
+    ++ErrorCount;
+  }
+
+  if (UserUefi->Input.KeySupport
+    && AsciiStrCmp (CustomDelays, "Disabled") != 0) {
     if (UserUefi->AppleInput.KeyInitialDelay != 0
       && UserUefi->AppleInput.KeyInitialDelay < UserUefi->Input.KeyForgetThreshold) {
       DEBUG ((DEBUG_WARN, "在KeySupport模式下启用KeyInitialDelay, 不为零且小于KeyForgetThreshold值 (可能导致不受控制的重复按键); 使用零（0）代替!\n"));
