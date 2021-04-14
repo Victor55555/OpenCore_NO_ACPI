@@ -21,7 +21,6 @@
 #include <Library/DebugLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/IoLib.h>
-#include <Library/HandleParsingLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/OcDeviceMiscLib.h>
 #include <Library/PrintLib.h>
@@ -30,6 +29,8 @@
 #include <IndustryStandard/PeCoffImage.h>
 #include <Protocol/Decompress.h>
 #include <Protocol/PciIo.h>
+
+#include "HandleParsingMin.h"
 
 /**
   @param[in] RomBar       The Rom Base address.
@@ -183,7 +184,9 @@ ReloadPciRom (
           }
         }
 
-        FreePool (DecompressedImageBuffer);
+        if (DecompressedImageBuffer != NULL) {
+          FreePool (DecompressedImageBuffer);
+        }
       }
     }
 
@@ -241,7 +244,7 @@ OcReloadOptionRoms (
         );
 
       if (BindingHandleCount == 0) {
-        HandleIndex = ConvertHandleToHandleIndex (HandleArray[Index]);
+        HandleIndex = InternalConvertHandleToHandleIndex (HandleArray[Index]);
         UnicodeSPrint (RomFileName, sizeof (RomFileName), L"Handle%X", HandleIndex);
         Status = ReloadPciRom (PciIo->RomImage, (UINTN) PciIo->RomSize, RomFileName);
         if (EFI_ERROR (ReturnStatus)) {
@@ -249,9 +252,13 @@ OcReloadOptionRoms (
         }
       }
 
-      FreePool (BindingHandleBuffer);
+      if (BindingHandleBuffer != NULL) {
+        FreePool (BindingHandleBuffer);
+      }
     }
   }
+
+  FreePool (HandleArray);
 
   return ReturnStatus;
 }
