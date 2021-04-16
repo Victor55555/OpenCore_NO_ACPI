@@ -298,10 +298,8 @@ OcReinstallProtocols (
   )
 {
   CONST CHAR8   *AppleEventMode;
-  CONST CHAR8   *CustomDelaysMode;
   BOOLEAN       InstallAppleEvent;
   BOOLEAN       OverrideAppleEvent;
-  BOOLEAN       UseCustomDelays;
 
   if (OcAudioInstallProtocols (Config->Uefi.ProtocolOverrides.AppleAudio) == NULL) {
     DEBUG ((DEBUG_INFO, "OC: Disabling audio in favour of firmware implementation\n"));
@@ -349,7 +347,6 @@ OcReinstallProtocols (
 
   InstallAppleEvent   = TRUE;
   OverrideAppleEvent  = FALSE;
-  UseCustomDelays     = Config->Uefi.Input.KeySupport;
 
   AppleEventMode = OC_BLOB_GET (&Config->Uefi.AppleInput.AppleEvent);
 
@@ -362,32 +359,18 @@ OcReinstallProtocols (
     DEBUG ((DEBUG_WARN, "OC: Invalid AppleInput AppleEvent setting %a, using Auto\n", AppleEventMode));
   }
 
-  CustomDelaysMode = OC_BLOB_GET (&Config->Uefi.AppleInput.CustomDelays);
-
-  if (AsciiStrCmp (CustomDelaysMode, "Auto") == 0) {
-  } else if (AsciiStrCmp (CustomDelaysMode, "Enabled") == 0) {
-    UseCustomDelays = TRUE;
-  } else if (AsciiStrCmp (CustomDelaysMode, "Disabled") == 0) {
-    UseCustomDelays = FALSE;
-  } else {
-    DEBUG ((DEBUG_WARN, "OC: Invalid AppleInput CustomDelays setting %a, using Auto\n", CustomDelaysMode));
-  }
-
-
-  if (InstallAppleEvent) {
-    if (OcAppleEventInstallProtocol (
-      OverrideAppleEvent,
-      UseCustomDelays,
-      Config->Uefi.AppleInput.KeyInitialDelay,
-      Config->Uefi.AppleInput.KeySubsequentDelay,
-      Config->Uefi.AppleInput.PointerSpeedDiv,
-      Config->Uefi.AppleInput.PointerSpeedMul
-      ) == NULL) {
-      DEBUG ((DEBUG_ERROR, "OC: Failed to install apple event protocol\n"));
-    }
-  } else {
-    DEBUG ((DEBUG_INFO, "OC: Allowing OEM apple event protocol to connect\n"));
-  }
+  if (OcAppleEventInstallProtocol (
+    InstallAppleEvent,
+    OverrideAppleEvent,
+    Config->Uefi.AppleInput.CustomDelays,
+    Config->Uefi.AppleInput.KeyInitialDelay,
+    Config->Uefi.AppleInput.KeySubsequentDelay,
+    Config->Uefi.AppleInput.PointerSpeedDiv,
+    Config->Uefi.AppleInput.PointerSpeedMul
+    ) == NULL
+    && InstallAppleEvent) {
+    DEBUG ((DEBUG_ERROR, "OC: Failed to install apple event protocol\n"));
+  };
 
   if (OcFirmwareVolumeInstallProtocol (Config->Uefi.ProtocolOverrides.FirmwareVolume) == NULL) {
     DEBUG ((DEBUG_ERROR, "OC: Failed to install firmware volume protocol\n"));
@@ -816,6 +799,14 @@ OcLoadUefiSupport (
 
   if (Config->Uefi.Quirks.DisableSecurityPolicy) {
     OcInstallPermissiveSecurityPolicy ();
+  }
+
+  if (Config->Uefi.Quirks.ForgeUefiSupport) {
+    OcForgeUefiSupport ();
+  }
+
+  if (Config->Uefi.Quirks.ReloadOptionRoms) {
+    OcReloadOptionRoms ();
   }
 
   OcMiscUefiQuirksLoaded (Config);

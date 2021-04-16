@@ -1,5 +1,18 @@
 OpenCore Changelog
 ==================
+#### v0.6.9
+- Fixed out-of-sync cursor movement rectangle when loading e.g. CrScreenshotDxe
+- Updated underlying EDK II package to edk2-stable202102
+- Applied consistent enforcement of required minimum Apple OEM Apple Event protocol version
+- Changed CustomDelays to less surprising boolean setting with failsafe of false
+- Changed key repeat failsafes and sample values to Apple OEM values
+- Changed PointerSpeedMul failsafe to Apple OEM value
+- Updated docs to include configuration of key repeat settings with and without KeySupport
+- Prevented 'set default' UI when action not permitted by security config
+- Added `ForgeUefiSupport` quirk to workaround legacy EFI 1.x firmwares compatibility
+- Added `ReloadOptionRoms` quirk to force-load Option ROMs on PCI devices
+- Added `OC_ATTR_USE_MINIMAL_UI` to allow running pickers with no Shutdown and Restart buttons
+
 #### v0.6.8
 - Switched to VS2019 toolchain for Windows builds
 - Reduced legacy boot install interaction effort
@@ -56,6 +69,9 @@ OpenCore Changelog
 - Added more precise control on `AppleEvent` protocol properties and features
 - Added dynamic keyboard protocol installation on CrScreenshotDxe
 - Support starting UEFI tools with argument support (e.g. `ControlMsrE2`) without arguments from picker
+- Fixed OpenCanopy font height calculation, may reject previously working fonts and mitigate memory corruption
+- Fixed incorrect identification of Xeon E5XXX/E5-XXXX and Xeon WXXXX/W-XXXX CPUs
+- Added RSDP, RSDT, and XSDT handling to `NormalizeHeaders` ACPI quirk
 
 #### v0.6.7
 - Fixed ocvalidate return code to be non-zero when issues are found
