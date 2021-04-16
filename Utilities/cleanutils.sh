@@ -19,6 +19,8 @@ UTILS=(
     "TestPeCoff"
     "TestRsaPreprocess"
     "TestSmbios"
+    "TestCpuFrequency"
+    "ACPIe"
   )
   for util in "${UTILS[@]}"; do
     cd "$util" || exit 1
