@@ -94,7 +94,7 @@
 
        \vspace{0.2in}
 
-       Reference Manual (0.6.9)
+       Reference Manual (0.7.0)
 
        \vspace{0.2in}
 
@@ -4212,6 +4212,9 @@ operating system makes use of several GUIDs, including but not limited to:
   \texttt{7C436110-AB2A-4BBB-A880-FE41995C9F82}
   (\texttt{APPLE\_BOOT\_VARIABLE\_GUID})
 \item
+  \texttt{5EDDA193-A070-416A-85EB-2A1181F45B18}
+  (Apple Hardware Configuration Storage for \texttt{MacPro7,1})
+\item
   \texttt{8BE4DF61-93CA-11D2-AA0D-00E098032B8C}
   (\texttt{EFI\_GLOBAL\_VARIABLE\_GUID})
 \item
@@ -4634,6 +4637,33 @@ troubleshooting:
   volume range specific to installed audio codec. The value is capped
   by \texttt{MaximumBootBeepVolume} AppleHDA layout value to avoid
   too loud audio playback in the firmware.
+\item
+  \texttt{5EDDA193-A070-416A-85EB-2A1181F45B18:PEXConf}
+  \break
+  PCI expansion slot configuration for \texttt{MacPro7,1}.
+  8-byte sequence describing default PCI slot configuration.
+  Each byte refers to a configuration for a dedicated PCI slot.
+
+  \begin{itemize}
+    \tightlist
+    \item Slot 1 resides at \texttt{IOService:/AppleACPIPlatformExpert/PC01@0/AppleACPIPCI/BR1A@0}
+      and its path is hardcoded. This slot is not behind a muxer.
+    \item Slot 3 resides at \texttt{IOService:/AppleACPIPlatformExpert/PC03@0/AppleACPIPCI/BR3A@0}
+      and its path is hardcoded. This slot is not behind a muxer.
+    \item Slots 2, 4-8 are dynamic and are matched based on \texttt{AAPL,slot-name} property
+      with \texttt{Slot-N} value, where \texttt{N} is the slot number. All these slots are
+      behind the muxer.
+  \end{itemize}
+
+  Refer to the \href{https://support.apple.com/HT210104}{support page}
+  for more details on how \texttt{MacPro7,1} slots are configured.
+
+\item
+  \texttt{5EDDA193-A070-416A-85EB-2A1181F45B18:SlotUtilPEXConf}
+  \break
+  User PCI expansion slot configuration for \texttt{MacPro7,1}.
+  8-byte sequence describing user PCI slot configuration.
+
 \end{itemize}
 
 \section{PlatformInfo}\label{platforminfo}
@@ -5328,6 +5358,21 @@ from \href{https://github.com/acidanthera/dmidecode/releases}{Acidanthera/dmidec
   \textbf{Failsafe}: \texttt{Unknown}\\
   \textbf{SMBIOS}: Memory Device (Type 17) --- Manufacturer\\
   \textbf{Description}: Specifies the manufacturer of this memory device.
+
+  For empty slot this must be set to \texttt{NO DIMM} for macOS System Profiler
+  to correctly display memory slots on certain Mac models, e.g. \texttt{MacPro7,1}.
+  \texttt{MacPro7,1} imposes additional requirements on the memory layout:
+  \begin{itemize}
+    \tightlist
+    \item The amount of installed sticks must one of the following: 4, 6, 8, 10, 12.
+          Using any different value will cause an error in the System Profiler.
+    \item The amount of memory slots must equal to 12. Using any different value
+          will cause an error in the System Profiler.
+    \item Memory sticks must be installed in dedicated memory slots as explained
+          on the \href{https://support.apple.com/HT210103}{support page}. SMBIOS
+          memory devices are mapped to the following slots:
+          \texttt{8, 7, 10, 9, 12, 11, 5, 6, 3, 4, 1, 2}.
+  \end{itemize}
 
 \item
   \texttt{PartNumber}\\
