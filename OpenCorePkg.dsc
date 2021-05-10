@@ -65,6 +65,7 @@
   OcAppleSecureBootLib|OpenCorePkg/Library/OcAppleSecureBootLib/OcAppleSecureBootLib.inf
   OcAppleUserInterfaceThemeLib|OpenCorePkg/Library/OcAppleUserInterfaceThemeLib/OcAppleUserInterfaceThemeLib.inf
   OcAudioLib|OpenCorePkg/Library/OcAudioLib/OcAudioLib.inf
+  OcBlitLib|OpenCorePkg/Library/OcBlitLib/OcBlitLib.inf
   OcBootManagementLib|OpenCorePkg/Library/OcBootManagementLib/OcBootManagementLib.inf
   OcBootServicesTableLib|OpenCorePkg/Library/OcBootServicesTableLib/OcBootServicesTableLib.inf
   OcCompressionLib|OpenCorePkg/Library/OcCompressionLib/OcCompressionLib.inf
@@ -167,6 +168,7 @@
   }
   OpenCorePkg/Application/ChipTune/ChipTune.inf
   OpenCorePkg/Application/CleanNvram/CleanNvram.inf
+  OpenCorePkg/Application/GopPerf/GopPerf.inf
   OpenCorePkg/Application/GopStop/GopStop.inf
   OpenCorePkg/Application/KeyTester/KeyTester.inf
   OpenCorePkg/Application/MmapDump/MmapDump.inf
@@ -202,6 +204,7 @@
   OpenCorePkg/Library/OcAppleSecureBootLib/OcAppleSecureBootLib.inf
   OpenCorePkg/Library/OcAppleUserInterfaceThemeLib/OcAppleUserInterfaceThemeLib.inf
   OpenCorePkg/Library/OcAudioLib/OcAudioLib.inf
+  OpenCorePkg/Library/OcBlitLib/OcBlitLib.inf
   OpenCorePkg/Library/OcBootManagementLib/OcBootManagementLib.inf
   OpenCorePkg/Library/OcBootServicesTableLib/OcBootServicesTableLib.inf
   OpenCorePkg/Library/OcCompilerIntrinsicsLib/OcCompilerIntrinsicsLib.inf
