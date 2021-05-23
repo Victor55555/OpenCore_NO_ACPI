@@ -332,10 +332,10 @@ ValidateFlavour (
   ErrorCount = 0;
 
   if (Flavour == NULL || *Flavour == '\0') {
-    DEBUG ((DEBUG_WARN, "Misc->%a[%u]->Flavour cannot be empty (use \"Auto\")!\n", EntryType, Index));
+    DEBUG ((DEBUG_WARN, "Misc->%a[%u]->Flavour 不能为空 (可以使用 \"Auto\")!\n", EntryType, Index));
     ++ErrorCount;
   } else if (AsciiStrSize (Flavour) > OC_MAX_CONTENT_FLAVOUR_SIZE) {
-    DEBUG ((DEBUG_WARN, "Misc->%a[%u]->Flavour cannot be longer than %d bytes!\n", EntryType, Index, OC_MAX_CONTENT_FLAVOUR_SIZE));
+    DEBUG ((DEBUG_WARN, "Misc->%a[%u]->Flavour 不能超过%d个字节!\n", EntryType, Index, OC_MAX_CONTENT_FLAVOUR_SIZE));
     ++ErrorCount;
   } else {
     //
@@ -345,7 +345,7 @@ ValidateFlavour (
     AsciiStrnCpyS (FlavourCopy, OC_MAX_CONTENT_FLAVOUR_SIZE, Flavour, Length);
     AsciiFilterString (FlavourCopy, TRUE);
     if (OcAsciiStrniCmp (FlavourCopy, Flavour, Length) != 0) {
-      DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour cannot contain CR, LF, TAB or any other non-ASCII characters!\n", EntryType, Index));
+      DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour 不能包含 CR, LF, TAB 或任何其他非ASCII字符!\n", EntryType, Index));
       ++ErrorCount;
     }
 
@@ -357,12 +357,12 @@ ValidateFlavour (
       for (Start = ++End; *End != '\0' && *End != ':'; ++End);
 
       if (Start == End) {
-        DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour cannot be empty!\n", EntryType, Index));
+        DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour 不能为空!\n", EntryType, Index));
         ++ErrorCount;
       } else {
         AsciiStrnCpyS (FlavourCopy, OC_MAX_CONTENT_FLAVOUR_SIZE, Start, End - Start);
         if (OcAsciiStartsWith(FlavourCopy, "Ext", TRUE)) {
-          DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour cannot begin with \"Ext\"!\n", EntryType, Index));
+          DEBUG ((DEBUG_WARN, "Flavour names within Misc->%a[%u]->Flavour 不能以\"Ext\"开头!\n", EntryType, Index));
           ++ErrorCount;
         }
       }

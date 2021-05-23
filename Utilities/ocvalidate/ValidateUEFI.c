@@ -455,7 +455,7 @@ CheckUEFIOutput (
   if (AsciiStrCmp (GopPassThrough, "Enabled") != 0
     && AsciiStrCmp (GopPassThrough, "Disabled") != 0
     && AsciiStrCmp (GopPassThrough, "Apple") != 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Output->GopPassThrough is illegal (Can only be Enabled, Disabled, Apple)!\n"));
+    DEBUG ((DEBUG_WARN, "UEFI->Output->GopPassThrough 是非法的 (只能是 Enabled, Disabled, Apple)!\n"));
     ++ErrorCount;
   }
 
