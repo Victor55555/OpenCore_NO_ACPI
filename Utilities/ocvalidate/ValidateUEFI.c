@@ -395,6 +395,7 @@ CheckUEFIOutput (
   UINT32               ErrorCount;
   OC_UEFI_CONFIG       *UserUefi;
   CONST CHAR8          *TextRenderer;
+  CONST CHAR8          *GopPassThrough;
   BOOLEAN              IsTextRendererSystem;
   BOOLEAN              IsClearScreenOnModeSwitchEnabled;
   BOOLEAN              IsIgnoreTextInGraphicsEnabled;
@@ -453,6 +454,14 @@ CheckUEFIOutput (
       DEBUG ((DEBUG_WARN, "UEFI->Output->SanitiseClearScreen没有在System TextRenderer模式下启用 (当前模式为 %a)!\n", TextRenderer));
       ++ErrorCount;
     }
+  }
+
+  GopPassThrough = OC_BLOB_GET (&UserUefi->Output.GopPassThrough);
+  if (AsciiStrCmp (GopPassThrough, "Enabled") != 0
+    && AsciiStrCmp (GopPassThrough, "Disabled") != 0
+    && AsciiStrCmp (GopPassThrough, "Apple") != 0) {
+    DEBUG ((DEBUG_WARN, "UEFI->Output->GopPassThrough is illegal (Can only be Enabled, Disabled, Apple)!\n"));
+    ++ErrorCount;
   }
 
   //
