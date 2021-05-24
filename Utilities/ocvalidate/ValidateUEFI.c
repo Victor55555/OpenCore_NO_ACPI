@@ -17,12 +17,7 @@
 #include <Library/OcConsoleLib.h>
 
 /**
-<<<<<<< HEAD
-  Callback funtion to verify whether one UEFI driver is duplicated in UEFI->Drivers.
-=======
   Callback function to verify whether one UEFI driver is duplicated in UEFI->Drivers.
-
->>>>>>> c7cbe51260fc38d81870f34b933a8796d95eabc5
   @param[in]  PrimaryDriver    Primary driver to be checked.
   @param[in]  SecondaryDriver  Secondary driver to be checked.
   @retval     TRUE             If PrimaryDriver and SecondaryDriver are duplicated.
