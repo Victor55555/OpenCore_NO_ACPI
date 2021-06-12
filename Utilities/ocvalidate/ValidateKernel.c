@@ -200,7 +200,7 @@ CheckKernelAdd (
     // MinKernel must not be below macOS 10.4 (Darwin version 8).
     //
     if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MinKernel has a Darwin version %a, which is below 8 (macOS 10.4)!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->MinKernel 有一个Darwin版本 %a, 低于 8 (macOS 10.4)!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -333,7 +333,7 @@ CheckKernelBlock (
     // MinKernel must not be below macOS 10.4 (Darwin version 8).
     //
     if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MinKernel has a Darwin version %a, which is below 8 (macOS 10.4)!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MinKernel 有一个 Darwin 版本 %a,低于 8 (macOS 10.4)!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -385,7 +385,7 @@ CheckKernelEmulate (
   // MinKernel must not be below macOS 10.4 (Darwin version 8).
   //
   if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
-    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MinKernel has a Darwin version %a, which is below 8 (macOS 10.4)!\n", MinKernel));
+    DEBUG ((DEBUG_WARN, "Kernel->Emulate->MinKernel 有一个Darwin版本%a，低于8(macOS 10.4)!\n", MinKernel));
     ++ErrorCount;
   }
   //
@@ -494,7 +494,7 @@ CheckKernelForce (
     // MinKernel must not be below macOS 10.4 (Darwin version 8).
     //
     if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MinKernel has a Darwin version %a, which is below 8 (macOS 10.4)!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Force[%u]->MinKernel 有一个Darwin版本%a，低于8(macOS 10.4)!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
@@ -587,7 +587,7 @@ CheckKernelPatch (
     // MinKernel must not be below macOS 10.4 (Darwin version 8).
     //
     if (!OcMatchDarwinVersion (OcParseDarwinVersion (MinKernel), KERNEL_VERSION_TIGER_MIN, 0)) {
-      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MinKernel has a Darwin version %a, which is below 8 (macOS 10.4)!\n", Index, MinKernel));
+      DEBUG ((DEBUG_WARN, "Kernel->Patch[%u]->MinKernel 有一个Darwin版本%a，低于8(macOS 10.4)!\n", Index, MinKernel));
       ++ErrorCount;
     }
 
