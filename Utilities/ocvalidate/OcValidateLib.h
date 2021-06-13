@@ -139,7 +139,8 @@ AsciiGuidIsLegal (
 
   @param[in]  Data                     Data to be checked.
   @param[in]  Mask                     Mask to be applied to Data.
-  @param[in]  Size                     Size of Data and Mask.
+  @param[in]  DataSize                 Size of Data.
+  @param[in]  MaskSize                 Size of Mask.
 
   @retval     TRUE                     If corresponding bits of Mask to Data are active (set to non-zero).
 **/
@@ -147,7 +148,8 @@ BOOLEAN
 DataHasProperMasking (
   IN  CONST VOID   *Data,
   IN  CONST VOID   *Mask,
-  IN  UINTN        Size
+  IN  UINTN        DataSize,
+  IN  UINTN        MaskSize
   );
 
 /**
@@ -228,6 +230,20 @@ StringIsDuplicated (
   IN  CONST CHAR8  *EntrySection,
   IN  CONST CHAR8  *FirstString,
   IN  CONST CHAR8  *SecondString  
+  );
+
+/**
+  Check if the length of path specified in OpenCore Config is safe enough.
+
+  @param[in]  PrefixLength    Length of prefix.
+  @param[in]  FileNameSize    Size of file path, including the '\0' terminator.
+
+  @retval     TRUE            If (PrefixLength + FileNameSize) does not exceed OC_STORAGE_SAFE_PATH_MAX.
+**/
+BOOLEAN
+StoragePathLengthIsSafe (
+  IN  UINTN  PrefixLength,
+  IN  UINTN  FileNameSize
   );
 
 /**

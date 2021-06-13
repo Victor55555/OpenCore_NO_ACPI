@@ -79,6 +79,14 @@ CheckACPIAdd (
       DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径具有.aml和.bin以外的文件名后缀!\n", Index));
       ++ErrorCount;
     }
+
+    //
+    // Check the length of path relative to OC directory.
+    //
+    if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_ACPI_PATH), AsciiStrSize (Path))) {
+      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径太长 (不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
   }
 
   //

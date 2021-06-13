@@ -412,6 +412,14 @@ CheckMiscEntries (
       DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment包含非法字符!\n", Index));
       ++ErrorCount;
     }
+
+    //
+    // Check the length of path relative to OC directory.
+    //
+    if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_TOOL_PATH), AsciiStrSize (Path))) {
+      DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->路径太长 (不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
     
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
@@ -578,7 +586,15 @@ CheckMiscTools (
       DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->Comment 包含非法字符！\n", Index));
       ++ErrorCount;
     }
-    
+
+    //
+    // Check the length of path relative to OC directory.
+    //
+    if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_TOOL_PATH), AsciiStrSize (Path))) {
+      DEBUG ((DEBUG_WARN, "Misc->Tools[%u]->路径太长 (不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      ++ErrorCount;
+    }
+
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
