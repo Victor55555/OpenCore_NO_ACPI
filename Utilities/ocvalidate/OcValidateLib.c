@@ -482,7 +482,7 @@ StringIsDuplicated (
     //
     // Print duplicated entries whose index will be printed in the parent function (FindArrayDuplication).
     //
-    DEBUG ((DEBUG_WARN, "%a: %a重复 ", EntrySection, FirstString[0] != '\0' ? FirstString : "<empty string>"));
+    DEBUG ((DEBUG_WARN, "%a: %a重复 ", EntrySection, FirstString[0] != '\0' ? FirstString : "<空字符串>"));
     return TRUE;
   }
 

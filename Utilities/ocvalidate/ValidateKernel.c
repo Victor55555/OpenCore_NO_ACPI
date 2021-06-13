@@ -200,15 +200,15 @@ CheckKernelAdd (
     // Check the length of path relative to OC directory.
     //
     if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_KEXT_PATH), AsciiStrSize (BundlePath))) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath 太长(不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
     if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_KEXT_PATH), AsciiStrSize (ExecutablePath))) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath 太长(不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
     if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_KEXT_PATH), AsciiStrSize (PlistPath))) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath 太长(不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
 

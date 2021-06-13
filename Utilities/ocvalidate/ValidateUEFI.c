@@ -257,7 +257,7 @@ CheckUEFIDrivers (
     // Check the length of path relative to OC directory.
     //
     if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_UEFI_DRIVER_PATH), AsciiStrSize (Driver))) {
-      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u] is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u] 太长 (不应超过%u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
     
