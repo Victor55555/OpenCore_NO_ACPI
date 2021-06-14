@@ -15,6 +15,7 @@
 
 /**
   Callback function to verify whether Path is duplicated in ACPI->Add.
+
   @param[in]  PrimaryEntry    Primary entry to be checked.
   @param[in]  SecondaryEntry  Secondary entry to be checked.
   @retval     TRUE            If PrimaryEntry and SecondaryEntry are duplicated.
@@ -83,8 +84,8 @@ CheckACPIAdd (
     //
     // Check the length of path relative to OC directory.
     //
-    if (!StoragePathLengthIsSafe (StrLen (OPEN_CORE_ACPI_PATH), AsciiStrSize (Path))) {
-      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径太长 (不应超过 %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    if (StrLen (OPEN_CORE_ACPI_PATH) + AsciiStrSize (Path) > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径太长 (不应超过%u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
   }
