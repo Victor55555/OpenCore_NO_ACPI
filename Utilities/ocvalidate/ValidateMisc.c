@@ -249,6 +249,15 @@ CheckMiscBoot (
     DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant不能为空!\n"));
     ++ErrorCount;
   }
+  //
+  // Check the length of path relative to OC directory.
+  //
+  // There is one missing '\\' after the concatenation of PickerVariant and ExtAppleRecv10_15.icns (which has the longest length). Append one.
+  //
+  if (StrLen (OPEN_CORE_IMAGE_PATH) + AsciiStrLen (PickerVariant) + 1 + AsciiStrSize ("ExtAppleRecv10_15.icns") > OC_STORAGE_SAFE_PATH_MAX) {
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant is too long (should not exceed %u)!\n", OC_STORAGE_SAFE_PATH_MAX));
+    ++ErrorCount;
+  }
 
   IsPickerAudioAssistEnabled = UserMisc->Boot.PickerAudioAssist;
   IsAudioSupportEnabled      = UserUefi->Audio.AudioSupport;
