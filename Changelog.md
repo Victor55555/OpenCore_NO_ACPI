@@ -1,5 +1,8 @@
 OpenCore Changelog
 ==================
+#### v0.7.2
+- Fixed OSBundleLibraries/OSBundleLibaries64 handling
+
 #### v0.7.1
 - Added `SyncTableIds` quirk to sync modified table OEM identifiers
 - Added CPU Info (MSRs) dumping to `SysReport`
@@ -19,6 +22,7 @@ OpenCore Changelog
 - Added `TpmInfo` tool to DEBUG TPM status
 - Fixed incorrect OpenCanopy initial display when default entry beyond right of screen
 - Fixed `ProvideCurrentCpuInfo` MSR patch on macOS 12
+- Fixed `AppleXcpmForceBoost` patch on macOS 12
 
 #### v0.7.0
 - Fixed NVRAM reset on firmware with write-protected `BootOptionSupport`
