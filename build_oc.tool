@@ -115,7 +115,7 @@ package() {
       )
     for efiOCBM in "${efiOCBMs[@]}"; do
       dd if="${bootsig}" \
-         of="${arch}/${efiOCBM}" seek=64 bs=1 count=64 conv=notrunc || exit 1
+         of="${arch}/${efiOCBM}" seek=64 bs=1 count=64 conv=notrunc >/dev/null || exit 1
     done
 
     # copy OpenCore main program.
@@ -187,7 +187,8 @@ package() {
   mkdir -p "${dstdir}/Docs/AcpiSamples/Binaries" || exit 1
   cd "${dstdir}/Docs/AcpiSamples/Source" || exit 1
   for i in *.dsl ; do
-    iasl "$i" || exit 1
+    echo "编译dsl为aml文件......"
+    iasl -va "$i" >/dev/null || exit 1
   done
   mv ./*.aml "${dstdir}/Docs/AcpiSamples/Binaries" || exit 1
   cd - || exit 1
