@@ -4,6 +4,8 @@ OpenCore Changelog
 - Improved SSDT-PNLF compatibility with CFL+ graphics
 - Fixed OpenCanopy performance loss due to redrawing introduced in 0.6.9
 - Added pattern-based automatic variable initialisation for better security
+- Updated underlying EDK II package to edk2-stable202108
+- Updated Apple Secure Boot variables for `x86legacy`
 
 #### v0.7.2
 - Fixed OSBundleLibraries/OSBundleLibaries64 handling
