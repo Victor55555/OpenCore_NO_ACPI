@@ -1,11 +1,14 @@
 /** @file
   Copyright (C) 2018, vit9696. All rights reserved.
   Copyright (C) 2020, PMheart. All rights reserved.
+
   All rights reserved.
+
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
   http://opensource.org/licenses/bsd-license.php
+
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
@@ -18,8 +21,10 @@
 
 /**
   Callback function to verify whether one UEFI driver is duplicated in UEFI->Drivers.
+
   @param[in]  PrimaryDriver    Primary driver to be checked.
   @param[in]  SecondaryDriver  Secondary driver to be checked.
+
   @retval     TRUE             If PrimaryDriver and SecondaryDriver are duplicated.
 **/
 STATIC
@@ -45,8 +50,10 @@ UEFIDriverHasDuplication (
 /**
   Callback function to verify whether one UEFI ReservedMemory entry overlaps the other,
   in terms of Address and Size.
+
   @param[in]  PrimaryEntry     Primary entry to be checked.
   @param[in]  SecondaryEntry   Secondary entry to be checked.
+
   @retval     TRUE             If PrimaryEntry and SecondaryEntry have overlapped Address and Size.
 **/
 STATIC
@@ -224,6 +231,7 @@ CheckUEFIDrivers (
   UINT32                       ErrorCount;
   OC_UEFI_CONFIG               *UserUefi;
   UINT32                       Index;
+  OC_UEFI_DRIVER_ENTRY         *DriverEntry;
   CONST CHAR8                  *Driver;
   BOOLEAN                      HasOpenRuntimeEfiDriver;
   BOOLEAN                      HasOpenUsbKbDxeEfiDriver;
@@ -251,7 +259,8 @@ CheckUEFIDrivers (
   HasAudioDxeEfiDriver         = FALSE;
   IndexAudioDxeEfiDriver       = 0;
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
-    Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
+    DriverEntry = UserUefi->Drivers.Values[Index];
+    Driver      = OC_BLOB_GET (&DriverEntry->Path);
 
     //
     // Check the length of path relative to OC directory.
@@ -260,17 +269,16 @@ CheckUEFIDrivers (
       DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u] 太长 (不应超过%u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
       ++ErrorCount;
     }
-    
-    if (Driver[0] == '#') {
-      continue;
-    }
 
     //
     // Sanitise strings.
     //
-    if (!AsciiUefiDriverIsLegal (Driver)) {
-      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u] 包含非法字符!\n", Index));
+    if (!AsciiUefiDriverIsLegal (Driver, Index)) {
       ++ErrorCount;
+      continue;
+    }
+
+    if (!DriverEntry->Enabled) {
       continue;
     }
 
