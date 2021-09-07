@@ -1540,6 +1540,8 @@
 			<integer>0</integer>
 			<key>ForgeUefiSupport</key>
 			<false/>
+			<key>ForceOcWriteFlash</key>
+			<false/>
 			<key>IgnoreInvalidFlexRatio</key>
 			<false/>
 			<key>ReleaseUsbOwnership</key>
