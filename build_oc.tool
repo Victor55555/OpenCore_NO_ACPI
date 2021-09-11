@@ -158,6 +158,7 @@ package() {
       "AudioDxe.efi"
       "CrScreenshotDxe.efi"
       "OpenCanopy.efi"
+      "OpenLinuxBoot.efi"
       "OpenPartitionDxe.efi"
       "OpenRuntime.efi"
       "OpenUsbKbDxe.efi"

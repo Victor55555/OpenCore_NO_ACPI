@@ -71,6 +71,7 @@ OC_STRUCTORS       (OC_PLATFORM_NVRAM_CONFIG, ())
 OC_STRUCTORS       (OC_PLATFORM_SMBIOS_CONFIG, ())
 OC_STRUCTORS       (OC_PLATFORM_CONFIG, ())
 
+OC_STRUCTORS       (OC_UEFI_DRIVER_ENTRY, ())
 OC_ARRAY_STRUCTORS (OC_UEFI_DRIVER_ARRAY)
 OC_STRUCTORS       (OC_UEFI_APFS, ())
 OC_STRUCTORS       (OC_UEFI_APPLEINPUT, ())
@@ -670,7 +671,15 @@ mPlatformConfigurationSchema[] = {
 
 STATIC
 OC_SCHEMA
-mUefiDriversSchema = OC_SCHEMA_STRING (NULL);
+mUefiDriversSchemaEntry[] = {
+  OC_SCHEMA_STRING_IN   ("Arguments", OC_UEFI_DRIVER_ENTRY, Arguments),
+  OC_SCHEMA_BOOLEAN_IN  ("Enabled",   OC_UEFI_DRIVER_ENTRY, Enabled),
+  OC_SCHEMA_STRING_IN   ("Path",      OC_UEFI_DRIVER_ENTRY, Path),
+};
+
+STATIC
+OC_SCHEMA
+mUefiDriversSchema = OC_SCHEMA_DICT (NULL, mUefiDriversSchemaEntry);
 
 STATIC
 OC_SCHEMA
@@ -679,6 +688,7 @@ mUefiQuirksSchema[] = {
   OC_SCHEMA_BOOLEAN_IN ("DisableSecurityPolicy",    OC_GLOBAL_CONFIG, Uefi.Quirks.DisableSecurityPolicy),
   OC_SCHEMA_BOOLEAN_IN ("EnableVectorAcceleration", OC_GLOBAL_CONFIG, Uefi.Quirks.EnableVectorAcceleration),
   OC_SCHEMA_INTEGER_IN ("ExitBootServicesDelay",    OC_GLOBAL_CONFIG, Uefi.Quirks.ExitBootServicesDelay),
+  OC_SCHEMA_BOOLEAN_IN ("ForceOcWriteFlash",        OC_GLOBAL_CONFIG, Uefi.Quirks.ForceOcWriteFlash),
   OC_SCHEMA_BOOLEAN_IN ("ForgeUefiSupport",         OC_GLOBAL_CONFIG, Uefi.Quirks.ForgeUefiSupport),
   OC_SCHEMA_BOOLEAN_IN ("IgnoreInvalidFlexRatio",   OC_GLOBAL_CONFIG, Uefi.Quirks.IgnoreInvalidFlexRatio),
   OC_SCHEMA_BOOLEAN_IN ("ReleaseUsbOwnership",      OC_GLOBAL_CONFIG, Uefi.Quirks.ReleaseUsbOwnership),

@@ -353,7 +353,7 @@ UefiMain (
   //
   // Obtain the file system device path
   //
-  FileSystem = LocateFileSystem (
+  FileSystem = OcLocateFileSystem (
     LoadedImage->DeviceHandle,
     LoadedImage->FilePath
     );

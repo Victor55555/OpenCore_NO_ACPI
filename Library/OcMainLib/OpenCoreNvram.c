@@ -24,6 +24,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/OcFileLib.h>
 #include <Library/OcSerializeLib.h>
 #include <Library/OcStringLib.h>
+#include <Library/OcVariableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -86,9 +87,8 @@ OcReportVersion (
   DEBUG ((DEBUG_INFO, "OC: Current version is %a\n", Version));
 
   if ((Config->Misc.Security.ExposeSensitiveData & OCS_EXPOSE_VERSION_VAR) != 0) {
-    gRT->SetVariable (
+    OcSetSystemVariable (
       OC_VERSION_VARIABLE_NAME,
-      &gOcVendorVariableGuid,
       OPEN_CORE_NVRAM_ATTR,
       AsciiStrLen (Version),
       (VOID *) Version
@@ -283,7 +283,7 @@ OcLoadLegacyNvram (
 
   Schema = &Config->Nvram.Legacy;
 
-  FileBuffer = ReadFile (FileSystem, OPEN_CORE_NVRAM_PATH, &FileSize, BASE_1MB);
+  FileBuffer = OcReadFile (FileSystem, OPEN_CORE_NVRAM_PATH, &FileSize, BASE_1MB);
   if (FileBuffer == NULL) {
     DEBUG ((DEBUG_INFO, "OC: Invalid nvram data\n"));
     return;

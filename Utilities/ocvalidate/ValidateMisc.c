@@ -172,7 +172,7 @@ CheckBlessOverride (
         ++ErrorCount;
       }
     }
-    
+
   }
 
   return ErrorCount;
@@ -184,21 +184,22 @@ CheckMiscBoot (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  UINT32            ErrorCount;
-  OC_MISC_CONFIG    *UserMisc;
-  OC_UEFI_CONFIG    *UserUefi;
-  UINT32            ConsoleAttributes;
-  CONST CHAR8       *HibernateMode;
-  UINT32            PickerAttributes;
-  UINT32            Index;
-  CONST CHAR8       *Driver;
-  BOOLEAN           HasOpenCanopyEfiDriver;
-  CONST CHAR8       *PickerMode;
-  CONST CHAR8       *PickerVariant;
-  BOOLEAN           IsPickerAudioAssistEnabled;
-  BOOLEAN           IsAudioSupportEnabled;
-  CONST CHAR8       *LauncherOption;
-  CONST CHAR8       *LauncherPath;
+  UINT32                ErrorCount;
+  OC_MISC_CONFIG        *UserMisc;
+  OC_UEFI_CONFIG        *UserUefi;
+  UINT32                ConsoleAttributes;
+  CONST CHAR8           *HibernateMode;
+  UINT32                PickerAttributes;
+  UINT32                Index;
+  OC_UEFI_DRIVER_ENTRY  *DriverEntry;
+  CONST CHAR8           *Driver;
+  BOOLEAN               HasOpenCanopyEfiDriver;
+  CONST CHAR8           *PickerMode;
+  CONST CHAR8           *PickerVariant;
+  BOOLEAN               IsPickerAudioAssistEnabled;
+  BOOLEAN               IsAudioSupportEnabled;
+  CONST CHAR8           *LauncherOption;
+  CONST CHAR8           *LauncherPath;
 
   ErrorCount        = 0;
   UserMisc          = &Config->Misc;
@@ -221,15 +222,16 @@ CheckMiscBoot (
 
   PickerAttributes  = UserMisc->Boot.PickerAttributes;
   if ((PickerAttributes & ~OC_ATTR_ALL_BITS) != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes设置了未知位!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerAttributes 设置了未知位!\n"));
     ++ErrorCount;
   }
 
   HasOpenCanopyEfiDriver = FALSE;
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
-    Driver = OC_BLOB_GET (UserUefi->Drivers.Values[Index]);
+    DriverEntry = UserUefi->Drivers.Values[Index];
+    Driver      = OC_BLOB_GET (&DriverEntry->Path);
 
-    if (AsciiStrCmp (Driver, "OpenCanopy.efi") == 0) {
+    if (DriverEntry->Enabled && AsciiStrCmp (Driver, "OpenCanopy.efi") == 0) {
       HasOpenCanopyEfiDriver = TRUE;
     }
   }
@@ -286,7 +288,7 @@ STATIC
 UINT32
 CheckMiscDebug (
   IN  OC_GLOBAL_CONFIG  *Config
-  ) 
+  )
 {
   UINT32              ErrorCount;
   OC_MISC_CONFIG      *UserMisc;
@@ -421,7 +423,7 @@ CheckMiscEntries (
       DEBUG ((DEBUG_WARN, "Misc->Entries[%u]->Comment包含非法字符!\n", Index));
       ++ErrorCount;
     }
-    
+
     UnicodeName = AsciiStrCopyToUnicode (AsciiName, 0);
     if (UnicodeName != NULL) {
       if (!UnicodeIsFilteredString (UnicodeName, TRUE)) {
@@ -519,12 +521,12 @@ CheckMiscSecurity (
   // ScanPolicy can be zero (failsafe value), skipping such.
   //
   if (ScanPolicy != 0) {
-    if ((ScanPolicy & ~AllowedScanPolicy) != 0) { 
+    if ((ScanPolicy & ~AllowedScanPolicy) != 0) {
       DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy 设置了未知位！\n"));
       ++ErrorCount;
     }
 
-    if ((ScanPolicy & OC_SCAN_FILE_SYSTEM_BITS) != 0 && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) == 0) {   
+    if ((ScanPolicy & OC_SCAN_FILE_SYSTEM_BITS) != 0 && (ScanPolicy & OC_SCAN_FILE_SYSTEM_LOCK) == 0) {
       DEBUG ((DEBUG_WARN, "Misc->Security->ScanPolicy需要扫描文件系统, 但是OC_SCAN_FILE_SYSTEM_LOCK (bit 0)未设置!\n"));
       ++ErrorCount;
     }
