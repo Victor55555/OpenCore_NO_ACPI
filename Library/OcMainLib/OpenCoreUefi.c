@@ -99,6 +99,7 @@ OcLoadDrivers (
   VOID                  *DriverBinding;
   BOOLEAN               SkipDriver;
   OC_UEFI_DRIVER_ENTRY  *DriverEntry;
+  CONST CHAR8           *DriverComment;
   CHAR8                 *DriverFileName;
   CONST CHAR8           *DriverArguments;
 
@@ -111,6 +112,7 @@ OcLoadDrivers (
 
   for (Index = 0; Index < Config->Uefi.Drivers.Count; ++Index) {
     DriverEntry     = Config->Uefi.Drivers.Values[Index];
+    DriverComment   = OC_BLOB_GET (&DriverEntry->Comment);
     DriverFileName  = OC_BLOB_GET (&DriverEntry->Path);
     DriverArguments = OC_BLOB_GET (&DriverEntry->Arguments);
 
@@ -118,9 +120,10 @@ OcLoadDrivers (
 
     DEBUG ((
       DEBUG_INFO,
-      "OC: Driver %a at %u is %a\n",
+      "OC: Driver %a at %u (%a) is %a\n",
       DriverFileName,
       Index,
+      DriverComment,
       SkipDriver ? "skipped!" : "being loaded..."
       ));
 
