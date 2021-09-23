@@ -276,7 +276,7 @@ CheckUEFIDrivers (
     // Sanitise strings.
     //
     if (!AsciiCommentIsLegal (Comment)) {
-      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u]->Comment contains illegal character!\n", Index));
+      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u]->Comment 包含非法字符!\n", Index));
       ++ErrorCount;
     }
     if (!AsciiUefiDriverIsLegal (Driver, Index)) {
