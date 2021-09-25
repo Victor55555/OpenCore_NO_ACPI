@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#set -x
 imgbuild() {
   local arch="$1"
 
