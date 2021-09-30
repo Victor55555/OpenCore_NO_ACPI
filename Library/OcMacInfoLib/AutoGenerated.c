@@ -24,6 +24,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook10,1",
@@ -46,8 +47,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE13FULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE13FULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook2,1",
@@ -72,6 +74,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook3,1",
@@ -96,6 +99,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001407ULL,
   .FirmwareFeaturesMask = 0xC0001FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook4,1",
@@ -120,6 +124,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook5,1",
@@ -144,6 +149,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook5,2",
@@ -168,6 +174,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook6,1",
@@ -192,6 +199,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xFC0FE13FULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook7,1",
@@ -216,6 +224,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xFC0FE13FULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook8,1",
@@ -240,6 +249,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Chassis Board Asset Tag#",
   .FirmwareFeatures = 0xFC0FE13FULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBook9,1",
@@ -262,8 +272,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE13FULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE13FULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir1,1",
@@ -288,6 +299,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir2,1",
@@ -312,6 +324,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir3,1",
@@ -336,6 +349,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir3,2",
@@ -360,6 +374,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir4,1",
@@ -384,6 +399,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir4,2",
@@ -408,6 +424,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir5,1",
@@ -432,6 +449,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir5,2",
@@ -456,6 +474,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir6,1",
@@ -480,6 +499,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir6,2",
@@ -504,6 +524,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir7,1",
@@ -526,8 +547,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x2,
   .ChassisAssetTag = "Chassis Board Asset Tag#",
-  .FirmwareFeatures = 0xFF0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FF0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir7,2",
@@ -550,8 +572,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x2,
   .ChassisAssetTag = "Chassis Board Asset Tag#",
-  .FirmwareFeatures = 0xFF0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FF0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookAir8,1",
@@ -560,8 +583,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 52, 48, 107, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Air",
@@ -574,8 +597,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x3A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF42EULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF42EULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J140KAP",
  },
  {
   .SystemProductName = "MacBookAir8,2",
@@ -584,8 +608,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 52, 48, 97, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Air",
@@ -598,8 +622,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x3A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF42EULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF42EULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J140AAP",
  },
  {
   .SystemProductName = "MacBookAir9,1",
@@ -608,8 +633,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 50, 51, 48, 107, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Air",
@@ -622,8 +647,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x3A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFFAFF06EULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FFAFF06EULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J230KAP",
  },
  {
   .SystemProductName = "MacBookPro1,1",
@@ -648,6 +674,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro1,2",
@@ -672,6 +699,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro10,1",
@@ -696,6 +724,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro10,2",
@@ -720,6 +749,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro11,1",
@@ -744,6 +774,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xEB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro11,2",
@@ -768,6 +799,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xEB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro11,3",
@@ -792,6 +824,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xEB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro11,4",
@@ -816,6 +849,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xEB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro11,5",
@@ -840,6 +874,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xEB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro12,1",
@@ -862,14 +897,15 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x2,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FD0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro13,1",
   .BoardProduct = "Mac-473D31EABEB93F9B",
   .BoardRevision = 0x14,
-  .SmcRevision = {2, 54, 15, 0, 1, 1},
+  .SmcRevision = {2, 54, 15, 0, 1, 2},
   .SmcBranch = {50, 48, 49, 54, 109, 98, 0, 0},
   .SmcPlatform = {106, 49, 51, 48, 0, 0, 0, 0},
   .BIOSVersion = "429.140.8.0.0",
@@ -886,8 +922,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro13,2",
@@ -910,8 +947,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro13,3",
@@ -934,8 +972,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro14,1",
@@ -958,8 +997,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFF0FF57EULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FF0FF57EULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro14,2",
@@ -982,8 +1022,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFF0FF57EULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FF0FF57EULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro14,3",
@@ -1006,8 +1047,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x1A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFF0FF57EULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8FF0FF57EULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro15,1",
@@ -1016,8 +1058,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 54, 56, 48, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1030,8 +1072,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF426ULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF426ULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J680AP",
  },
  {
   .SystemProductName = "MacBookPro15,2",
@@ -1040,8 +1083,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 51, 50, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1054,8 +1097,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF426ULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF426ULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J132AP",
  },
  {
   .SystemProductName = "MacBookPro15,3",
@@ -1064,8 +1108,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 55, 56, 48, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1078,8 +1122,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF426ULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF426ULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J780AP",
  },
  {
   .SystemProductName = "MacBookPro15,4",
@@ -1088,8 +1133,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 50, 49, 51, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1102,8 +1147,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF426ULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF426ULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J213AP",
  },
  {
   .SystemProductName = "MacBookPro16,1",
@@ -1112,8 +1158,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 53, 50, 102, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1126,8 +1172,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFDAFF066ULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FDAFF066ULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J152FAP",
  },
  {
   .SystemProductName = "MacBookPro16,2",
@@ -1136,8 +1183,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 50, 49, 52, 107, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1150,8 +1197,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x3A,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFFAFF06EULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FFAFF06EULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J214KAP",
  },
  {
   .SystemProductName = "MacBookPro16,3",
@@ -1160,8 +1208,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 50, 50, 51, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1174,8 +1222,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFDAFF066ULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FDAFF066ULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J223AP",
  },
  {
   .SystemProductName = "MacBookPro16,4",
@@ -1184,8 +1233,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 50, 49, 53, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacBook Pro",
@@ -1198,8 +1247,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x32,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFDAFF066ULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FDAFF066ULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J215AP",
  },
  {
   .SystemProductName = "MacBookPro2,1",
@@ -1224,6 +1274,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro2,2",
@@ -1248,6 +1299,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro3,1",
@@ -1272,6 +1324,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001407ULL,
   .FirmwareFeaturesMask = 0xC0001FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro4,1",
@@ -1296,6 +1349,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro5,1",
@@ -1320,6 +1374,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro5,2",
@@ -1344,6 +1399,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro5,3",
@@ -1368,6 +1424,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro5,4",
@@ -1392,6 +1449,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro5,5",
@@ -1416,6 +1474,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro6,1",
@@ -1440,6 +1499,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro6,2",
@@ -1464,6 +1524,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro7,1",
@@ -1488,6 +1549,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro8,1",
@@ -1512,6 +1574,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro8,2",
@@ -1536,6 +1599,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro8,3",
@@ -1560,6 +1624,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro9,1",
@@ -1584,6 +1649,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacBookPro9,2",
@@ -1608,6 +1674,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC10DF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro1,1",
@@ -1632,6 +1699,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x80000015ULL,
   .FirmwareFeaturesMask = 0x800003FFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro2,1",
@@ -1656,6 +1724,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0000015ULL,
   .FirmwareFeaturesMask = 0xC0000FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro3,1",
@@ -1680,6 +1749,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Pro-Enclosure",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro4,1",
@@ -1704,6 +1774,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Pro-Enclosure",
   .FirmwareFeatures = 0xE001F537ULL,
   .FirmwareFeaturesMask = 0xC003FF37ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro5,1",
@@ -1728,6 +1799,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE80FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro6,1",
@@ -1750,8 +1822,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x4,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xE90FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .FirmwareFeatures = 0x8E90FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "MacPro7,1",
@@ -1760,8 +1833,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 54, 48, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "MacPro",
@@ -1774,8 +1847,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x0,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFDAFF066ULL,
-  .FirmwareFeaturesMask = 0xFFFFFF7FULL,
+  .FirmwareFeatures = 0x8FDAFF066ULL,
+  .FirmwareFeaturesMask = 0x8FFFFFF7FULL,
+  .BridgeModel = "J160AP",
  },
  {
   .SystemProductName = "Macmini1,1",
@@ -1800,6 +1874,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini2,1",
@@ -1824,6 +1899,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini3,1",
@@ -1848,6 +1924,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0007FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini4,1",
@@ -1872,6 +1949,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00C9423ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini5,1",
@@ -1896,6 +1974,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini5,2",
@@ -1920,6 +1999,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini5,3",
@@ -1944,6 +2024,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xD00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini6,1",
@@ -1968,6 +2049,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini6,2",
@@ -1992,6 +2074,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini7,1",
@@ -2014,8 +2097,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x3,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xE00DE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8E00DE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Macmini8,1",
@@ -2024,8 +2108,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 55, 52, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "Mac mini",
@@ -2038,8 +2122,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF466ULL,
-  .FirmwareFeaturesMask = 0xFFDFFF7FULL,
+  .FirmwareFeatures = 0x8FD8FF466ULL,
+  .FirmwareFeaturesMask = 0x8FFDFFF7FULL,
+  .BridgeModel = "J174AP",
  },
  {
   .SystemProductName = "Xserve1,1",
@@ -2064,6 +2149,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Xserve2,1",
@@ -2088,6 +2174,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "Xserve3,1",
@@ -2112,6 +2199,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Xserve",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac10,1",
@@ -2136,6 +2224,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac11,1",
@@ -2160,6 +2249,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac11,2",
@@ -2184,6 +2274,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xC00C9423ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac11,3",
@@ -2208,6 +2299,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac12,1",
@@ -2232,6 +2324,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac12,2",
@@ -2256,6 +2349,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac13,1",
@@ -2280,6 +2374,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac13,2",
@@ -2304,6 +2399,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac13,3",
@@ -2328,6 +2424,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00DE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac14,1",
@@ -2352,6 +2449,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xFB0FF577ULL,
   .FirmwareFeaturesMask = 0xFF1FFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac14,2",
@@ -2376,6 +2474,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac14,3",
@@ -2400,6 +2499,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xE00FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac14,4",
@@ -2424,6 +2524,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xF00FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac15,1",
@@ -2448,6 +2549,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "",
   .FirmwareFeatures = 0xF80FE137ULL,
   .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac16,1",
@@ -2470,8 +2572,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x3,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac16,2",
@@ -2494,8 +2597,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x3,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac17,1",
@@ -2518,8 +2622,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0xD,
   .PlatformFeature = 0x0,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFC0FE137ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FC0FE137ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac18,1",
@@ -2542,8 +2647,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x0,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FD0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac18,2",
@@ -2566,8 +2672,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x0,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FD0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac18,3",
@@ -2590,8 +2697,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x0,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD0FF576ULL,
-  .FirmwareFeaturesMask = 0xFF1FFF3FULL,
+  .FirmwareFeatures = 0x8FD0FF576ULL,
+  .FirmwareFeaturesMask = 0x8FF1FFF3FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac19,1",
@@ -2614,8 +2722,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF576ULL,
-  .FirmwareFeaturesMask = 0xFFDFFF7FULL,
+  .FirmwareFeatures = 0x8FD8FF576ULL,
+  .FirmwareFeaturesMask = 0x8FFDFFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac19,2",
@@ -2638,8 +2747,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF576ULL,
-  .FirmwareFeaturesMask = 0xFFDFFF7FULL,
+  .FirmwareFeatures = 0x8FD8FF576ULL,
+  .FirmwareFeaturesMask = 0x8FFDFFF7FULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac20,1",
@@ -2648,8 +2758,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 56, 53, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "iMac",
@@ -2662,8 +2772,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF576ULL,
-  .FirmwareFeaturesMask = 0xFFDFFF7FULL,
+  .FirmwareFeatures = 0x8FD8FF576ULL,
+  .FirmwareFeaturesMask = 0x8FFDFFF7FULL,
+  .BridgeModel = "J185AP",
  },
  {
   .SystemProductName = "iMac20,2",
@@ -2672,8 +2783,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 56, 53, 102, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "iMac",
@@ -2686,8 +2797,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF576ULL,
-  .FirmwareFeaturesMask = 0xFFDFFF7FULL,
+  .FirmwareFeatures = 0x8FD8FF576ULL,
+  .FirmwareFeaturesMask = 0x8FFDFFF7FULL,
+  .BridgeModel = "J185FAP",
  },
  {
   .SystemProductName = "iMac4,1",
@@ -2712,6 +2824,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac4,2",
@@ -2736,6 +2849,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac5,1",
@@ -2760,6 +2874,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac5,2",
@@ -2784,6 +2899,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac6,1",
@@ -2808,6 +2924,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag",
   .FirmwareFeatures = 0x0ULL,
   .FirmwareFeaturesMask = 0x0ULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac7,1",
@@ -2832,6 +2949,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001407ULL,
   .FirmwareFeaturesMask = 0xC0001FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac8,1",
@@ -2856,6 +2974,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMac9,1",
@@ -2880,6 +2999,7 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .ChassisAssetTag = "Asset Tag#",
   .FirmwareFeatures = 0xC0001403ULL,
   .FirmwareFeaturesMask = 0xC0003FFFULL,
+  .BridgeModel = NULL,
  },
  {
   .SystemProductName = "iMacPro1,1",
@@ -2888,8 +3008,8 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .SmcRevision = {0},
   .SmcBranch = {0},
   .SmcPlatform = {106, 49, 51, 55, 0, 0, 0, 0},
-  .BIOSVersion = "1715.0.57.0.0",
-  .BIOSReleaseDate = "07/05/2021",
+  .BIOSVersion = "1715.40.12.0.0",
+  .BIOSReleaseDate = "09/05/2021",
   .SystemVersion = "1.0",
   .SystemSKUNumber = "",
   .SystemFamily = "iMac Pro",
@@ -2902,8 +3022,9 @@ CONST MAC_INFO_INTERNAL_ENTRY gMacInfoModels[] = {
   .MemoryFormFactor = 0x9,
   .PlatformFeature = 0x20,
   .ChassisAssetTag = "",
-  .FirmwareFeatures = 0xFD8FF53EULL,
-  .FirmwareFeaturesMask = 0xFF9FFF3FULL,
+  .FirmwareFeatures = 0x8FD8FF53EULL,
+  .FirmwareFeaturesMask = 0x8FF9FFF3FULL,
+  .BridgeModel = "J137AP",
  },
 };
 CONST UINTN gMacInfoModelCount = ARRAY_SIZE (gMacInfoModels);

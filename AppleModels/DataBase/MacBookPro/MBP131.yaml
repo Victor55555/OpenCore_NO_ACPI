@@ -27,8 +27,8 @@ ChassisAssetTag: ""
 PlatformFeature: 0x1A
 FirmwareFeatures: 0xFC0FE137
 FirmwareFeaturesMask: 0xFF1FFF3F
-ExtendedFirmwareFeatures: 0x00000000FC0FE137
-ExtendedFirmwareFeaturesMask: 0x00000000FF1FFF3F
+ExtendedFirmwareFeatures: 0x00000008FC0FE137
+ExtendedFirmwareFeaturesMask: 0x00000008FF1FFF3F
 MemoryFormFactor: 0xD
 # FIXME: Correct this one
 ProcessorType:
@@ -45,7 +45,7 @@ SmcRevision:
   - 0x0f
   - 0x00
   - 0x01
-  - 0x01
+  - 0x02
 SmcBranch:
   - 0x32
   - 0x30
