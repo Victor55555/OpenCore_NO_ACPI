@@ -8,6 +8,9 @@ OpenCore Changelog
 - Added large BaseSystem support in `AdviseFeatures`
 - Updated builtin firmware versions for SMBIOS and the rest
 - Added tool to extract vendor secure boot certificate from GRUB shim file
+- Added `BridgeOSHardwareModel` NVRAM variable to fix T2 SB AP models on macOS 12
+- Changed `Default` Apple Secure Boot model to match SMBIOS for macOS 12
+- Fixed `opencore-version` not being added to NVRAM variables
 
 #### v0.7.3
 - Improved SSDT-PNLF compatibility with CFL+ graphics
