@@ -151,6 +151,9 @@ CreateRootPartuuid (
   NumPrinted = AsciiSPrint (*Dest, Length + 1, "%a%g", "root=PARTUUID=", gPartuuid);
   ASSERT (NumPrinted == Length);
 
+  //
+  // Value is case-sensitive and must be lower case.
+  //
   OcAsciiToLower (&(*Dest)[L_STR_LEN ("root=PARTUUID=")]);
 
   return EFI_SUCCESS;
@@ -331,6 +334,24 @@ AddOption (
   return InsertOption (Options->Count, Options, Value, IsUnicode);
 }
 
+EFI_STATUS
+InsertRootOption (
+  IN           OC_FLEX_ARRAY      *Options
+  )
+{
+  CHAR8             **NewOption;
+
+  DEBUG (((gLinuxBootFlags & LINUX_BOOT_LOG_VERBOSE) == 0 ? DEBUG_VERBOSE : DEBUG_INFO,
+    "LNX: Creating \"root=PARTUUID=%g\"\n", gPartuuid));
+
+  NewOption = OcFlexArrayInsertItem (Options, 0);
+  if (NewOption == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  return CreateRootPartuuid (NewOption);
+}
+
 //
 // TODO: Options for rescue versions. Would it be better e.g. just to add "ro" and nothing else?
 // However on some installs (e.g. where modules to load are specified in the kernel opts) this
@@ -347,13 +368,18 @@ AutodetectBootOptions (
   EFI_STATUS        Status;
   UINTN             Index;
   UINTN             InsertIndex;
+  UINTN             OptionCount;
   OC_PARSED_VAR     *Option;
   EFI_GUID          Guid;
   CHAR8             *AsciiStrValue;
   CHAR8             *GrubVarName;
-  CHAR8             **NewOption;
   BOOLEAN           FoundOptions;
   BOOLEAN           PlusOpts;
+
+  OptionCount = 0;
+  if (gParsedLoadOptions != NULL) {
+    OptionCount = gParsedLoadOptions->Count;
+  }
 
   FoundOptions = FALSE;
 
@@ -362,7 +388,7 @@ AutodetectBootOptions (
   // Remember that although args are ASCII in the OC config file, they are
   // Unicode by the time they get passed as UEFI LoadOptions.
   //
-  for (Index = 0; Index < gParsedLoadOptions->Count; Index++) {
+  for (Index = 0; Index < OptionCount; Index++) {
     Option = OcFlexArrayItemAt (gParsedLoadOptions, Index);
     //
     // partuuidopts:{partuuid}[+]="...": user options for specified partuuid.
@@ -407,7 +433,7 @@ AutodetectBootOptions (
   //
   // Use global defaults, if user has defined any.
   //
-  for (Index = 0; Index < gParsedLoadOptions->Count; Index++) {
+  for (Index = 0; Index < OptionCount; Index++) {
     Option = OcFlexArrayItemAt (gParsedLoadOptions, Index);
     //
     // Don't use autoopts if partition specific partuuidopts already found.
@@ -442,6 +468,7 @@ AutodetectBootOptions (
   }
 
   //
+  // Code only reaches here and below if has been nothing or only += options above.
   // Use options from GRUB default location.
   //
   if (mEtcDefaultGrubOptions != NULL) {
@@ -494,8 +521,8 @@ AutodetectBootOptions (
   }
 
   //
-  // It might be valid to have no options except "ro", but at least empty
-  // (not missing) user specified options, or GRUB_CMDLINE_LINUX_... needs
+  // It might be valid to have no options for some kernels or distros, but at least
+  // empty (not missing) user specified options or GRUB_CMDLINE_LINUX[_DEFAULT] needs
   // to be present in that case or we stop.
   //
   if (!FoundOptions) {
@@ -504,9 +531,9 @@ AutodetectBootOptions (
   }
 
   //
-  // Basic attached drives on OVMF appear as MBR, so it can be more convenient when
-  // debugging e.g. save and load default entry to allow entries with incorrect
-  // (i.e. specifies no drive) root= on NOOPT debugging build.
+  // Standard attached drives on OVMF appear as MBR, so it can be convenient when
+  // debugging to allow entries with incorrect (i.e. specifies no/every drive)
+  // root=... on NOOPT debugging build.
   //
 //#if !defined(OC_TARGET_NOOPT)
   if (CompareGuid (&gPartuuid, &gEfiPartTypeUnusedGuid)) {
@@ -519,21 +546,11 @@ AutodetectBootOptions (
   //
   // Insert "root=PARTUUID=..." option, followed by "ro" if requested, only if we get to here.
   //
-  DEBUG (((gLinuxBootFlags & LINUX_BOOT_LOG_VERBOSE) == 0 ? DEBUG_VERBOSE : DEBUG_INFO,
-    "LNX: Creating \"root=PARTUUID=%g\"\n", gPartuuid));
-
-  InsertIndex = 0;
-
-  NewOption = OcFlexArrayInsertItem (Options, InsertIndex);
-  if (NewOption == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-  ++InsertIndex;
-  
-  Status = CreateRootPartuuid (NewOption);
+  Status = InsertRootOption (Options);
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  InsertIndex = 1;
 
   if ((gLinuxBootFlags & LINUX_BOOT_ADD_RO) != 0) {
     DEBUG (((gLinuxBootFlags & LINUX_BOOT_LOG_VERBOSE) == 0 ? DEBUG_VERBOSE : DEBUG_INFO,
@@ -692,6 +709,9 @@ InternalAutodetectLinux (
   Status = OcSafeFileOpen (RootDirectory, &RootFsFile, ROOT_FS_FILE, EFI_FILE_MODE_READ, 0);
   if (!EFI_ERROR (Status)) {
     Status = OcEnsureDirectoryFile (RootFsFile, FALSE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_WARN, "LNX: %s found but not a %a - %r\n", ROOT_FS_FILE, "file", Status));
+    }
     RootFsFile->Close (RootFsFile);
   }
   if (EFI_ERROR (Status)) {
