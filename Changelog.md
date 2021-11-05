@@ -1,5 +1,10 @@
 OpenCore Changelog
 ==================
+#### v0.7.6
+- Fixed stack canary support when compiling with GCC
+- Added automatic scaling factor detection
+- Explicitly restricted `ResizeAppleGpuBars` to 0 and -1
+
 #### v0.7.5
 - Revised OpenLinuxBoot documentation
 - Supported Linux ostree boot layout
