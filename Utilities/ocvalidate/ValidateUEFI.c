@@ -424,6 +424,7 @@ CheckUEFIOutput (
   UINT32               UserHeight;
   UINT32               UserBpp;
   BOOLEAN              UserSetMax;
+  INT8                 UIScale;
 
   ErrorCount           = 0;
   UserUefi             = &Config->Uefi;
@@ -516,6 +517,12 @@ CheckUEFIOutput (
     ++ErrorCount;
   }
 
+  UIScale = UserUefi->Output.UIScale;
+  if (UIScale < -1 || UIScale > 2) {
+    DEBUG ((DEBUG_WARN, "UEFI->Output->UIScale is borked (Can only be between -1 and 2)!\n"));
+    ++ErrorCount;
+  }
+
   return ErrorCount;
 }
 
@@ -528,7 +535,20 @@ CheckUEFIQuirks (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  return 0;
+  UINT32          ErrorCount;
+  OC_UEFI_CONFIG  *UserUefi;
+  INT8            ResizeGpuBars;
+
+  ErrorCount      = 0;
+  UserUefi        = &Config->Uefi;
+  ResizeGpuBars   = UserUefi->Quirks.ResizeGpuBars;
+
+  if (ResizeGpuBars < -1 || ResizeGpuBars > 19) {
+    DEBUG ((DEBUG_WARN, "UEFI->Quirks->ResizeGpuBars is borked (Can only be between -1 and 19)!\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
 }
 
 STATIC
