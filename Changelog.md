@@ -4,6 +4,9 @@ OpenCore Changelog
 - Fixed stack canary support when compiling with GCC
 - Added automatic scaling factor detection
 - Explicitly restricted `ResizeAppleGpuBars` to 0 and -1
+- Fixed OpenCanopy long labels fade-out over graphics background
+- Fixed `ProvideConsoleGop` not disabling blit-only modes (e.g. on Z690)
+- Fixed Alder Lake SMBIOS CPU model information
 
 #### v0.7.5
 - Revised OpenLinuxBoot documentation
