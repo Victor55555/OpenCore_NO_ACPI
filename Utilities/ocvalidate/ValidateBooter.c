@@ -208,13 +208,13 @@ CheckBooterQuirks (
   }
 
   if (ResizeAppleGpuBars > 10) {
-    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars is set to %d, which is unsupported by macOS!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, 这是 macOS 不支持的!\n", UserBooter->Quirks.ResizeAppleGpuBars));
     ++ErrorCount;
   } else if (ResizeAppleGpuBars > 8) {
-    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars is set to %d, which is unstable with macOS sleep-wake!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, macOS 睡眠唤醒不稳定!\n", UserBooter->Quirks.ResizeAppleGpuBars));
     ++ErrorCount;
   } else if (ResizeAppleGpuBars > 0) {
-    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars is set to %d, which is not useful for macOS!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, 这对 macOS 没有用!\n", UserBooter->Quirks.ResizeAppleGpuBars));
     ++ErrorCount;
   }
 
@@ -233,7 +233,7 @@ CheckBooter (
     &CheckBooterPatch,
     &CheckBooterQuirks
   };
-  
+
   DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
 
   ErrorCount  = 0;

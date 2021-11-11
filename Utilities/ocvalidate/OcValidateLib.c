@@ -212,7 +212,7 @@ AsciiUefiDriverIsLegal (
 
   DriverLength = AsciiStrLen (Driver);
   if (DriverLength == 0) {
-    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].Path value is missing!\n", DriverIndex));
+    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].缺少路径值!\n", DriverIndex));
     return FALSE;
   }
 
@@ -221,7 +221,7 @@ AsciiUefiDriverIsLegal (
   // then it must be illegal.
   //
   if (!OcAsciiEndsWith (Driver, ".efi", TRUE)) {
-    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].Path does not end with \"%a\"!\n", DriverIndex, ".efi"));
+    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].路径未以\"%a\"结尾!\n", DriverIndex, ".efi"));
     return FALSE;
   }
 
@@ -241,7 +241,7 @@ AsciiUefiDriverIsLegal (
     //
     // Disallowed characters matched.
     //
-    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].Path contains illegal character!\n", DriverIndex));
+    DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u].路径包含非法字符!\n", DriverIndex));
     return FALSE;
   }
 
