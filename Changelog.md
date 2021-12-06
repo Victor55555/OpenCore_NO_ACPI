@@ -7,6 +7,16 @@ OpenCore Changelog
 - Fixed OpenCanopy long labels fade-out over graphics background
 - Fixed `ProvideConsoleGop` not disabling blit-only modes (e.g. on Z690)
 - Fixed Alder Lake SMBIOS CPU model information
+- Added XCPM CPU power management ACPI table for Intel Alder Lake
+- Updated draw order to avoid graphics tearing in OpenCanopy
+- Fixed handling PCI device paths with logical units in ScanPolicy
+- Added `ReconnectGraphicsOnConnect` option for enabling alternative UEFI graphics drivers
+- Added BiosVideo.efi driver to use with `ReconnectGraphicsOnConnect`
+- Changed `FadtEnableReset` to avoid unreliable keyboard controller reset
+- Added `EnableVmx` quirk to allow virtualization in other OS on some Macs
+- Upgraded `ProtectUefiServices` to prevent GRUB shim overwriting service pointers when chainloading with Secure Boot enabled
+- Removed deprecated SSDT-PNLFCFL
+- Fixed handling of zero-sized Memory Attributes Table
 
 #### v0.7.5
 - Revised OpenLinuxBoot documentation

@@ -654,7 +654,8 @@ typedef enum {
   _(INT8                        , UIScale                     ,     , -1     , ()) \
   _(BOOLEAN                     , UgaPassThrough              ,     , FALSE  , ()) \
   _(BOOLEAN                     , DirectGopRendering          ,     , FALSE  , ()) \
-  _(BOOLEAN                     , ForceResolution             ,     , FALSE  , ())
+  _(BOOLEAN                     , ForceResolution             ,     , FALSE  , ()) \
+  _(BOOLEAN                     , ReconnectGraphicsOnConnect  ,     , FALSE  , ())
   OC_DECLARE (OC_UEFI_OUTPUT)
 
 ///
@@ -690,6 +691,7 @@ typedef enum {
   _(BOOLEAN                     , ActivateHpetSupport         ,     , FALSE  , ()) \
   _(BOOLEAN                     , DisableSecurityPolicy       ,     , FALSE  , ()) \
   _(BOOLEAN                     , EnableVectorAcceleration    ,     , FALSE  , ()) \
+  _(BOOLEAN                     , EnableVmx                   ,     , FALSE  , ()) \
   _(BOOLEAN                     , ForgeUefiSupport            ,     , FALSE  , ()) \
   _(BOOLEAN                     , IgnoreInvalidFlexRatio      ,     , FALSE  , ()) \
   _(INT8                        , ResizeGpuBars               ,     , -1     , ()) \
