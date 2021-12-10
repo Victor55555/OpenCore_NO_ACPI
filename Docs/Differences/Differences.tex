@@ -1,7 +1,7 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Mon Dec  6 21:04:20 2021
-%DIF ADD ../Configuration.tex        Mon Dec  6 21:08:35 2021
+%DIF DEL PreviousConfiguration.tex   Wed Dec  8 21:04:04 2021
+%DIF ADD ../Configuration.tex        Fri Dec 10 11:51:28 2021
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
@@ -691,7 +691,20 @@ package. The currently supported EDK II release is hosted in
 \href{https://github.com/acidanthera/audk}{acidanthera/audk}. Required patches
 for this package can be found in the \texttt{Patches} directory.
 
-The only officially supported toolchain is \texttt{XCODE5}. Other toolchains
+\DIFaddbegin \DIFadd{When updating the LaTeX documentation (e.g. }\texttt{\DIFadd{Configuration.tex}}\DIFadd{) please
+do }\textit{\DIFadd{not}} \DIFadd{rebuild the PDF files till merging to master happens. This avoids
+unnecessary merge conflicts:
+}\begin{itemize}
+\tightlist
+\item \DIFadd{External contributors using the pull-request approach should request
+  the maintainers to handle the PDF rebuild in the pull-request message.
+}\item \DIFadd{Internal contributors should rebuild the documentation at merge time
+  in the same or in a separate commit. One can ask another maintainer to
+  rebuild the documentation when lacking the necessary tools
+  in the pull-request message.
+}\end{itemize}
+
+\DIFaddend The only officially supported toolchain is \texttt{XCODE5}. Other toolchains
 might work but are neither supported nor recommended. Contributions of clean
 patches are welcome. Please do follow
 \href{https://github.com/tianocore/tianocore.github.io/wiki/Code-Style-C}{EDK II C Codestyle}.
@@ -2253,6 +2266,10 @@ blocking.
   \texttt{0x0306C3} (Haswell).
 
   \emph{Note 3}: For XCPM support it is recommended to use the following combinations.
+  \DIFaddbegin \DIFadd{Be warned that one is required to set the correct
+  }\href{https://github.com/dortania/bugtracker/issues/190}{\DIFadd{frequency vectors}} \DIFadd{matching
+  the installed CPU.
+}\DIFaddend 
 
   \begin{itemize}
     \tightlist
@@ -2262,11 +2279,14 @@ blocking.
     \item Broadwell-E (\texttt{0x0406F1}) to Broadwell (\texttt{0x0306D4}):\\
     \texttt{Cpuid1Data}: \texttt{D4 06 03 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
-    \item Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
+    \item \DIFaddbegin \DIFadd{Comet Lake U62 (}\texttt{\DIFadd{0x0A0660}}\DIFadd{) to Comet Lake U42 (}\texttt{\DIFadd{0x0806EC}}\DIFadd{):}\\
+    \texttt{\DIFadd{Cpuid1Data}}\DIFadd{: }\texttt{\DIFadd{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}}\\
+    \texttt{\DIFadd{Cpuid1Mask}}\DIFadd{: }\texttt{\DIFadd{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}}
+    \item \DIFaddend Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
     \texttt{Cpuid1Data}: \texttt{EB 06 09 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
-    \item Comet Lake U62 (\texttt{0x0A0660}) to Comet Lake U42 (\texttt{0x0806EC}):\\
-    \texttt{Cpuid1Data}: \texttt{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
+    \item \DIFdelbegin \DIFdel{Comet Lake U62 (}\DIFdelend \DIFaddbegin \DIFadd{Alder Lake (}\DIFaddend \texttt{\DIFdelbegin \DIFdel{0x0A0660}\DIFdelend \DIFaddbegin \DIFadd{0x090672}\DIFaddend }) to Comet Lake \DIFdelbegin \DIFdel{U42 (}\DIFdelend \DIFaddbegin \DIFadd{(}\DIFaddend \texttt{\DIFdelbegin \DIFdel{0x0806EC}\DIFdelend \DIFaddbegin \DIFadd{0x0906EB}\DIFaddend }):\\
+    \texttt{Cpuid1Data}: \texttt{\DIFdelbegin \DIFdel{EC }\DIFdelend \DIFaddbegin \DIFadd{EB }\DIFaddend 06 \DIFdelbegin \DIFdel{08 }\DIFdelend \DIFaddbegin \DIFadd{09 }\DIFaddend 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
   \end{itemize}
 
@@ -2733,14 +2753,26 @@ blocking.
   \texttt{ProvideCurrentCpuInfo}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Requirement}: 10.8\\
+  \textbf{Requirement}: 10.8 \DIFaddbegin \DIFadd{(10.14)}\DIFaddend \\
   \textbf{Description}: Provides current CPU info to the kernel.
 
-  This quirk currently provides the correct TSC and FSB values to the kernel, as well
-  as disables CPU topology validation.
+  This quirk \DIFdelbegin \DIFdel{currently }\DIFdelend \DIFaddbegin \DIFadd{works differently depending on the CPU:
+}
 
-  \emph{Note}: These patches currently target Microsoft Hyper-V and may need to be extended for
-  other purposes.
+  \begin{itemize}
+  \tightlist
+  \item \DIFadd{For Microsoft Hyper-V it }\DIFaddend provides the correct TSC and FSB values
+    to the kernel, as well as disables CPU topology validation \DIFdelbegin \DIFdel{.
+}%DIFDELCMD < 
+
+%DIFDELCMD <   %%%
+\emph{\DIFdel{Note}}%DIFAUXCMD
+\DIFdel{: These patches currently target Microsoft Hyper-V and may need to be extended for other purposes.}\DIFdelend \DIFaddbegin \DIFadd{(10.8+).
+  }\item \DIFadd{For Intel CPUs it adds support for asymmetrical SMP systems
+    (e.g. Intel Alder Lake) by patching core count to thread count along
+    with the supplemental required changes (10.14+).
+  }\end{itemize}
+\DIFaddend 
 
 \item
   \texttt{SetApfsTrimTimeout}\\

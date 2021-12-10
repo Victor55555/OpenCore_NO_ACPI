@@ -631,6 +631,19 @@ package. The currently supported EDK II release is hosted in
 \href{https://github.com/acidanthera/audk}{acidanthera/audk}. Required patches
 for this package can be found in the \texttt{Patches} directory.
 
+When updating the LaTeX documentation (e.g. \texttt{Configuration.tex}) please
+do \textit{not} rebuild the PDF files till merging to master happens. This avoids
+unnecessary merge conflicts:
+\begin{itemize}
+\tightlist
+\item External contributors using the pull-request approach should request
+  the maintainers to handle the PDF rebuild in the pull-request message.
+\item Internal contributors should rebuild the documentation at merge time
+  in the same or in a separate commit. One can ask another maintainer to
+  rebuild the documentation when lacking the necessary tools
+  in the pull-request message.
+\end{itemize}
+
 The only officially supported toolchain is \texttt{XCODE5}. Other toolchains
 might work but are neither supported nor recommended. Contributions of clean
 patches are welcome. Please do follow
@@ -2193,6 +2206,9 @@ blocking.
   \texttt{0x0306C3} (Haswell).
 
   \emph{Note 3}: For XCPM support it is recommended to use the following combinations.
+  Be warned that one is required to set the correct
+  \href{https://github.com/dortania/bugtracker/issues/190}{frequency vectors} matching
+  the installed CPU.
 
   \begin{itemize}
     \tightlist
@@ -2202,11 +2218,14 @@ blocking.
     \item Broadwell-E (\texttt{0x0406F1}) to Broadwell (\texttt{0x0306D4}):\\
     \texttt{Cpuid1Data}: \texttt{D4 06 03 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
+    \item Comet Lake U62 (\texttt{0x0A0660}) to Comet Lake U42 (\texttt{0x0806EC}):\\
+    \texttt{Cpuid1Data}: \texttt{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
+    \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
     \item Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
     \texttt{Cpuid1Data}: \texttt{EB 06 09 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
-    \item Comet Lake U62 (\texttt{0x0A0660}) to Comet Lake U42 (\texttt{0x0806EC}):\\
-    \texttt{Cpuid1Data}: \texttt{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
+    \item Alder Lake (\texttt{0x090672}) to Comet Lake (\texttt{0x0906EB}):\\
+    \texttt{Cpuid1Data}: \texttt{EB 06 09 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
   \end{itemize}
 
@@ -2673,14 +2692,19 @@ blocking.
   \texttt{ProvideCurrentCpuInfo}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Requirement}: 10.8\\
+  \textbf{Requirement}: 10.8 (10.14)\\
   \textbf{Description}: Provides current CPU info to the kernel.
 
-  This quirk currently provides the correct TSC and FSB values to the kernel, as well
-  as disables CPU topology validation.
+  This quirk works differently depending on the CPU:
 
-  \emph{Note}: These patches currently target Microsoft Hyper-V and may need to be extended for
-  other purposes.
+  \begin{itemize}
+  \tightlist
+  \item For Microsoft Hyper-V it provides the correct TSC and FSB values
+    to the kernel, as well as disables CPU topology validation (10.8+).
+  \item For Intel CPUs it adds support for asymmetrical SMP systems
+    (e.g. Intel Alder Lake) by patching core count to thread count along
+    with the supplemental required changes (10.14+).
+  \end{itemize}
 
 \item
   \texttt{SetApfsTrimTimeout}\\
