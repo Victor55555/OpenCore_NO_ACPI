@@ -1,7 +1,7 @@
 \documentclass[]{article}
 %DIF LATEXDIFF DIFFERENCE FILE
-%DIF DEL PreviousConfiguration.tex   Wed Nov  3 14:16:04 2021
-%DIF ADD ../Configuration.tex        Sun Nov 28 15:24:08 2021
+%DIF DEL PreviousConfiguration.tex   Wed Dec  8 21:04:04 2021
+%DIF ADD ../Configuration.tex        Fri Dec 10 11:51:28 2021
 
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
@@ -154,7 +154,7 @@
 
        \vspace{0.2in}
 
-       Reference Manual (0.7\DIFdelbegin \DIFdel{.5}\DIFdelend \DIFaddbegin \DIFadd{.6}\DIFaddend )
+       Reference Manual (0.7\DIFdelbegin \DIFdel{.6}\DIFdelend \DIFaddbegin \DIFadd{.7}\DIFaddend )
 
        \vspace{0.2in}
 
@@ -691,7 +691,20 @@ package. The currently supported EDK II release is hosted in
 \href{https://github.com/acidanthera/audk}{acidanthera/audk}. Required patches
 for this package can be found in the \texttt{Patches} directory.
 
-The only officially supported toolchain is \texttt{XCODE5}. Other toolchains
+\DIFaddbegin \DIFadd{When updating the LaTeX documentation (e.g. }\texttt{\DIFadd{Configuration.tex}}\DIFadd{) please
+do }\textit{\DIFadd{not}} \DIFadd{rebuild the PDF files till merging to master happens. This avoids
+unnecessary merge conflicts:
+}\begin{itemize}
+\tightlist
+\item \DIFadd{External contributors using the pull-request approach should request
+  the maintainers to handle the PDF rebuild in the pull-request message.
+}\item \DIFadd{Internal contributors should rebuild the documentation at merge time
+  in the same or in a separate commit. One can ask another maintainer to
+  rebuild the documentation when lacking the necessary tools
+  in the pull-request message.
+}\end{itemize}
+
+\DIFaddend The only officially supported toolchain is \texttt{XCODE5}. Other toolchains
 might work but are neither supported nor recommended. Contributions of clean
 patches are welcome. Please do follow
 \href{https://github.com/tianocore/tianocore.github.io/wiki/Code-Style-C}{EDK II C Codestyle}.
@@ -1711,8 +1724,14 @@ To view their current state, use the \texttt{pmset -g} command in Terminal.
   such as \texttt{DevirtualiseMmio}, \texttt{ProtectMemoryRegions}, or \texttt{RebuildAppleMemoryMap},
   and may also obstruct other quirks depending on the scope of such.
 
-  \emph{Note}: On VMware, the need for this quirk may be determined by the appearance of the
+  GRUB shim makes similar on-the-fly changes to various UEFI image services,
+  which are also protected against by this quirk.
+
+  \emph{Note 1}: On VMware, the need for this quirk may be determined by the appearance of the
   ``Your Mac OS guest might run unreliably with more than one virtual core.'' message.
+
+  \emph{Note 2}: This quirk is needed for correct operation if OpenCore is chainloaded from GRUB
+  with BIOS Secure Boot enabled.
 
 \item
   \texttt{ProvideCustomSlide}\\
@@ -1793,19 +1812,13 @@ To view their current state, use the \texttt{pmset -g} command in Terminal.
 
   This quirk reduces GPU PCI BAR sizes for Apple macOS up to the specified
   value or lower if it is unsupported. The specified value follows PCI Resizable
-  BAR spec. \DIFdelbegin \DIFdel{Use }\texttt{\DIFdel{0}} %DIFAUXCMD
-\DIFdel{for 1 MB, }\texttt{\DIFdel{1}} %DIFAUXCMD
-\DIFdel{for 2 MB, }\texttt{\DIFdel{2}}
-  %DIFAUXCMD
-\DIFdel{for 4 MB, and so on up to }\texttt{\DIFdel{19}} %DIFAUXCMD
-\DIFdel{for 512 GB. }\DIFdelend \DIFaddbegin \DIFadd{While }\DIFaddend Apple macOS supports \DIFaddbegin \DIFadd{a theoretical }\DIFaddend 1 GB maximum, \DIFdelbegin \DIFdel{which is }\texttt{\DIFdel{10}}%DIFAUXCMD
-\DIFdel{.}\DIFdelend \DIFaddbegin \DIFadd{in practice all
+  BAR spec. While Apple macOS supports a theoretical 1 GB maximum, in practice all
   non-default values may not work correctly. For this reason the only supported
-  value for this quirk is the minimal supported BAR size, i.e. }\texttt{\DIFadd{0}}\DIFadd{. }\DIFaddend Use
+  value for this quirk is the minimal supported BAR size, i.e. \texttt{0}. Use
   \texttt{-1} to disable this quirk.
 
-  \DIFaddbegin \DIFadd{For development purposes one may take risks and try other values.
-  }\DIFaddend Consider a GPU with 2 BARs:
+  For development purposes one may take risks and try other values.
+  Consider a GPU with 2 BARs:
   \begin{itemize}
     \tightlist
     \item \texttt{BAR0} supports sizes from 256 MB to 8 GB. Its value is 4 GB.
@@ -1821,18 +1834,10 @@ To view their current state, use the \texttt{pmset -g} command in Terminal.
   \emph{Example 3}: Setting \texttt{ResizeAppleGpuBars} to 16 GB will make no
   changes.
 
-  \emph{Note\DIFdelbegin \DIFdel{1}\DIFdelend }: See \texttt{ResizeGpuBars} quirk for general GPU PCI BAR
+  \emph{Note}: See \texttt{ResizeGpuBars} quirk for general GPU PCI BAR
   size configuration and more details about the technology.
 
-\DIFdelbegin \emph{\DIFdel{Note 2}}%DIFAUXCMD
-\DIFdel{: Certain GPU drivers do not support non-standard BAR sizes,
-  causing sleep wake issues, for this reason for macOS it is recommended
-  to use minimal supported BAR sizes, i.e. specify }\texttt{\DIFdel{0}} %DIFAUXCMD
-\DIFdel{(1 MB).
-}%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\DIFdelend \item
+\item
   \texttt{SetupVirtualMap}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
@@ -2261,6 +2266,10 @@ blocking.
   \texttt{0x0306C3} (Haswell).
 
   \emph{Note 3}: For XCPM support it is recommended to use the following combinations.
+  \DIFaddbegin \DIFadd{Be warned that one is required to set the correct
+  }\href{https://github.com/dortania/bugtracker/issues/190}{\DIFadd{frequency vectors}} \DIFadd{matching
+  the installed CPU.
+}\DIFaddend 
 
   \begin{itemize}
     \tightlist
@@ -2270,11 +2279,14 @@ blocking.
     \item Broadwell-E (\texttt{0x0406F1}) to Broadwell (\texttt{0x0306D4}):\\
     \texttt{Cpuid1Data}: \texttt{D4 06 03 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
-    \item Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
+    \item \DIFaddbegin \DIFadd{Comet Lake U62 (}\texttt{\DIFadd{0x0A0660}}\DIFadd{) to Comet Lake U42 (}\texttt{\DIFadd{0x0806EC}}\DIFadd{):}\\
+    \texttt{\DIFadd{Cpuid1Data}}\DIFadd{: }\texttt{\DIFadd{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}}\\
+    \texttt{\DIFadd{Cpuid1Mask}}\DIFadd{: }\texttt{\DIFadd{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}}
+    \item \DIFaddend Rocket Lake (\texttt{0x0A0670}) to Comet Lake (\texttt{0x0906EB}):\\
     \texttt{Cpuid1Data}: \texttt{EB 06 09 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
-    \item Comet Lake U62 (\texttt{0x0A0660}) to Comet Lake U42 (\texttt{0x0806EC}):\\
-    \texttt{Cpuid1Data}: \texttt{EC 06 08 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
+    \item \DIFdelbegin \DIFdel{Comet Lake U62 (}\DIFdelend \DIFaddbegin \DIFadd{Alder Lake (}\DIFaddend \texttt{\DIFdelbegin \DIFdel{0x0A0660}\DIFdelend \DIFaddbegin \DIFadd{0x090672}\DIFaddend }) to Comet Lake \DIFdelbegin \DIFdel{U42 (}\DIFdelend \DIFaddbegin \DIFadd{(}\DIFaddend \texttt{\DIFdelbegin \DIFdel{0x0806EC}\DIFdelend \DIFaddbegin \DIFadd{0x0906EB}\DIFaddend }):\\
+    \texttt{Cpuid1Data}: \texttt{\DIFdelbegin \DIFdel{EC }\DIFdelend \DIFaddbegin \DIFadd{EB }\DIFaddend 06 \DIFdelbegin \DIFdel{08 }\DIFdelend \DIFaddbegin \DIFadd{09 }\DIFaddend 00 00 00 00 00 00 00 00 00 00 00 00 00}\\
     \texttt{Cpuid1Mask}: \texttt{FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00}
   \end{itemize}
 
@@ -2741,14 +2753,26 @@ blocking.
   \texttt{ProvideCurrentCpuInfo}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Requirement}: 10.8\\
+  \textbf{Requirement}: 10.8 \DIFaddbegin \DIFadd{(10.14)}\DIFaddend \\
   \textbf{Description}: Provides current CPU info to the kernel.
 
-  This quirk currently provides the correct TSC and FSB values to the kernel, as well
-  as disables CPU topology validation.
+  This quirk \DIFdelbegin \DIFdel{currently }\DIFdelend \DIFaddbegin \DIFadd{works differently depending on the CPU:
+}
 
-  \emph{Note}: These patches currently target Microsoft Hyper-V and may need to be extended for
-  other purposes.
+  \begin{itemize}
+  \tightlist
+  \item \DIFadd{For Microsoft Hyper-V it }\DIFaddend provides the correct TSC and FSB values
+    to the kernel, as well as disables CPU topology validation \DIFdelbegin \DIFdel{.
+}%DIFDELCMD < 
+
+%DIFDELCMD <   %%%
+\emph{\DIFdel{Note}}%DIFAUXCMD
+\DIFdel{: These patches currently target Microsoft Hyper-V and may need to be extended for other purposes.}\DIFdelend \DIFaddbegin \DIFadd{(10.8+).
+  }\item \DIFadd{For Intel CPUs it adds support for asymmetrical SMP systems
+    (e.g. Intel Alder Lake) by patching core count to thread count along
+    with the supplemental required changes (10.14+).
+  }\end{itemize}
+\DIFaddend 
 
 \item
   \texttt{SetApfsTrimTimeout}\\
@@ -3902,7 +3926,7 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log |
   SIP disabled. Use of this boot option may make it easier to quickly disable SIP
   protection when genuinely needed - it should be re-enabled again afterwards.
 
-  \emph{Note 2}: \DIFdelbegin \DIFdel{OC }\DIFdelend \DIFaddbegin \DIFadd{OpenCore }\DIFaddend uses \texttt{0x26F} even though \texttt{csrutil disable} on Big Sur
+  \emph{Note 2}: OpenCore uses \texttt{0x26F} even though \texttt{csrutil disable} on Big Sur
   sets \texttt{0x7F}. To explain the choice:
   \begin{itemize}
   \tightlist
@@ -4053,8 +4077,8 @@ diskutil mount -mountpoint /var/tmp/OSPersonalizationTemp $disk
 
   \begin{itemize}
   \tightlist
-    \item \texttt{0x01} --- Expose the printable booter path as \DIFdelbegin \DIFdel{an }\DIFdelend \DIFaddbegin \DIFadd{a }\DIFaddend UEFI variable.
-    \item \texttt{0x02} --- Expose the OpenCore version as \DIFdelbegin \DIFdel{an }\DIFdelend \DIFaddbegin \DIFadd{a }\DIFaddend UEFI variable.
+    \item \texttt{0x01} --- Expose the printable booter path as a UEFI variable.
+    \item \texttt{0x02} --- Expose the OpenCore version as a UEFI variable.
     \item \texttt{0x04} --- Expose the OpenCore version in the OpenCore picker menu title.
     \item \texttt{0x08} --- Expose OEM information as a set of UEFI variables.
   \end{itemize}
@@ -6057,11 +6081,11 @@ even cause permanent firmware damage. Some of the known drivers are listed below
 \href{https://github.com/acidanthera/OcBinaryData}{\texttt{btrfs\_x64}}
 & Open source BTRFS file system driver, required for booting with \hyperref[uefilinux]{OpenLinuxBoot}
   from a file system which is now quite commonly used with Linux. \\
-\DIFaddbegin \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{\DIFadd{BiosVideo}}}\textbf{\DIFadd{*}}
-& \DIFadd{CSM video driver implementing graphics output protocol based on VESA and legacy
+\href{https://github.com/acidanthera/OpenCorePkg}{\texttt{BiosVideo}}\textbf{*}
+& CSM video driver implementing graphics output protocol based on VESA and legacy
   BIOS interfaces. Used for UEFI firmware with fragile GOP support (e.g. low resolution).
-  Requires }\texttt{\DIFadd{ReconnectGraphicsOnConnect}}\DIFadd{. Included in OpenDuet out of the box. }\\
-\DIFaddend \href{https://github.com/acidanthera/OpenCorePkg}{\texttt{CrScreenshotDxe}}\textbf{*}
+  Requires \texttt{ReconnectGraphicsOnConnect}. Included in OpenDuet out of the box. \\
+\href{https://github.com/acidanthera/OpenCorePkg}{\texttt{CrScreenshotDxe}}\textbf{*}
 & Screenshot making driver saving images to the root of OpenCore partition (ESP) or
   any available writeable filesystem upon pressing \texttt{F10}.
   This is a modified version of \href{https://github.com/LongSoft/CrScreenshotDxe}{\texttt{CrScreenshotDxe}}
@@ -6728,27 +6752,27 @@ with the boot menu.
   \texttt{AppleEvent}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: \texttt{Auto}\\
-  \textbf{Description}: Determine whether \DIFdelbegin \DIFdel{OC builtin or }\DIFdelend \DIFaddbegin \DIFadd{the OpenCore builtin or the }\DIFaddend OEM Apple Event protocol is used.
+  \textbf{Description}: Determine whether the OpenCore builtin or the OEM Apple Event protocol is used.
 
-  This option determines whether \DIFdelbegin \DIFdel{Apple's }\DIFdelend \DIFaddbegin \DIFadd{the }\DIFaddend OEM Apple Event protocol is used (where available), or
+  This option determines whether the OEM Apple Event protocol is used (where available), or
   whether OpenCore's reversed engineered and updated re-implementation is used. In general
   OpenCore's re-implementation should be preferred, since it contains updates such as noticeably
   improved fine mouse cursor movement and configurable key repeat delays.
 
   \begin{itemize}
   \tightlist
-  \item \texttt{Auto} --- Use \DIFaddbegin \DIFadd{the }\DIFaddend OEM Apple Event implementation if available, connected and
-  recent enough to be used, otherwise use \DIFdelbegin \DIFdel{OC reimplementation}\DIFdelend \DIFaddbegin \DIFadd{the OpenCore re-implementation}\DIFaddend .
-  On non-Apple hardware\DIFaddbegin \DIFadd{, }\DIFaddend this will use the OpenCore builtin implementation.
-  On some Macs \DIFdelbegin \DIFdel{(e.g. classic Mac Pro) this will find }\DIFdelend \DIFaddbegin \DIFadd{such as Classic Mac Pros, this will prefer }\DIFaddend the Apple implementation \DIFdelbegin \DIFdel{. On }\DIFdelend \DIFaddbegin \DIFadd{but on }\DIFaddend both older and
-  newer \DIFdelbegin \DIFdel{Macs than this}\DIFdelend \DIFaddbegin \DIFadd{Mac models than these}\DIFaddend , this option will \DIFdelbegin \DIFdel{always or often use the OC implementation}\DIFdelend \DIFaddbegin \DIFadd{typically use the OpenCore re-implementation instead}\DIFaddend .
-  On older Macs\DIFaddbegin \DIFadd{, }\DIFaddend this is because the implementation available is too old to be used \DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{while }\DIFaddend on newer Macs\DIFaddbegin \DIFadd{,
-  }\DIFaddend it is because of optimisations added by Apple which do not connect the Apple Event protocol
+  \item \texttt{Auto} --- Use the OEM Apple Event implementation if available, connected and
+  recent enough to be used, otherwise use the OpenCore re-implementation.
+  On non-Apple hardware, this will use the OpenCore builtin implementation.
+  On some Macs such as Classic Mac Pros, this will prefer the Apple implementation but on both older and
+  newer Mac models than these, this option will typically use the OpenCore re-implementation instead.
+  On older Macs, this is because the implementation available is too old to be used while on newer Macs,
+  it is because of optimisations added by Apple which do not connect the Apple Event protocol
   except when needed -- e.g. except when the Apple boot picker is explicitly started.
-  Due to its somewhat unpredicatable results, this option is not \DIFdelbegin \DIFdel{normally }\DIFdelend \DIFaddbegin \DIFadd{typically }\DIFaddend recommended.
+  Due to its somewhat unpredicatable results, this option is not typically recommended.
   \item \texttt{Builtin} ---  Always use OpenCore's updated re-implementation of the Apple Event protocol.
   Use of this setting is recommended even on Apple hardware, due to
-  improvements (better fine mouse control, configurable key delays) made in the \DIFdelbegin \DIFdel{OC }\DIFdelend \DIFaddbegin \DIFadd{OpenCore }\DIFaddend re-implementation
+  improvements (better fine mouse control, configurable key delays) made in the OpenCore re-implementation
   of the protocol.
   \item \texttt{OEM} --- Assume Apple's protocol will be available at driver connection. On all Apple hardware
   where a recent enough Apple OEM version of the protocol is available -- whether or not connected automatically
@@ -6761,8 +6785,8 @@ with the boot menu.
   \texttt{CustomDelays}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Description}: Enable custom key repeat delays when using the OpenCore \DIFdelbegin \DIFdel{implementation }\DIFdelend \DIFaddbegin \DIFadd{re-implementation
-  }\DIFaddend of the Apple Event protocol.
+  \textbf{Description}: Enable custom key repeat delays when using the OpenCore re-implementation
+  of the Apple Event protocol.
   Has no effect when using the OEM Apple implementation (see \texttt{AppleEvent} setting).
 
   \begin{itemize}
@@ -6775,9 +6799,8 @@ with the boot menu.
   \texttt{KeyInitialDelay}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{50} (500ms before first key repeat)\\
-  \textbf{Description}: Configures the initial delay before keyboard key repeats in \DIFdelbegin \DIFdel{OpenCore implementation
-  of }\DIFdelend \DIFaddbegin \DIFadd{the
-  OpenCore re-implementation of the }\DIFaddend Apple Event protocol, in units of 10ms.
+  \textbf{Description}: Configures the initial delay before keyboard key repeats in the
+  OpenCore re-implementation of the Apple Event protocol, in units of 10ms.
 
   The Apple OEM default value is \texttt{50} (500ms).
 
@@ -6800,9 +6823,8 @@ with the boot menu.
   \texttt{KeySubsequentDelay}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{5} (50ms between subsequent key repeats)\\
-  \textbf{Description}: Configures the gap between keyboard key repeats in \DIFdelbegin \DIFdel{OpenCore implementation
-  of }\DIFdelend \DIFaddbegin \DIFadd{the OpenCore re-implementation
-  of the }\DIFaddend Apple Event protocol, in units of 10ms.
+  \textbf{Description}: Configures the gap between keyboard key repeats in the OpenCore re-implementation
+  of the Apple Event protocol, in units of 10ms.
 
   The Apple OEM default value is \texttt{5} (50ms).
   \texttt{0} is an invalid value for this option (will issue a debug log warning and use \texttt{1} instead).
@@ -6834,7 +6856,7 @@ with the boot menu.
   \begin{itemize}
     \tightlist
     \item Setting \texttt{KeyInitialDelay} to \texttt{0} cancels the Apple Event initial repeat
-    delay (when using the \DIFdelbegin \DIFdel{OC }\DIFdelend \DIFaddbegin \DIFadd{OpenCore }\DIFaddend builtin Apple Event implementation with \texttt{CustomDelays} enabled),
+    delay (when using the OpenCore builtin Apple Event implementation with \texttt{CustomDelays} enabled),
     therefore the only long delay you will see is the the non-configurable and non-avoidable initial
     long delay introduced by the BIOS key support on these machines.
     \item Key-smoothing parameter \texttt{KeyForgetThreshold}
@@ -6854,7 +6876,7 @@ with the boot menu.
   Apple’s own implementation of AppleEvent prevents keyboard input during graphics applications from appearing
   on the basic console input stream.
 
-  With the default setting of \texttt{false}, \DIFdelbegin \DIFdel{OC}\DIFdelend \DIFaddbegin \DIFadd{OpenCore}\DIFaddend 's builtin implementation of AppleEvent replicates this behaviour.
+  With the default setting of \texttt{false}, OpenCore's builtin implementation of AppleEvent replicates this behaviour.
 
   On non-Apple hardware this can stop keyboard input working in graphics-based applications such as Windows BitLocker
   which use non-Apple key input methods.
@@ -6874,9 +6896,8 @@ with the boot menu.
   \texttt{PointerSpeedDiv}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{1}\\
-  \textbf{Description}: Configure pointer speed divisor in \DIFdelbegin \DIFdel{OpenCore implementation
-  of }\DIFdelend \DIFaddbegin \DIFadd{the OpenCore re-implementation
-  of the }\DIFaddend Apple Event protocol.
+  \textbf{Description}: Configure pointer speed divisor in the OpenCore re-implementation
+  of the Apple Event protocol.
   Has no effect when using the OEM Apple implementation (see \texttt{AppleEvent} setting).
 
   Configures the divisor for pointer movements. The Apple OEM default value is \texttt{1}.
@@ -6890,9 +6911,8 @@ with the boot menu.
   \texttt{PointerSpeedMul}\\
   \textbf{Type}: \texttt{plist\ integer}\\
   \textbf{Failsafe}: \texttt{1}\\
-  \textbf{Description}: Configure pointer speed multiplier in \DIFdelbegin \DIFdel{OpenCore implementation
-  of }\DIFdelend \DIFaddbegin \DIFadd{the OpenCore re-implementation
-  of the }\DIFaddend Apple Event protocol.
+  \textbf{Description}: Configure pointer speed multiplier in the OpenCore re-implementation
+  of the Apple Event protocol.
   Has no effect when using the OEM Apple implementation (see \texttt{AppleEvent} setting).
 
   Configures the multiplier for pointer movements. The Apple OEM default value is \texttt{1}.
@@ -7065,7 +7085,7 @@ with the boot menu.
   \texttt{Arguments}\\
   \textbf{Type}: \texttt{plist\ string}\\
   \textbf{Failsafe}: Empty\\
-  \textbf{Description}: Some \DIFdelbegin \DIFdel{OC }\DIFdelend \DIFaddbegin \DIFadd{OpenCore }\DIFaddend plugins accept optional additional arguments
+  \textbf{Description}: Some OpenCore plugins accept optional additional arguments
   which may be specified as a string here.
 
 \end{enumerate}
@@ -7421,24 +7441,21 @@ with the boot menu.
   console handle, as may be the case on the \texttt{MacPro5,1} when using modern GPUs.
 
 \item
-  \DIFaddbegin \texttt{\DIFadd{ReconnectGraphicsOnConnect}}\\
-  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ boolean}}\\
-  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{false}}\\
-  \textbf{\DIFadd{Description}}\DIFadd{: Reconnect all graphics drivers during driver connection.
-}
+  \texttt{ReconnectGraphicsOnConnect}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Reconnect all graphics drivers during driver connection.
 
-  \DIFadd{On certain firmware, it may be desireable to use an alternative graphics driver,
+  On certain firmware, it may be desireable to use an alternative graphics driver,
   for example BiosVideo.efi, providing better screen resolution options on legacy
-  machines, or a driver supporting }\texttt{\DIFadd{ForceResolution}}\DIFadd{. This option attempts
+  machines, or a driver supporting \texttt{ForceResolution}. This option attempts
   to disconnect all currently connected graphics drivers before connecting newly
   loaded drivers.
-}
 
-  \emph{\DIFadd{Note}}\DIFadd{: This option requires }\texttt{\DIFadd{ConnectDrivers}} \DIFadd{to be enabled.
-}
+  \emph{Note}: This option requires \texttt{ConnectDrivers} to be enabled.
 
 \item
-  \DIFaddend \texttt{ReconnectOnResChange}\\
+  \texttt{ReconnectOnResChange}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Reconnect console controllers after changing screen resolution.
@@ -7465,30 +7482,27 @@ with the boot menu.
    an empty string for this option to work.
 
 \item
-  \DIFaddbegin \texttt{\DIFadd{UIScale}}\\
-  \textbf{\DIFadd{Type}}\DIFadd{: }\texttt{\DIFadd{plist\ integer}}\DIFadd{, 8 bit}\\
-  \textbf{\DIFadd{Failsafe}}\DIFadd{: }\texttt{\DIFadd{-1}}\\
-  \textbf{\DIFadd{Description}}\DIFadd{: User interface scaling factor.
-}
+  \texttt{UIScale}\\
+  \textbf{Type}: \texttt{plist\ integer}, 8 bit\\
+  \textbf{Failsafe}: \texttt{-1}\\
+  \textbf{Description}: User interface scaling factor.
 
-  \DIFadd{Corresponds to }\texttt{\DIFadd{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:UIScale}} \DIFadd{variable.
-  }\begin{itemize}
+  Corresponds to \texttt{4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14:UIScale} variable.
+  \begin{itemize}
     \tightlist
-    \item \texttt{\DIFadd{1}} \DIFadd{--- 1x scaling, corresponds to normal displays.
-    }\item \texttt{\DIFadd{2}} \DIFadd{--- 2x scaling, corresponds to HiDPI displays.
-    }\item \texttt{\DIFadd{-1}} \DIFadd{--- leaves the current variable unchanged.
-    }\item \texttt{\DIFadd{0}} \DIFadd{--- automatically chooses scaling based on the current resolution.
-  }\end{itemize}
+    \item \texttt{1} --- 1x scaling, corresponds to normal displays.
+    \item \texttt{2} --- 2x scaling, corresponds to HiDPI displays.
+    \item \texttt{-1} --- leaves the current variable unchanged.
+    \item \texttt{0} --- automatically chooses scaling based on the current resolution.
+  \end{itemize}
 
-  \emph{\DIFadd{Note 1}}\DIFadd{: Automatic scale factor detection works on the basis of total pixel area and may fail on small HiDPI displays,
+  \emph{Note 1}: Automatic scale factor detection works on the basis of total pixel area and may fail on small HiDPI displays,
   in which case the value may be manually managed using the NVRAM section.
-}
 
-  \emph{\DIFadd{Note 2}}\DIFadd{: When switching from manually specified NVRAM variable to this preference an NVRAM reset may be needed.
-}
+  \emph{Note 2}: When switching from manually specified NVRAM variable to this preference an NVRAM reset may be needed.
 
 \item
-  \DIFaddend \texttt{UgaPassThrough}\\
+  \texttt{UgaPassThrough}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
   \textbf{Description}: Provide UGA protocol instances on top of GOP protocol instances.
@@ -7708,6 +7722,16 @@ with the boot menu.
   \textbf{Description}: Enable AVX vector acceleration of SHA-512 and SHA-384 hashing algorithms.
 
   \item
+  \texttt{EnableVmx}\\
+  \textbf{Type}: \texttt{plist\ boolean}\\
+  \textbf{Failsafe}: \texttt{false}\\
+  \textbf{Description}: Enable Intel virtual machine extensions.
+
+  \emph{Note}: Required to allow virtualization in Windows on some Mac hardware. VMX
+  is enabled or disabled and locked by BIOS before OpenCore starts on most
+  firmware. Use BIOS to enable virtualization where possible.
+
+  \item
   \texttt{DisableSecurityPolicy}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
@@ -7734,7 +7758,7 @@ with the boot menu.
   \texttt{ForceOcWriteFlash}\\
   \textbf{Type}: \texttt{plist\ boolean}\\
   \textbf{Failsafe}: \texttt{false}\\
-  \textbf{Description}: Enables writing to flash memory for all \DIFdelbegin \DIFdel{OpenCore }\DIFdelend \DIFaddbegin \DIFadd{OpenCore-managed NVRAM }\DIFaddend system variables.
+  \textbf{Description}: Enables writing to flash memory for all OpenCore-managed NVRAM system variables.
 
   \emph{Note}: This value should be disabled on most types of firmware but is
   left configurable to account for firmware that may have issues with volatile
