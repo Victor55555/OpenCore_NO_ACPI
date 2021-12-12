@@ -434,7 +434,7 @@ OcReinstallProtocols (
   }
 
   if (OcAppleEg2InfoInstallProtocol (Config->Uefi.ProtocolOverrides.AppleEg2Info) == NULL) {
-    DEBUG ((DEBUG_INFO, "OC: Failed to install fb info protocol\n"));
+    DEBUG ((DEBUG_INFO, "OC: Failed to install eg2 info protocol\n"));
   }
 }
 
@@ -506,13 +506,13 @@ OcLoadAppleSecureBoot (
 
     Status = OcAppleImg4BootstrapValues (RealSecureBootModel, Config->Misc.Security.ApECID);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "OC: Failed to bootstrap IMG4 values - %r\n", Status));
+      DEBUG ((DEBUG_ERROR, "OC: Failed to bootstrap IMG4 NVRAM values - %r\n", Status));
       return;
     }
 
     Status = OcAppleSecureBootBootstrapValues (RealSecureBootModel, Config->Misc.Security.ApECID);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "OC: Failed to bootstrap SB values - %r\n", Status));
+      DEBUG ((DEBUG_ERROR, "OC: Failed to bootstrap SB NVRAM values - %r\n", Status));
       return;
     }
   }
@@ -816,13 +816,14 @@ OcLoadUefiSupport (
   IN UINT8               *Signature
   )
 {
+  EFI_STATUS            Status;
   EFI_HANDLE            *DriversToConnect;
   EFI_EVENT             Event;
   BOOLEAN               AvxEnabled;
 
   OcReinstallProtocols (Config);
 
-  OcImageLoaderInit ();
+  OcImageLoaderInit (Config->Booter.Quirks.ProtectUefiServices);
 
   OcLoadAppleSecureBoot (Config);
 
@@ -842,6 +843,11 @@ OcLoadUefiSupport (
     OcCpuCorrectFlexRatio (CpuInfo);
   }
 
+  if (Config->Uefi.Quirks.EnableVmx) {
+    Status = OcCpuEnableVmx ();
+    DEBUG ((EFI_ERROR (Status) ? DEBUG_WARN : DEBUG_INFO, "OC: Enable VMX - %r\n", Status));
+  }
+
   if (Config->Uefi.Quirks.TscSyncTimeout > 0) {
     OcCpuCorrectTscSync (CpuInfo, Config->Uefi.Quirks.TscSyncTimeout);
   }
@@ -859,7 +865,8 @@ OcLoadUefiSupport (
     OC_BOOT_REDIRECT_VARIABLE_NAME,
     OPEN_CORE_INT_NVRAM_ATTR,
     sizeof (Config->Uefi.Quirks.RequestBootVarRouting),
-    &Config->Uefi.Quirks.RequestBootVarRouting
+    &Config->Uefi.Quirks.RequestBootVarRouting,
+    NULL
     );
 
   if (Config->Uefi.Quirks.UnblockFsConnect) {
@@ -905,6 +912,13 @@ OcLoadUefiSupport (
       // DriversToConnect is not freed as it is owned by OcRegisterDriversToHighestPriority.
       //
     }
+
+    if (Config->Uefi.Output.ReconnectGraphicsOnConnect) {
+      DEBUG ((DEBUG_INFO, "OC: Disconnecting graphics drivers...\n"));
+      OcDisconnectGraphicsDrivers ();
+      DEBUG ((DEBUG_INFO, "OC: Disconnecting graphics drivers done...\n"));
+    }
+
     OcConnectDrivers ();
     DEBUG ((DEBUG_INFO, "OC: Connecting drivers done...\n"));
   } else {

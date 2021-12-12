@@ -119,16 +119,15 @@ package() {
     done
 
     # copy OpenCore main program.
-    ocflavour="${selfdir}/Library/OcBootManagementLib/.contentFlavour"
     cp "${arch}/OpenCore.efi" "${dstdir}/${arch}/EFI/OC" || exit 1
-    cp "${ocflavour}" "${dstdir}/${arch}/EFI/OC" || exit 1
+    printf "%s" "OpenCore" > "${dstdir}/${arch}/EFI/OC/.contentFlavour" || exit 1
 
     local suffix="${arch}"
     if [ "${suffix}" = "X64" ]; then
       suffix="x64"
     fi
     cp "${arch}/Bootstrap.efi" "${dstdir}/${arch}/EFI/BOOT/BOOT${suffix}.efi" || exit 1
-    cp "${ocflavour}" "${dstdir}/${arch}/EFI/BOOT" || exit 1
+    printf "%s" "OpenCore" > "${dstdir}/${arch}/EFI/BOOT/.contentFlavour" || exit 1
 
     efiTools=(
       "BootKicker.efi"
@@ -153,19 +152,20 @@ package() {
     cp -r "${selfdir}/Resources/" "${dstdir}/${arch}/EFI/OC/Resources"/ || exit 1
 
     efiDrivers=(
+      "AudioDxe.efi"
+      "BiosVideo.efi"
+      "CrScreenshotDxe.efi"
       "HiiDatabase.efi"
       "NvmExpressDxe.efi"
-      "AudioDxe.efi"
-      "CrScreenshotDxe.efi"
       "OpenCanopy.efi"
+      "OpenHfsPlus.efi"
       "OpenLinuxBoot.efi"
       "OpenPartitionDxe.efi"
       "OpenRuntime.efi"
       "OpenUsbKbDxe.efi"
-      "Ps2MouseDxe.efi"
       "Ps2KeyboardDxe.efi"
+      "Ps2MouseDxe.efi"
       "UsbMouseDxe.efi"
-      "OpenHfsPlus.efi"
       "XhciDxe.efi"
       )
     for efiDriver in "${efiDrivers[@]}"; do

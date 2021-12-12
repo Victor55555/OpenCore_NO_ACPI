@@ -46,7 +46,7 @@ Recovery flavours also automatically add the OS version:
  - ...
  - **AppleRecv10_4:AppleRecv:Apple10_4:Apple** - macOS Tiger Recovery
 
- Time machine icons _do not_ automatically the add OS version, so per-OS versions would require manual specification by the user (e.g. in `.contentFlavour`) as follows, in order to be found and used:
+ Time machine icons _do not_ automatically add the OS version, so per-OS versions would require manual specification by the user (e.g. in `.contentFlavour`) as follows, in order to be found and used:
 
  - **AppleTM:Apple** - macOS Time Machine, default flavour, not version specific
  - **AppleTM11:AppleTM:Apple11:Apple** - macOS Big Sur Time Machine (`AppleTM11.icns`, etc.)
@@ -127,7 +127,7 @@ Create an Issue or Pull Request to request additional tool icons. If doing so pl
 It is recommended to provide this icon.
 
  - **Tool** - Any tool entry
-   - If provided, is used as fallback for non-OS entries in OC; if not provided falls back again to **HardDrive** (which is required)
+   - If provided, is used as fallback for non-OS entries in OpenCore; if not provided falls back again to **HardDrive** (which is required)
 
 ### Shell Tools
 
@@ -170,7 +170,7 @@ Certain well-known bootloaders have also been assigned a flavour:
 
  - **Boatloader** - Generic bootloader icon (`Bootloader.icns`)
  - **Grub:Bootloader** - Icon for the GRUB2 bootloader (`Grub.icns`)
- - **OpenCore:Bootloader** - OpenCore intentionally does not offer to start instances of itself which have had the OC binary signature applied (i.e. standard release versions), however a) it will show non-signed versions and b) ofc we have to have our own flavour (`OpenCore.icns`)
+ - **OpenCore:Bootloader** - OpenCore intentionally does not offer to start instances of itself which have had the OC binary signature applied (i.e. standard release versions), however a) it will show non-signed versions and b) we need to have our own flavour (`OpenCore.icns`)
 
 ---
 
@@ -227,4 +227,3 @@ These icons are not directly related to boot entry flavours, but they are includ
  - **ShutDown** - additional button: shut down
 
 In addition, **Background** (`Background.icns`) is used as the background image for the OpenCanopy boot picker if provided.
-

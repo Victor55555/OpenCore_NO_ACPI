@@ -150,6 +150,7 @@ CheckBooterQuirks (
   BOOLEAN               IsDisableVariableWriteEnabled;
   BOOLEAN               IsEnableWriteUnprotectorEnabled;
   BOOLEAN               HasOpenRuntimeEfiDriver;
+  INT8                  ResizeAppleGpuBars;
 
   ErrorCount                      = 0;
   UserBooter                      = &Config->Booter;
@@ -161,6 +162,7 @@ CheckBooterQuirks (
   IsEnableWriteUnprotectorEnabled = UserBooter->Quirks.EnableWriteUnprotector;
   HasOpenRuntimeEfiDriver         = FALSE;
   MaxSlide                        = UserBooter->Quirks.ProvideMaxSlide;
+  ResizeAppleGpuBars              = UserBooter->Quirks.ResizeAppleGpuBars;
 
   for (Index = 0; Index < UserUefi->Drivers.Count; ++Index) {
     DriverEntry = UserUefi->Drivers.Values[Index];
@@ -205,6 +207,17 @@ CheckBooterQuirks (
     }
   }
 
+  if (ResizeAppleGpuBars > 10) {
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, 这是 macOS 不支持的!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    ++ErrorCount;
+  } else if (ResizeAppleGpuBars > 8) {
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, macOS 睡眠唤醒不稳定!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    ++ErrorCount;
+  } else if (ResizeAppleGpuBars > 0) {
+    DEBUG ((DEBUG_WARN, "Booter->Quirks->ResizeAppleGpuBars 设置为 %d, 这对 macOS 没有用!\n", UserBooter->Quirks.ResizeAppleGpuBars));
+    ++ErrorCount;
+  }
+
   return ErrorCount;
 }
 
@@ -220,7 +233,7 @@ CheckBooter (
     &CheckBooterPatch,
     &CheckBooterQuirks
   };
-  
+
   DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
 
   ErrorCount  = 0;

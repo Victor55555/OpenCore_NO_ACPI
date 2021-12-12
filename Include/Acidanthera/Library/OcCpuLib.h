@@ -54,6 +54,7 @@ typedef enum {
   OcCpuGenerationCannonLake,
   OcCpuGenerationIceLake,
   OcCpuGenerationTigerLake,
+  OcCpuGenerationAlderLake,
   OcCpuGenerationMaxGeneration
 } OC_CPU_GENERATION;
 
@@ -286,6 +287,19 @@ OcCpuGetMsrReports (
 VOID
 OcCpuCorrectFlexRatio (
   IN OC_CPU_INFO  *Cpu
+  );
+
+/**
+  Enable VMX in FeatureControl MSR if supported and not already locked by BIOS.
+  Required to use virtualization in Windows on some Mac hardware.
+
+  REF: https://github.com/acidanthera/bugtracker/issues/1870
+  REF: https://www.thomas-krenn.com/en/wiki/Activating_the_Intel_VT_Virtualization_Feature (via rEFInd)
+  REF: 'Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3', p.1296 etc.
+**/
+EFI_STATUS
+OcCpuEnableVmx (
+  VOID
   );
 
 /**

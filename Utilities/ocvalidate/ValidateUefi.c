@@ -13,6 +13,7 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
+#include "NvramKeyInfo.h"
 #include "ocvalidate.h"
 #include "OcValidateLib.h"
 
@@ -29,22 +30,22 @@
 **/
 STATIC
 BOOLEAN
-UEFIDriverHasDuplication (
+UefiDriverHasDuplication (
   IN  CONST VOID  *PrimaryDriver,
   IN  CONST VOID  *SecondaryDriver
   )
 {
-  CONST OC_UEFI_DRIVER_ENTRY  *UEFIPrimaryDriver;
-  CONST OC_UEFI_DRIVER_ENTRY  *UEFISecondaryDriver;
-  CONST CHAR8                 *UEFIDriverPrimaryString;
-  CONST CHAR8                 *UEFIDriverSecondaryString;
+  CONST OC_UEFI_DRIVER_ENTRY  *UefiPrimaryDriver;
+  CONST OC_UEFI_DRIVER_ENTRY  *UefiSecondaryDriver;
+  CONST CHAR8                 *UefiDriverPrimaryString;
+  CONST CHAR8                 *UefiDriverSecondaryString;
 
-  UEFIPrimaryDriver         = *(CONST OC_UEFI_DRIVER_ENTRY **) PrimaryDriver;
-  UEFISecondaryDriver       = *(CONST OC_UEFI_DRIVER_ENTRY **) SecondaryDriver;
-  UEFIDriverPrimaryString   = OC_BLOB_GET (&UEFIPrimaryDriver->Path);
-  UEFIDriverSecondaryString = OC_BLOB_GET (&UEFISecondaryDriver->Path);
+  UefiPrimaryDriver         = *(CONST OC_UEFI_DRIVER_ENTRY **) PrimaryDriver;
+  UefiSecondaryDriver       = *(CONST OC_UEFI_DRIVER_ENTRY **) SecondaryDriver;
+  UefiDriverPrimaryString   = OC_BLOB_GET (&UefiPrimaryDriver->Path);
+  UefiDriverSecondaryString = OC_BLOB_GET (&UefiSecondaryDriver->Path);
 
-  return StringIsDuplicated ("UEFI->Drivers", UEFIDriverPrimaryString, UEFIDriverSecondaryString);
+  return StringIsDuplicated ("UEFI->Drivers", UefiDriverPrimaryString, UefiDriverSecondaryString);
 }
 
 /**
@@ -58,31 +59,31 @@ UEFIDriverHasDuplication (
 **/
 STATIC
 BOOLEAN
-UEFIReservedMemoryHasOverlap (
+UefiReservedMemoryHasOverlap (
   IN  CONST VOID  *PrimaryEntry,
   IN  CONST VOID  *SecondaryEntry
   )
 {
-  CONST OC_UEFI_RSVD_ENTRY           *UEFIReservedMemoryPrimaryEntry;
-  CONST OC_UEFI_RSVD_ENTRY           *UEFIReservedMemorySecondaryEntry;
-  UINT64                             UEFIReservedMemoryPrimaryAddress;
-  UINT64                             UEFIReservedMemoryPrimarySize;
-  UINT64                             UEFIReservedMemorySecondaryAddress;
-  UINT64                             UEFIReservedMemorySecondarySize;
+  CONST OC_UEFI_RSVD_ENTRY           *UefiReservedMemoryPrimaryEntry;
+  CONST OC_UEFI_RSVD_ENTRY           *UefiReservedMemorySecondaryEntry;
+  UINT64                             UefiReservedMemoryPrimaryAddress;
+  UINT64                             UefiReservedMemoryPrimarySize;
+  UINT64                             UefiReservedMemorySecondaryAddress;
+  UINT64                             UefiReservedMemorySecondarySize;
 
-  UEFIReservedMemoryPrimaryEntry     = *(CONST OC_UEFI_RSVD_ENTRY **) PrimaryEntry;
-  UEFIReservedMemorySecondaryEntry   = *(CONST OC_UEFI_RSVD_ENTRY **) SecondaryEntry;
-  UEFIReservedMemoryPrimaryAddress   = UEFIReservedMemoryPrimaryEntry->Address;
-  UEFIReservedMemoryPrimarySize      = UEFIReservedMemoryPrimaryEntry->Size;
-  UEFIReservedMemorySecondaryAddress = UEFIReservedMemorySecondaryEntry->Address;
-  UEFIReservedMemorySecondarySize    = UEFIReservedMemorySecondaryEntry->Size;
+  UefiReservedMemoryPrimaryEntry     = *(CONST OC_UEFI_RSVD_ENTRY **) PrimaryEntry;
+  UefiReservedMemorySecondaryEntry   = *(CONST OC_UEFI_RSVD_ENTRY **) SecondaryEntry;
+  UefiReservedMemoryPrimaryAddress   = UefiReservedMemoryPrimaryEntry->Address;
+  UefiReservedMemoryPrimarySize      = UefiReservedMemoryPrimaryEntry->Size;
+  UefiReservedMemorySecondaryAddress = UefiReservedMemorySecondaryEntry->Address;
+  UefiReservedMemorySecondarySize    = UefiReservedMemorySecondaryEntry->Size;
 
-  if (!UEFIReservedMemoryPrimaryEntry->Enabled || !UEFIReservedMemorySecondaryEntry->Enabled) {
+  if (!UefiReservedMemoryPrimaryEntry->Enabled || !UefiReservedMemorySecondaryEntry->Enabled) {
     return FALSE;
   }
 
-  if (UEFIReservedMemoryPrimaryAddress < UEFIReservedMemorySecondaryAddress + UEFIReservedMemorySecondarySize
-    && UEFIReservedMemorySecondaryAddress < UEFIReservedMemoryPrimaryAddress + UEFIReservedMemoryPrimarySize) {
+  if (UefiReservedMemoryPrimaryAddress < UefiReservedMemorySecondaryAddress + UefiReservedMemorySecondarySize
+    && UefiReservedMemorySecondaryAddress < UefiReservedMemoryPrimaryAddress + UefiReservedMemoryPrimarySize) {
     DEBUG ((DEBUG_WARN, "UEFI->ReservedMemory: 条目的地址和大小是重叠的 "));
     return TRUE;
   }
@@ -114,7 +115,7 @@ ValidateReservedMemoryType (
 
 STATIC
 UINT32
-CheckUEFIAPFS (
+CheckUefiAPFS (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -145,7 +146,7 @@ CheckUEFIAPFS (
 
 STATIC
 UINT32
-CheckUEFIAppleInput (
+CheckUefiAppleInput (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -183,7 +184,7 @@ CheckUEFIAppleInput (
 
 STATIC
 UINT32
-CheckUEFIAudio (
+CheckUefiAudio (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -224,7 +225,7 @@ CheckUEFIAudio (
 
 STATIC
 UINT32
-CheckUEFIDrivers (
+CheckUefiDrivers (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -320,7 +321,7 @@ CheckUEFIDrivers (
     UserUefi->Drivers.Values,
     UserUefi->Drivers.Count,
     sizeof (UserUefi->Drivers.Values[0]),
-    UEFIDriverHasDuplication
+    UefiDriverHasDuplication
     );
 
   IsRequestBootVarRoutingEnabled = UserUefi->Quirks.RequestBootVarRouting;
@@ -371,7 +372,7 @@ CheckUEFIDrivers (
 
 STATIC
 UINT32
-CheckUEFIInput (
+CheckUefiInput (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -405,7 +406,7 @@ CheckUEFIInput (
 
 STATIC
 UINT32
-CheckUEFIOutput (
+CheckUefiOutput (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -424,10 +425,13 @@ CheckUEFIOutput (
   UINT32               UserHeight;
   UINT32               UserBpp;
   BOOLEAN              UserSetMax;
+  INT8                 UIScale;
+  BOOLEAN              HasUefiOutputUIScale;
 
   ErrorCount           = 0;
   UserUefi             = &Config->Uefi;
   IsTextRendererSystem = FALSE;
+  HasUefiOutputUIScale = FALSE;
 
   //
   // Sanitise strings.
@@ -516,6 +520,19 @@ CheckUEFIOutput (
     ++ErrorCount;
   }
 
+  UIScale = UserUefi->Output.UIScale;
+  if (UIScale < -1 || UIScale > 2) {
+    DEBUG ((DEBUG_WARN, "UEFI->Output->UIScale 不太对 (只能介于 -1 和 2 之间)!\n"));
+    ++ErrorCount;
+  } else if (UIScale != -1) {
+    HasUefiOutputUIScale = TRUE;
+  }
+
+  if (HasUefiOutputUIScale && mHasNvramUIScale) {
+    DEBUG ((DEBUG_WARN, "UIScale 在 NVRAM 和 UEFI->Output 下设置!\n"));
+    ++ErrorCount;
+  }
+
   return ErrorCount;
 }
 
@@ -524,16 +541,29 @@ CheckUEFIOutput (
 //
 STATIC
 UINT32
-CheckUEFIQuirks (
+CheckUefiQuirks (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
-  return 0;
+  UINT32          ErrorCount;
+  OC_UEFI_CONFIG  *UserUefi;
+  INT8            ResizeGpuBars;
+
+  ErrorCount      = 0;
+  UserUefi        = &Config->Uefi;
+  ResizeGpuBars   = UserUefi->Quirks.ResizeGpuBars;
+
+  if (ResizeGpuBars < -1 || ResizeGpuBars > 19) {
+    DEBUG ((DEBUG_WARN, "UEFI->Quirks->ResizeGpuBars 不太对 (只能在 -1 到 19 之间)!\n"));
+    ++ErrorCount;
+  }
+
+  return ErrorCount;
 }
 
 STATIC
 UINT32
-CheckUEFIReservedMemory (
+CheckUefiReservedMemory (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
@@ -580,36 +610,36 @@ CheckUEFIReservedMemory (
     UserUefi->ReservedMemory.Values,
     UserUefi->ReservedMemory.Count,
     sizeof (UserUefi->ReservedMemory.Values[0]),
-    UEFIReservedMemoryHasOverlap
+    UefiReservedMemoryHasOverlap
     );
 
   return ErrorCount;
 }
 
 UINT32
-CheckUEFI (
+CheckUefi (
   IN  OC_GLOBAL_CONFIG  *Config
   )
 {
   UINT32               ErrorCount;
   UINTN                Index;
-  STATIC CONFIG_CHECK  UEFICheckers[] = {
-    &CheckUEFIAPFS,
-    &CheckUEFIAppleInput,
-    &CheckUEFIAudio,
-    &CheckUEFIDrivers,
-    &CheckUEFIInput,
-    &CheckUEFIOutput,
-    &CheckUEFIQuirks,
-    &CheckUEFIReservedMemory
+  STATIC CONFIG_CHECK  UefiCheckers[] = {
+    &CheckUefiAPFS,
+    &CheckUefiAppleInput,
+    &CheckUefiAudio,
+    &CheckUefiDrivers,
+    &CheckUefiInput,
+    &CheckUefiOutput,
+    &CheckUefiQuirks,
+    &CheckUefiReservedMemory
   };
 
   DEBUG ((DEBUG_VERBOSE, "config loaded into %a!\n", __func__));
 
   ErrorCount = 0;
 
-  for (Index = 0; Index < ARRAY_SIZE (UEFICheckers); ++Index) {
-    ErrorCount += UEFICheckers[Index] (Config);
+  for (Index = 0; Index < ARRAY_SIZE (UefiCheckers); ++Index) {
+    ErrorCount += UefiCheckers[Index] (Config);
   }
 
   return ReportError (__func__, ErrorCount);
