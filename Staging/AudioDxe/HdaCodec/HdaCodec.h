@@ -27,6 +27,8 @@
 
 #include "AudioDxe.h"
 
+#define HDA_CODEC_ERROR_ON_NO_OUTPUTS
+
 typedef struct _HDA_CODEC_DEV HDA_CODEC_DEV;
 typedef struct _HDA_FUNC_GROUP HDA_FUNC_GROUP;
 typedef struct _HDA_WIDGET_DEV HDA_WIDGET_DEV;
@@ -101,6 +103,28 @@ struct _HDA_FUNC_GROUP {
   UINT8 WidgetsCount;
 };
 
+//
+// Quirks.
+//
+
+//
+// Apple hardware Cirrus logic codecs require speakers and headphones bits set
+// in GPIO to enable sound. Speakers are always BIT3, headphones are BIT1 or BIT2
+// depending on the model; we just enable all.
+// REF:
+// - https://github.com/torvalds/linux/blob/6f513529296fd4f696afb4354c46508abe646541/sound/pci/hda/patch_cirrus.c#L43-L57
+// - https://github.com/torvalds/linux/blob/6f513529296fd4f696afb4354c46508abe646541/sound/pci/hda/patch_cirrus.c#L493-L517
+//
+#define HDA_CODEC_QUIRK_CIRRUSLOGIC      BIT0
+
+#define HDA_CIRRUSLOGIC_GPIO_HEADPHONES1  BIT1
+#define HDA_CIRRUSLOGIC_GPIO_HEADPHONES2  BIT2
+#define HDA_CIRRUSLOGIC_GPIO_SPEAKERS     BIT3
+#define HDA_CIRRUSLOGIC_GPIO_ALL    (\
+  HDA_CIRRUSLOGIC_GPIO_HEADPHONES1  |\
+  HDA_CIRRUSLOGIC_GPIO_HEADPHONES2  |\
+  HDA_CIRRUSLOGIC_GPIO_SPEAKERS     )
+
 struct _HDA_CODEC_DEV {
   // Signature.
   UINTN Signature;
@@ -128,6 +152,9 @@ struct _HDA_CODEC_DEV {
   HDA_WIDGET_DEV **InputPorts;
   UINTN OutputPortsCount;
   UINTN InputPortsCount;
+
+  // Required quirks. 
+  UINTN Quirks;
 };
 
 // HDA Codec Info private data.
@@ -149,7 +176,7 @@ struct _AUDIO_IO_PRIVATE_DATA {
 
   // Audio I/O protocol.
   EFI_AUDIO_IO_PROTOCOL AudioIo;
-  UINT8 SelectedOutputIndex;
+  UINT64 SelectedOutputIndexMask;
   UINT8 SelectedInputIndex;
 
   // Codec device.
@@ -234,11 +261,12 @@ EFI_STATUS
 EFIAPI
 HdaCodecAudioIoSetupPlayback(
   IN EFI_AUDIO_IO_PROTOCOL *This,
-  IN UINT8 OutputIndex,
+  IN UINT64 OutputIndexMask,
   IN UINT8 Volume,
   IN EFI_AUDIO_IO_PROTOCOL_FREQ Freq,
   IN EFI_AUDIO_IO_PROTOCOL_BITS Bits,
-  IN UINT8 Channels);
+  IN UINT8 Channels,
+  IN UINTN PlaybackDelay);
 
 EFI_STATUS
 EFIAPI
