@@ -106,7 +106,7 @@
 
        \rmfamily
 
-       Copyright \textcopyright 2018-2021 vit9696
+       Copyright \textcopyright 2018-2022 vit9696
 
    \end{center}
 \end{titlepage}
@@ -6895,7 +6895,7 @@ with the boot menu.
 
   If using \texttt{AudioDxe}, the required device path is also output as:
 
-  \texttt{HDA: Connecting controller \textit{\textbf{PciRoot(0x0)/Pci(0x1B,0x0)}}}
+  \texttt{HDA: Connecting controller - \textit{\textbf{PciRoot(0x0)/Pci(0x1B,0x0)}}}
 
   Finally, \texttt{gfxutil -f HDEF} command can be used in macOS to obtain the device path.
   
@@ -6935,9 +6935,10 @@ with the boot menu.
   headphones plus speakers) as long as all the chosen outputs support the sound file format in use; if any do not then no
   sound will play and a warning will be logged.
 
-  When all available output channels on the codec support the available sound file format, then a value
-  of \texttt{-1} will play sound to all channels simultaneously. If this does not work, it will usually be quickest
-  to try each available output channel one by one, in order to work out which channel(s) to use.
+  When all available output channels on the codec support the available sound file format then a value
+  of \texttt{-1} will play sound to all channels simultaneously. If this does not work it will usually be quickest
+  to try each available output channel one by one, by setting \texttt{AudioOutMask} to \texttt{1}, \texttt{2},
+  \texttt{4}, etc., up to 2 \texttt{\^{}} \texttt{N - 1}, in order to work out which channel(s) produce sound.
 
   \item
   \texttt{AudioSupport}\\
