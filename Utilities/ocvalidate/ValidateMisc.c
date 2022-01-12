@@ -257,7 +257,7 @@ CheckMiscBoot (
   // There is one missing '\\' after the concatenation of PickerVariant and ExtAppleRecv10_15.icns (which has the longest length). Append one.
   //
   if (StrLen (OPEN_CORE_IMAGE_PATH) + AsciiStrLen (PickerVariant) + 1 + AsciiStrSize ("ExtAppleRecv10_15.icns") > OC_STORAGE_SAFE_PATH_MAX) {
-    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant is too long (should not exceed %u)!\n", OC_STORAGE_SAFE_PATH_MAX));
+    DEBUG ((DEBUG_WARN, "Misc->Boot->PickerVariant 太长 (不应超过 %u)!\n", OC_STORAGE_SAFE_PATH_MAX));
     ++ErrorCount;
   }
 
@@ -550,7 +550,7 @@ CheckMiscSecurity (
     || AsciiStrCmp (AsciiDmgLoading, "Signed") == 0
     || AsciiDmgLoading[0] == '\0') ///< Default is "Signed", and assume default will always be secure.
    && AsciiStrCmp (SecureBootModel, "Disabled") != 0) {
-    DEBUG ((DEBUG_WARN, "Misc->Security->DmgLoading must be Disabled or Signed unless Misc->Security->SecureBootModel is Disabled!\n"));
+    DEBUG ((DEBUG_WARN, "Misc->Security->DmgLoading 必须禁用或签名，除非 Misc->Security->SecureBootModel 被禁用!\n"));
     ++ErrorCount;
   }
 
