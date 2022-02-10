@@ -904,7 +904,7 @@ OcCpuScanProcessor (
   } else if (Cpu->Vendor[0] == CPUID_VENDOR_AMD) {
     ScanAmdProcessor (Cpu);
   } else {
-    DEBUG ((DEBUG_WARN, "OCCPU: Found unsupported CPU vendor: %0X", Cpu->Vendor[0]));
+    DEBUG ((DEBUG_WARN, " unsupported CPU vendor: %0X", Cpu->Vendor[0]));
     return;
   }
 

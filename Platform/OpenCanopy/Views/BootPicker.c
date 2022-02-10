@@ -1076,6 +1076,39 @@ InternalVersionLabelDraw (
   }
 }
 
+//自定义一个欢迎字符串
+STATIC GUI_IMAGE mWelcomeLabelImage;
+
+VOID
+InternalWelcomeLabelDraw (
+  IN OUT GUI_OBJ                 *This,
+  IN OUT GUI_DRAWING_CONTEXT     *DrawContext,
+  IN     BOOT_PICKER_GUI_CONTEXT *Context,
+  IN     INT64                   BaseX,
+  IN     INT64                   BaseY,
+  IN     UINT32                  OffsetX,
+  IN     UINT32                  OffsetY,
+  IN     UINT32                  Width,
+  IN     UINT32                  Height,
+  IN     UINT8                   Opacity
+  )
+{
+  if (mWelcomeLabelImage.Buffer != NULL) {
+    GuiDrawToBuffer (
+      &mWelcomeLabelImage,
+      Opacity,
+      DrawContext,
+      BaseX,
+      BaseY,
+      OffsetX,
+      OffsetY,
+      Width,
+      Height
+      );
+  }
+}
+//自定义结束
+
 VOID
 InternalBootPickerViewKeyEvent (
   IN OUT GUI_OBJ                 *This,
@@ -1282,19 +1315,37 @@ GLOBAL_REMOVE_IF_UNREFERENCED GUI_OBJ_CHILD mBootPickerVersionLabel = {
   NULL
 };
 
+//仿造版本标签
+GLOBAL_REMOVE_IF_UNREFERENCED GUI_OBJ_CHILD mBootWelcomeLabel = {
+  {
+    0, 0, 0, 0, 0xFF,
+    InternalWelcomeLabelDraw,
+    NULL,
+    GuiObjDelegatePtrEvent,
+    NULL,
+    0,
+    NULL
+  },
+  NULL
+};
+//结束
+
+
 STATIC GUI_OBJ_CHILD *mBootPickerViewChildren[] = {
   &mBootPickerContainer,
   &mCommonActionButtonsContainer,
   &mBootPickerLeftScroll.Hdr,
   &mBootPickerRightScroll.Hdr,
-  &mBootPickerVersionLabel
+  &mBootPickerVersionLabel,
+  &mBootWelcomeLabel //我的添加
 };
 
 STATIC GUI_OBJ_CHILD *mBootPickerViewChildrenMinimal[] = {
   &mBootPickerContainer,
   &mBootPickerLeftScroll.Hdr,
   &mBootPickerRightScroll.Hdr,
-  &mBootPickerVersionLabel
+  &mBootPickerVersionLabel,
+  &mBootWelcomeLabel //我的添加
 };
 
 GLOBAL_REMOVE_IF_UNREFERENCED GUI_VIEW_CONTEXT mBootPickerViewContext = {
@@ -1966,9 +2017,46 @@ BootPickerViewInitialize (
 
     mBootPickerVersionLabel.Obj.Width   = mVersionLabelImage.Width;
     mBootPickerVersionLabel.Obj.Height  = mVersionLabelImage.Height;
-    mBootPickerVersionLabel.Obj.OffsetX = DrawContext->Screen.Width  - ((3 * mBootPickerVersionLabel.Obj.Width ) / 2);
+    // mBootPickerVersionLabel.Obj.OffsetX = DrawContext->Screen.Width  - ((3 * mBootPickerVersionLabel.Obj.Width ) / 2);
+    mBootPickerVersionLabel.Obj.OffsetX = 0;
     mBootPickerVersionLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootPickerVersionLabel.Obj.Height) / 2);
   }
+
+
+//模仿构建一个欢迎字符串,在屏幕右下角显示
+  if (GuiContext->PickerContext->WelcomeSuffix == NULL) {
+    mWelcomeLabelImage.Buffer = NULL;
+
+    mBootWelcomeLabel.Obj.Width   = 0;
+    mBootWelcomeLabel.Obj.Height  = 0;
+    mBootWelcomeLabel.Obj.OffsetX = 0;
+    mBootWelcomeLabel.Obj.OffsetY = 0;
+  } else {
+    DestLen = AsciiStrLen (GuiContext->PickerContext->WelcomeSuffix);
+    UString = AsciiStrCopyToUnicode (GuiContext->PickerContext->WelcomeSuffix, DestLen);
+
+    Result = GuiGetLabel (
+      &mWelcomeLabelImage,
+      &GuiContext->FontContext,
+      UString,
+      DestLen,
+      GuiContext->LightBackground
+      );
+
+    FreePool (UString);
+    
+    if (!Result) {
+      DEBUG ((DEBUG_WARN, "OCUI: welcome label failed\n"));
+      return Result;
+    }
+
+    mBootWelcomeLabel.Obj.Width   = mWelcomeLabelImage.Width;
+    mBootWelcomeLabel.Obj.Height  = mWelcomeLabelImage.Height;
+    mBootWelcomeLabel.Obj.OffsetX = DrawContext->Screen.Width  - mBootWelcomeLabel.Obj.Width;
+    mBootWelcomeLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootWelcomeLabel.Obj.Height) / 2);
+  }
+
+//模仿结束
 
   // TODO: animations should be tied to UI objects, not global
   // Each object has its own list of animations.

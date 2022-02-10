@@ -873,6 +873,8 @@ struct OC_PICKER_CONTEXT_ {
   // Additional suffix to include by the interface.
   //
   CONST CHAR8                *TitleSuffix;
+  //添加一个自定义常量
+  CONST CHAR8                *WelcomeSuffix;
   //
   // Used picker mode.
   //

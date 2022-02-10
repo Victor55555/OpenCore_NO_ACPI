@@ -342,7 +342,7 @@ OcMiscGetVersionString (
 
   STATIC_ASSERT (
     L_STR_LEN (OPEN_CORE_TARGET) == 3,
-    "OPEN_CORE_TARGET must XYZ format, where XYZ is build target."
+    "OPEN_CORE_TARGET is XYZ format, where XYZ is build target."
     );
 
   STATIC CHAR8 mOpenCoreVersion[] = {
@@ -353,6 +353,7 @@ OcMiscGetVersionString (
     /* [12]:[8]   = */ "YYYY-"
     /* [15]:[13]  = */ "MM-"
     /* [17]:[16]  = */ "DD"
+    " | MOD By BTWISE | WeChat:15242609 QQ:15242609"
   };
 
   STATIC BOOLEAN mOpenCoreVersionReady;
@@ -393,6 +394,27 @@ OcMiscGetVersionString (
   return mOpenCoreVersion;
 }
 
+//构造一个欢迎字符串函数
+CONST CHAR8 *
+OcWelcomeString (
+  VOID
+  )
+{
+
+  STATIC CHAR8 mWelcome[] = {
+    "Welcome Use My MOD OpenCore"
+  };
+
+  STATIC BOOLEAN mWelcomeReady;
+
+  if (!mWelcomeReady) {
+    mWelcomeReady = TRUE;
+  }
+
+  return mWelcome;
+}
+
+//构造结束
 EFI_STATUS
 OcMiscEarlyInit (
   IN  OC_STORAGE_CONTEXT *Storage,
@@ -486,6 +508,7 @@ OcMiscEarlyInit (
     DEBUG_INFO,
     "OC: OpenCore %a is loading in %a mode (%d/%d)...\n",
     OcMiscGetVersionString (),
+    OcWelcomeString (),
     AsciiVault,
     Storage->HasVault,
     VaultKey != NULL
@@ -887,6 +910,7 @@ OcMiscBoot (
 
   if ((Config->Misc.Security.ExposeSensitiveData & OCS_EXPOSE_VERSION_UI) != 0) {
     Context->TitleSuffix      = OcMiscGetVersionString ();
+    Context->WelcomeSuffix    = OcWelcomeString ();
   }
 
   Status = OcHandleRecoveryRequest (
