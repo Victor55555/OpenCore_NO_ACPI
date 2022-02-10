@@ -402,7 +402,7 @@ OcWelcomeString (
 {
 
   STATIC CHAR8 mWelcome[] = {
-    "Welcome Use My MOD OpenCore"
+    "Welcome to use  MOD-OC"
   };
 
   STATIC BOOLEAN mWelcomeReady;

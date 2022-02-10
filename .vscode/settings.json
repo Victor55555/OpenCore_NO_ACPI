@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "occonfigurationlib.h": "c"
+        "occonfigurationlib.h": "c",
+        "ocbootmanagementlib.h": "c"
     }
 }

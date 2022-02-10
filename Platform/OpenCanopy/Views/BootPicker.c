@@ -2017,13 +2017,12 @@ BootPickerViewInitialize (
 
     mBootPickerVersionLabel.Obj.Width   = mVersionLabelImage.Width;
     mBootPickerVersionLabel.Obj.Height  = mVersionLabelImage.Height;
-    // mBootPickerVersionLabel.Obj.OffsetX = DrawContext->Screen.Width  - ((3 * mBootPickerVersionLabel.Obj.Width ) / 2);
-    mBootPickerVersionLabel.Obj.OffsetX = 0;
+    mBootPickerVersionLabel.Obj.OffsetX = (DrawContext->Screen.Width  - mBootPickerVersionLabel.Obj.Width ) / 2;
     mBootPickerVersionLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootPickerVersionLabel.Obj.Height) / 2);
   }
 
 
-//模仿构建一个欢迎字符串,在屏幕右下角显示
+//构建一个欢迎字符串,在版本信息上一行显示
   if (GuiContext->PickerContext->WelcomeSuffix == NULL) {
     mWelcomeLabelImage.Buffer = NULL;
 
@@ -2052,11 +2051,11 @@ BootPickerViewInitialize (
 
     mBootWelcomeLabel.Obj.Width   = mWelcomeLabelImage.Width;
     mBootWelcomeLabel.Obj.Height  = mWelcomeLabelImage.Height;
-    mBootWelcomeLabel.Obj.OffsetX = DrawContext->Screen.Width  - mBootWelcomeLabel.Obj.Width;
-    mBootWelcomeLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootWelcomeLabel.Obj.Height) / 2);
+    mBootWelcomeLabel.Obj.OffsetX = (DrawContext->Screen.Width  - mBootWelcomeLabel.Obj.Width) / 2;
+    mBootWelcomeLabel.Obj.OffsetY = DrawContext->Screen.Height - ((8 * mBootWelcomeLabel.Obj.Height) / 2);
   }
 
-//模仿结束
+//构建结束
 
   // TODO: animations should be tied to UI objects, not global
   // Each object has its own list of animations.
