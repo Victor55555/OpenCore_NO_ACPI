@@ -31,7 +31,7 @@
   OpenCore version reported to log and NVRAM.
   OPEN_CORE_VERSION must follow X.Y.Z format, where X.Y.Z are single digits.
 **/
-#define OPEN_CORE_VERSION          "0.7.8"
+#define OPEN_CORE_VERSION          "0.7.9"
 
 /**
   OpenCore build type reported to log and NVRAM.
@@ -193,11 +193,13 @@ OcGetLegacySecureBootECID (
   Obtain default Secure Boot hardware model.
 
   @param[in]  Config   Configuration.
+  @param[in]  CpuInfo  CPU information.
   @return Apple Secure Boot model.
 **/
 CONST CHAR8 *
 OcGetDefaultSecureBootModel (
-  IN  OC_GLOBAL_CONFIG    *Config
+  IN  OC_GLOBAL_CONFIG    *Config,
+  IN  OC_CPU_INFO         *CpuInfo
   );
 
 /**
