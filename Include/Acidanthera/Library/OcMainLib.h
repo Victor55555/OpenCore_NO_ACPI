@@ -284,6 +284,11 @@ OcMiscGetVersionString (
   VOID
   );
 
+CONST CHAR8 *
+OcWelcomeString (
+  VOID
+  );
+
 /**
   Load early miscellaneous support like configuration.
 
