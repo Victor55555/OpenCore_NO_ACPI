@@ -87,9 +87,9 @@ STATIC TAB_FOCUS mFocusListMinimal[] = {
 // TODO: (?) Update to actual text mode width, 80 is the guaranteed minimum.
 //
 #define MENU_PREFIX_LENGTH             (5)
-#define SAFE_ENTRY_LENGTH              (80 - MENU_PREFIX_LENGTH - 1)
+#define SAFE_ENTRY_LENGTH              (100 - MENU_PREFIX_LENGTH - 1)
 
-#define OC_KB_DBG_MAX_COLUMN           80
+#define OC_KB_DBG_MAX_COLUMN           100
 #define OC_KB_DBG_DELTA_SAMPLE_COLUMN  0 //40
 
 #if defined(BUILTIN_DEMONSTRATE_TYPING)
@@ -101,6 +101,88 @@ STATIC TAB_FOCUS mFocusListMinimal[] = {
 #define OC_KB_DBG_DOWN_ROW             (OC_KB_DBG_PRINT_ROW + 4)
 #define OC_KB_DBG_X_ROW                (OC_KB_DBG_PRINT_ROW + 5)
 #define OC_KB_DBG_MODIFIERS_ROW        (OC_KB_DBG_PRINT_ROW + 6)
+
+// STATIC
+// VOID
+// DrawFrame (
+//   IN UINTN               Columns,
+//   IN UINTN               Rows
+//   )
+// {
+//   CHAR16                 Char[2];
+//   UINTN                  Index;
+//   UINTN                  Index1;
+  
+//   Char[1] = '\0';
+  
+//   Char[0] = BOXDRAW_DOUBLE_DOWN_RIGHT;
+//   gST->ConOut->SetCursorPosition (gST->ConOut, 1, 0);
+//   gST->ConOut->OutputString (gST->ConOut, Char);
+//   Char[0] = BOXDRAW_DOUBLE_HORIZONTAL;
+//   for (Index = 2; Index < Columns - 2; ++Index) {
+//     gST->ConOut->OutputString (gST->ConOut, Char);
+//   }
+//   Char[0] = BOXDRAW_DOUBLE_DOWN_LEFT;
+//   gST->ConOut->OutputString (gST->ConOut, Char);
+  
+//   Char[0] = BOXDRAW_DOUBLE_VERTICAL;
+//   for (Index = 1; Index < Rows - 1; ++Index) {
+//     // draw middle double line
+//     if (Index == (Rows - 3) || Index == 3) {
+//       Char[0] = BOXDRAW_DOUBLE_VERTICAL_RIGHT;
+//       gST->ConOut->SetCursorPosition (gST->ConOut, 1, Index);
+//       gST->ConOut->OutputString (gST->ConOut, Char);
+//       Char[0] = BOXDRAW_DOUBLE_HORIZONTAL;
+//       for (Index1 = 2; Index1 < Columns - 2; ++Index1) {
+//         gST->ConOut->OutputString (gST->ConOut, Char);
+//       }
+//       Char[0] = BOXDRAW_DOUBLE_VERTICAL_LEFT;
+//       gST->ConOut->OutputString (gST->ConOut, Char);
+//       Char[0] = BOXDRAW_DOUBLE_VERTICAL;
+//       continue;
+//     }
+    
+//     gST->ConOut->SetCursorPosition (gST->ConOut, 1, Index);
+//     gST->ConOut->OutputString (gST->ConOut, Char);
+//     gST->ConOut->SetCursorPosition (gST->ConOut, Columns - 2, Index);
+//     gST->ConOut->OutputString (gST->ConOut, Char);
+//   }
+  
+//   Char[0] = BOXDRAW_DOUBLE_UP_RIGHT;
+//   gST->ConOut->SetCursorPosition (gST->ConOut, 1, Rows - 1);
+//   gST->ConOut->OutputString (gST->ConOut, Char);
+//   Char[0] = BOXDRAW_DOUBLE_HORIZONTAL;
+//   for (Index = 2; Index < Columns - 2; ++Index) {
+//     gST->ConOut->OutputString (gST->ConOut, Char);
+//   }
+//   Char[0] = BOXDRAW_DOUBLE_UP_LEFT;
+//   gST->ConOut->OutputString (gST->ConOut, Char);
+// }
+
+// STATIC
+// VOID
+// PrintBootMenuHeader (
+//   IN UINTN               Col,
+//   IN UINTN               Row,
+//   IN UINTN               MaxStrWidth
+//   )
+// {
+//   CHAR16                 Char[2];
+//   UINTN                  Index;
+  
+//   Char[1] = '\0';
+  
+//   Char[0] = BOXDRAW_DOUBLE_HORIZONTAL;
+  
+//   gST->ConOut->SetCursorPosition (gST->ConOut, Col, Row);
+  
+//   for (Index = 0; Index < MaxStrWidth; ++Index) {
+//     gST->ConOut->OutputString (gST->ConOut, Char);
+//   }
+  
+//   gST->ConOut->SetCursorPosition (gST->ConOut, Col + (MaxStrWidth - 12) / 2, Row);
+//   gST->ConOut->OutputString (gST->ConOut, L" BOOT MENU ");
+// }
 
 STATIC
 VOID
@@ -290,9 +372,9 @@ UpdateTabContext (
     Code[0] = IsEntering ? L'[' : '|';
     gST->ConOut->OutputString (gST->ConOut, Code);
     if (TabFocus == TAB_SHUTDOWN) {
-      gST->ConOut->OutputString (gST->ConOut, L"Shutdown");
+      gST->ConOut->OutputString (gST->ConOut, L"关机");
     } else {
-      gST->ConOut->OutputString (gST->ConOut, L"Restart");
+      gST->ConOut->OutputString (gST->ConOut, L"重启");
     }
     Code[0] = IsEntering ? L']' : '|';
     gST->ConOut->OutputString (gST->ConOut, Code);
@@ -400,6 +482,7 @@ OcShowSimpleBootMenu (
 
   Count = (UINT32) BootContext->BootEntryCount;
 
+
   if (Count != MIN (Count, OC_INPUT_MAX)) {
     DEBUG ((DEBUG_WARN, "OCB: Cannot display all entries in the menu!\n"));
   }
@@ -470,11 +553,12 @@ OcShowSimpleBootMenu (
       // Render initial menu
       //
       gST->ConOut->ClearScreen (gST->ConOut);
-      gST->ConOut->OutputString (gST->ConOut, OC_MENU_BOOT_MENU);
-
+      // gST->ConOut->OutputString (gST->ConOut, OC_MENU_BOOT_MENU);
+      gST->ConOut->OutputString (gST->ConOut, L"         欢迎使用OpenCore-MOD");
+      gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       if (BootContext->PickerContext->TitleSuffix != NULL) {
         Length = AsciiStrLen (BootContext->PickerContext->TitleSuffix);
-        gST->ConOut->OutputString (gST->ConOut, L" (");
+        gST->ConOut->OutputString (gST->ConOut, L"(");
         for (Index = 0; Index < Length; ++Index) {
           Code[0] = BootContext->PickerContext->TitleSuffix[Index];
           gST->ConOut->OutputString (gST->ConOut, Code);
@@ -487,7 +571,7 @@ OcShowSimpleBootMenu (
         //
         // Fixed part of milliseconds display
         //
-        gST->ConOut->OutputString (gST->ConOut, L" [System uptime: ");
+        gST->ConOut->OutputString (gST->ConOut, L" [系统启动时间 : ");
         MillisColumn = gST->ConOut->Mode->CursorColumn;
         DisplaySystemMs ();
       }
@@ -527,10 +611,10 @@ OcShowSimpleBootMenu (
         ShutdownRestartRow = gST->ConOut->Mode->CursorRow;
         gST->ConOut->OutputString (gST->ConOut, L" ");
         RestartColumn = gST->ConOut->Mode->CursorColumn;
-        gST->ConOut->OutputString (gST->ConOut, L"|Restart|");
+        gST->ConOut->OutputString (gST->ConOut, L"|重启|");
         gST->ConOut->OutputString (gST->ConOut, L"  ");
         ShutdownColumn = gST->ConOut->Mode->CursorColumn;
-        gST->ConOut->OutputString (gST->ConOut, L"|Shutdown|");
+        gST->ConOut->OutputString (gST->ConOut, L"|关机|");
 
         gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       } else {
@@ -543,6 +627,7 @@ OcShowSimpleBootMenu (
       }
 
       gST->ConOut->OutputString (gST->ConOut, L"\r\n");
+      gST->ConOut->OutputString (gST->ConOut, L"欢迎使用MOD-OC,");
       gST->ConOut->OutputString (gST->ConOut, OC_MENU_CHOOSE_OS);
 
       mStatusRow     = gST->ConOut->Mode->CursorRow;

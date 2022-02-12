@@ -2017,7 +2017,7 @@ BootPickerViewInitialize (
 
     mBootPickerVersionLabel.Obj.Width   = mVersionLabelImage.Width;
     mBootPickerVersionLabel.Obj.Height  = mVersionLabelImage.Height;
-    mBootPickerVersionLabel.Obj.OffsetX = (DrawContext->Screen.Width  - mBootPickerVersionLabel.Obj.Width ) / 2;
+    mBootPickerVersionLabel.Obj.OffsetX = DrawContext->Screen.Width  - mBootPickerVersionLabel.Obj.Width;
     mBootPickerVersionLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootPickerVersionLabel.Obj.Height) / 2);
   }
 
@@ -2051,8 +2051,8 @@ BootPickerViewInitialize (
 
     mBootWelcomeLabel.Obj.Width   = mWelcomeLabelImage.Width;
     mBootWelcomeLabel.Obj.Height  = mWelcomeLabelImage.Height;
-    mBootWelcomeLabel.Obj.OffsetX = (DrawContext->Screen.Width  - mBootWelcomeLabel.Obj.Width) / 2;
-    mBootWelcomeLabel.Obj.OffsetY = DrawContext->Screen.Height - ((8 * mBootWelcomeLabel.Obj.Height) / 2);
+    mBootWelcomeLabel.Obj.OffsetX = 0;
+    mBootWelcomeLabel.Obj.OffsetY = DrawContext->Screen.Height - ((5 * mBootWelcomeLabel.Obj.Height) / 2);
   }
 
 //构建结束
