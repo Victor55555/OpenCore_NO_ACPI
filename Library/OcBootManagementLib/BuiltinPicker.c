@@ -554,7 +554,7 @@ OcShowSimpleBootMenu (
       //
       gST->ConOut->ClearScreen (gST->ConOut);
       // gST->ConOut->OutputString (gST->ConOut, OC_MENU_BOOT_MENU);
-      gST->ConOut->OutputString (gST->ConOut, L"         欢迎使用OpenCore-MOD");
+      gST->ConOut->OutputString (gST->ConOut, L"             欢迎使用OpenCore-MOD");
       gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       if (BootContext->PickerContext->TitleSuffix != NULL) {
         Length = AsciiStrLen (BootContext->PickerContext->TitleSuffix);

@@ -43,7 +43,7 @@ typedef struct OC_HOTKEY_CONTEXT_ OC_HOTKEY_CONTEXT;
   Default strings for use in the interfaces.
 **/
 #define OC_MENU_BOOT_MENU            L"OpenCore 启动菜单 "
-#define OC_MENU_RESET_NVRAM_ENTRY    L"重置  NVRAM"
+#define OC_MENU_RESET_NVRAM_ENTRY    L"Reset NVRAM"
 #define OC_MENU_UEFI_SHELL_ENTRY     L"UEFI Shell"
 #define OC_MENU_PASSWORD_REQUEST     L"Password: "
 #define OC_MENU_PASSWORD_PROCESSING  L"Verifying password..."
