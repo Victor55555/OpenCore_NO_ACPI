@@ -186,6 +186,32 @@ STATIC TAB_FOCUS mFocusListMinimal[] = {
 
 STATIC
 VOID
+PrintBanner (
+  IN UINTN               Col,
+  IN UINTN               Row
+  )
+{
+  gST->ConOut->SetCursorPosition (gST->ConOut, Col, Row);
+  gST->ConOut->OutputString (gST->ConOut,
+    L"   _____   ______  _____   __  ___ _____  _____   _____   _____  "
+    );
+  gST->ConOut->SetCursorPosition (gST->ConOut, Col, Row + 1);
+  gST->ConOut->OutputString (gST->ConOut,
+    L"  / ___ \\ /   _  )/  __ \\ /  |/  //  ___)/ ___ \\ /  __ \\ /  __ \\ "
+    );
+  gST->ConOut->SetCursorPosition (gST->ConOut, Col, Row + 2);
+  gST->ConOut->OutputString (gST->ConOut,
+    L" / /__/ //  /___//  (___//      //  /__ / /__/ //  /_/ //  (___/ "
+    );
+  gST->ConOut->SetCursorPosition (gST->ConOut, Col, Row + 3);
+  gST->ConOut->OutputString (gST->ConOut,
+    L" \\_____//__/     \\_____ /__/|__/ \\_____)\\_____//__/ \\__\\\\_____   "
+    );
+}
+
+
+STATIC
+VOID
 InitKbDebugDisplay (
   VOID
   )
@@ -423,6 +449,14 @@ OcShowSimpleBootMenu (
   BOOLEAN                            PlayedOnce;
   BOOLEAN                            PlayChosen;
   BOOLEAN                            ModifiersChanged;
+  UINTN                              BannerCol;
+  UINTN                              BannerRow;
+  UINTN                              MaxStrWidth;
+  UINTN                              StrWidth;
+  EFI_SIMPLE_TEXT_OUTPUT_MODE        SavedConsoleMode;
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL    *ConOut;
+  UINTN                              Columns;
+  UINTN                              Rows;
 #if defined(BUILTIN_DEMONSTRATE_TYPING)
   INT32                              TypingRow;
   INT32                              TypingColumn;
@@ -481,6 +515,27 @@ OcShowSimpleBootMenu (
   }
 
   Count = (UINT32) BootContext->BootEntryCount;
+
+//测试自定义终端画面
+  MaxStrWidth      = 0;
+    ConOut = gST->ConOut;
+  CopyMem (&SavedConsoleMode, ConOut->Mode, sizeof (SavedConsoleMode));
+  
+  for (Index = 0; Index < MIN (Count, OC_INPUT_MAX); ++Index) {
+    StrWidth = UnicodeStringDisplayLength (BootEntries[Index]->Name) + ((BootEntries[Index]->IsFolder || BootEntries[Index]->IsExternal) ? 11 : 5);
+    MaxStrWidth = MaxStrWidth > StrWidth ? MaxStrWidth : StrWidth;
+  }
+  
+  ConOut->QueryMode (
+            ConOut,
+            SavedConsoleMode.Mode,
+            &Columns,
+            &Rows
+            );
+  BannerCol = (Columns - 65) / 2 ;
+  BannerRow = (Rows - (Count + 16)) / 2;
+
+//结束
 
 
   if (Count != MIN (Count, OC_INPUT_MAX)) {
@@ -553,11 +608,15 @@ OcShowSimpleBootMenu (
       // Render initial menu
       //
       gST->ConOut->ClearScreen (gST->ConOut);
+      PrintBanner (BannerCol, 1);
       // gST->ConOut->OutputString (gST->ConOut, OC_MENU_BOOT_MENU);
+      gST->ConOut->SetCursorPosition(ConOut,BannerCol + 5,BannerRow + 6);
+      gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       gST->ConOut->OutputString (gST->ConOut, L"             欢迎使用OpenCore-MOD");
       gST->ConOut->OutputString (gST->ConOut, L"\r\n");
       if (BootContext->PickerContext->TitleSuffix != NULL) {
         Length = AsciiStrLen (BootContext->PickerContext->TitleSuffix);
+        gST->ConOut->SetCursorPosition (gST->ConOut, Columns - 13, Rows);
         gST->ConOut->OutputString (gST->ConOut, L"(");
         for (Index = 0; Index < Length; ++Index) {
           Code[0] = BootContext->PickerContext->TitleSuffix[Index];
