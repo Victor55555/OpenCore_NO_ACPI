@@ -453,14 +453,14 @@ InternalBootPickerKeyEvent (
     // FIXME: Other keys are not allowed when boot picker is partially transparent.
     //
     return;
-  }
-
+  }  
   if (KeyEvent->OcKeyCode == OC_INPUT_MORE) {
     //
     // Match Builtin picker logic here: only refresh if the keypress makes a change
     //
-    if (GuiContext->HideAuxiliary) {
-      GuiContext->HideAuxiliary = FALSE;
+    GuiContext->HideAuxiliary = !GuiContext->HideAuxiliary;
+    GuiContext->Refresh = TRUE;
+    if (!GuiContext->HideAuxiliary) {
       GuiContext->Refresh = TRUE;
       DrawContext->GuiContext->PickerContext->PlayAudioFile (
         DrawContext->GuiContext->PickerContext,

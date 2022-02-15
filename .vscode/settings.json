@@ -1,6 +1,14 @@
 {
     "files.associations": {
         "occonfigurationlib.h": "c",
-        "ocbootmanagementlib.h": "c"
+        "ocbootmanagementlib.h": "c",
+        "basememorylib.h": "c",
+        "devicepathlib.h": "c",
+        "ocstoragelib.h": "c",
+        "ocpnglib.h": "c",
+        "memoryallocationlib.h": "c",
+        "ocmisclib.h": "c",
+        "ocsimplebootmenuinternal.h": "c",
+        "applekeymapaggregator.h": "c"
     }
 }
