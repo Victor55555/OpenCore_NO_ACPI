@@ -201,16 +201,16 @@ CheckUefiGain (
 //
 #if 0
   if (Gain < -128) {
-    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a must be greater than or equal to -128!\n", GainName));
+    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a 必须大于或等于 -128!\n", GainName));
     ++ErrorCount;
   } else if (Gain > 127) {
-    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a must be less than or equal to 127!\n", GainName));
+    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a 必须小于或等于 127!\n", GainName));
     ++ErrorCount;
   }
 #endif
 
   if (GainAboveName != NULL && Gain > GainAbove) {
-    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a must be less than or equal to UEFI->Audio->%a!\n", GainName, GainAboveName));
+    DEBUG ((DEBUG_WARN, "UEFI->Audio->%a 必须小于或等于 UEFI->Audio->%a!\n", GainName, GainAboveName));
     ++ErrorCount;
   }
 
@@ -238,7 +238,7 @@ CheckUefiAudio (
   AsciiPlayChime           = OC_BLOB_GET (&UserUefi->Audio.PlayChime);
   if (IsAudioSupportEnabled) {
     if (AudioOutMask == 0) {
-      DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioOutMask is zero when AudioSupport is enabled, no sound will play!\n"));
+      DEBUG ((DEBUG_WARN, "UEFI->Audio->AudioOutMask 启用 AudioSupport 时为零, 不会播放任何声音!\n"));
       ++ErrorCount;
     }
 
@@ -302,6 +302,7 @@ CheckUefiDrivers (
   OC_UEFI_DRIVER_ENTRY         *DriverEntry;
   CONST CHAR8                  *Comment;
   CONST CHAR8                  *Driver;
+  UINTN                        DriverSumSize;
   BOOLEAN                      HasOpenRuntimeEfiDriver;
   BOOLEAN                      HasOpenUsbKbDxeEfiDriver;
   UINT32                       IndexOpenUsbKbDxeEfiDriver;
@@ -335,8 +336,15 @@ CheckUefiDrivers (
     //
     // Check the length of path relative to OC directory.
     //
-    if (StrLen (OPEN_CORE_UEFI_DRIVER_PATH) + AsciiStrSize (Driver) > OC_STORAGE_SAFE_PATH_MAX) {
-      DEBUG ((DEBUG_WARN, "UEFI->Drivers[%u] 太长 (不应超过%u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    DriverSumSize = L_STR_LEN (OPEN_CORE_UEFI_DRIVER_PATH) + AsciiStrSize (Driver);
+    if (DriverSumSize > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((
+        DEBUG_WARN,
+        "UEFI->Drivers[%u] (%u长度) 太长 (不应超过 %u)!\n",
+        Index,
+        AsciiStrLen (Driver),
+        OC_STORAGE_SAFE_PATH_MAX - L_STR_LEN (OPEN_CORE_UEFI_DRIVER_PATH)
+        ));
       ++ErrorCount;
     }
 

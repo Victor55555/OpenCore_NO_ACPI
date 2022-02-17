@@ -55,6 +55,7 @@ CheckACPIAdd (
   OC_ACPI_CONFIG  *UserAcpi;
   CONST CHAR8     *Path;
   CONST CHAR8     *Comment;
+  UINTN           AcpiAddSumSize;
 
   ErrorCount      = 0;
   UserAcpi        = &Config->Acpi;
@@ -84,8 +85,15 @@ CheckACPIAdd (
     //
     // Check the length of path relative to OC directory.
     //
-    if (StrLen (OPEN_CORE_ACPI_PATH) + AsciiStrSize (Path) > OC_STORAGE_SAFE_PATH_MAX) {
-      DEBUG ((DEBUG_WARN, "ACPI->Add[%u]->路径太长 (不应超过%u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    AcpiAddSumSize = L_STR_LEN (OPEN_CORE_ACPI_PATH) + AsciiStrSize (Path);
+    if (AcpiAddSumSize > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((
+        DEBUG_WARN,
+        "ACPI->Add[%u]->Path (%u长度) 太长 (不应超过 %u)!\n",
+        Index,
+        AsciiStrLen (Path),
+        OC_STORAGE_SAFE_PATH_MAX - L_STR_LEN (OPEN_CORE_ACPI_PATH)
+        ));
       ++ErrorCount;
     }
   }
@@ -155,7 +163,7 @@ CheckACPIPatch (
   UINT32          MaskSize;
   CONST UINT8     *ReplaceMask;
   UINT32          ReplaceMaskSize;
- 
+
   ErrorCount      = 0;
   UserAcpi        = &Config->Acpi;
 
@@ -198,7 +206,7 @@ CheckACPIPatch (
       MaskSize,
       ReplaceMask,
       ReplaceMaskSize
-      ); 
+      );
   }
 
   return ErrorCount;
