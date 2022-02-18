@@ -316,11 +316,7 @@ CheckMiscDebug (
   DisplayLevel        = UserMisc->Debug.DisplayLevel;
   AllowedDisplayLevel = DEBUG_WARN | DEBUG_INFO | DEBUG_VERBOSE | DEBUG_ERROR;
   if ((DisplayLevel & ~AllowedDisplayLevel) != 0) {
-<<<<<<< HEAD
-    DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel设置了未知位！\n"));
-=======
     DEBUG ((DEBUG_WARN, "Misc->Debug->DisplayLevel设置了未知位!\n"));
->>>>>>> ae04256ac544b56766978c1a29ccdd13d75ce38b
     ++ErrorCount;
   }
   HaltLevel           = DisplayLevel;
