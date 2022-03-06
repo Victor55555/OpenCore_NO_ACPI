@@ -9,6 +9,7 @@
         "memoryallocationlib.h": "c",
         "ocmisclib.h": "c",
         "ocsimplebootmenuinternal.h": "c",
-        "applekeymapaggregator.h": "c"
+        "applekeymapaggregator.h": "c",
+        "opencanopy.h": "c"
     }
 }

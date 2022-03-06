@@ -476,6 +476,30 @@ InternalBootPickerKeyEvent (
       FALSE
       );
   }
+  if (KeyEvent->OcKeyCode == OC_INPUT_FUNCTIONAL(9)) {//按F9隐藏版本和作者信息
+    if (GuiContext->PickerContext->TitleSuffix != NULL) {
+          GuiContext->PickerContext->WelcomeSuffix = NULL;
+          GuiContext->PickerContext->TitleSuffix = NULL;
+          GuiContext->Refresh = TRUE;
+          DrawContext->GuiContext->PickerContext->PlayAudioFile (
+          DrawContext->GuiContext->PickerContext,
+          OcVoiceOverAudioFileReloading,
+          FALSE
+      );
+    } 
+    else {
+          GuiContext->PickerContext->TitleSuffix = GuiContext->PickerContext->TitleSuffix;
+          GuiContext->PickerContext->WelcomeSuffix =  GuiContext->PickerContext->WelcomeSuffix;
+          GuiContext->Refresh = TRUE;
+          DrawContext->GuiContext->PickerContext->PlayAudioFile (
+          DrawContext->GuiContext->PickerContext,
+          OcVoiceOverAudioFileReloading,
+          FALSE
+      );
+
+    }
+  }
+  
 }
 
 STATIC
