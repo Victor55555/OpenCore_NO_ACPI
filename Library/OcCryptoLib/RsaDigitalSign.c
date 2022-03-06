@@ -181,6 +181,7 @@ RsaVerifySigHashFromProcessed (
   VOID        *Memory;
   OC_BN_WORD  *EncryptedSigNum;
   OC_BN_WORD  *DecryptedSigNum;
+  OC_BN_WORD  *PowScratchNum;
 
   CONST UINT8 *Padding;
   UINTN       PaddingSize;
@@ -266,7 +267,7 @@ RsaVerifySigHashFromProcessed (
     return FALSE;
   }
 
-  Memory = AllocatePool (2 * ModulusSize);
+  Memory = AllocatePool (3 * ModulusSize);
   if (Memory == NULL) {
     DEBUG ((DEBUG_INFO, "OCCR: Memory allocation failure\n"));
     return FALSE;
@@ -274,6 +275,7 @@ RsaVerifySigHashFromProcessed (
 
   EncryptedSigNum = Memory;
   DecryptedSigNum = (OC_BN_WORD *)((UINTN)EncryptedSigNum + ModulusSize);
+  PowScratchNum   = (OC_BN_WORD *)((UINTN)DecryptedSigNum + ModulusSize);
 
   BigNumParseBuffer (
     EncryptedSigNum,
@@ -289,7 +291,8 @@ RsaVerifySigHashFromProcessed (
              Exponent,
              N,
              N0Inv,
-             RSqrMod
+             RSqrMod,
+             PowScratchNum
              );
   if (!Result) {
     FreePool (Memory);
@@ -502,6 +505,7 @@ RsaVerifySigDataFromData (
   OC_BN_NUM_WORDS ModulusNumWords;
 
   VOID            *Memory;
+  VOID            *Scratch;
   OC_BN_WORD      *N;
   OC_BN_WORD      *RSqrMod;
 
@@ -529,17 +533,20 @@ RsaVerifySigDataFromData (
     "An overflow verification must be added"
     );
 
-  Memory = AllocatePool (2 * ModulusSize);
+  Memory = AllocatePool (
+    2 * ModulusSize + BIG_NUM_MONT_PARAMS_SCRATCH_SIZE (ModulusNumWords)
+    );
   if (Memory == NULL) {
     return FALSE;
   }
 
   N       = (OC_BN_WORD *)Memory;
   RSqrMod = (OC_BN_WORD *)((UINTN)N + ModulusSize);
+  Scratch = (UINT8 *)Memory + 2 * ModulusSize;
 
   BigNumParseBuffer (N, ModulusNumWords, Modulus, ModulusSize);
 
-  N0Inv = BigNumCalculateMontParams (RSqrMod, ModulusNumWords, N);
+  N0Inv = BigNumCalculateMontParams (RSqrMod, ModulusNumWords, N, Scratch);
   if (N0Inv == 0) {
     FreePool (Memory);
     return FALSE;

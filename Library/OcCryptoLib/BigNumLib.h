@@ -77,11 +77,20 @@ BigNumSwapWord (
 //
 
 /**
+  1 + 2 * NumWords for RSqr, and then twice more than that for Mod.
+ 
+  @param[in] NumWords   The number of Words of RSqrMod and N.
+**/
+#define BIG_NUM_MONT_PARAMS_SCRATCH_SIZE(NumWords) \
+  ((1 + 2 * NumWords) * 3 * OC_BN_WORD_SIZE)
+
+/**
   Calculates the Montgomery Inverse and R^2 mod N.
 
   @param[in,out] RSqrMod   The buffer to return R^2 mod N into.
   @param[in]     NumWords  The number of Words of RSqrMod and N.
   @param[in]     N         The Montgomery Modulus.
+  @param[in]     Scratch   Scratch buffer BIG_NUM_MONT_PARAMS_SCRATCH_SIZE(NumWords).
 
   @returns  The Montgomery Inverse of N.
 
@@ -90,7 +99,8 @@ OC_BN_WORD
 BigNumCalculateMontParams (
   IN OUT OC_BN_WORD        *RSqrMod,
   IN     OC_BN_NUM_WORDS   NumWords,
-  IN     CONST OC_BN_WORD  *N
+  IN     CONST OC_BN_WORD  *N,
+  IN     OC_BN_WORD        *Scratch
   );
 
 /**
@@ -103,6 +113,7 @@ BigNumCalculateMontParams (
   @param[in]     N         The modulus.
   @param[in]     N0Inv     The Montgomery Inverse of N.
   @param[in]     RSqrMod   Montgomery's R^2 mod N.
+  @param[in]     ATmp      Scratch buffer of NumWords.
 
   @returns  Whether the operation was completes successfully.
 
@@ -115,7 +126,8 @@ BigNumPowMod (
   IN     UINT32            B,
   IN     CONST OC_BN_WORD  *N,
   IN     OC_BN_WORD        N0Inv,
-  IN     CONST OC_BN_WORD  *RSqrMod
+  IN     CONST OC_BN_WORD  *RSqrMod,
+  IN     OC_BN_WORD        *ATmp
   );
 
 #endif // BIG_NUM_LIB_H
