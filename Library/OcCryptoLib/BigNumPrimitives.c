@@ -558,20 +558,18 @@ BigNumCmp (
   return 0;
 }
 
-BOOLEAN
+VOID
 BigNumMod (
   IN OUT OC_BN_WORD        *Result,
   IN     OC_BN_NUM_WORDS   NumWordsRest,
   IN     CONST OC_BN_WORD  *A,
   IN     OC_BN_NUM_WORDS   NumWordsA,
-  IN     CONST OC_BN_WORD  *B
+  IN     CONST OC_BN_WORD  *B,
+  IN     OC_BN_WORD        *ModTmp
   )
 {
   INTN            CmpResult;
 
-  VOID            *Memory;
-
-  OC_BN_WORD      *ModTmp;
   OC_BN_NUM_BITS  SigBitsModTmp;
   OC_BN_NUM_WORDS SigWordsModTmp;
 
@@ -602,12 +600,6 @@ BigNumMod (
     "An overflow verification must be added"
     );
 
-  Memory = AllocatePool (2 * SigWordsModTmp * OC_BN_WORD_SIZE);
-  if (Memory == NULL) {
-    return FALSE;
-  }
-
-  ModTmp         = Memory;
   BigDiv         = &ModTmp[SigWordsModTmp];
   SigWordsBigDiv = SigWordsModTmp;
   //
@@ -745,9 +737,6 @@ BigNumMod (
   //
   ASSERT (BigNumMostSignificantWord (ModTmp, SigWordsModTmp) + 1 <= NumWordsRest);
   CopyMem (Result, ModTmp, NumWordsRest * OC_BN_WORD_SIZE);
-
-  FreePool (Memory);
-  return TRUE;
 }
 
 VOID
