@@ -915,6 +915,10 @@ OcMiscBoot (
     Context->WelcomeSuffix    = OcWelcomeString ();
   }
 
+  if ((Config->Misc.Security.ExposeSensitiveData & OCS_EXPOSE_VERSION_UI) == 0) {
+    Context->TempTitleSuffix  = OcMiscGetVersionString ();
+     Context->TempWelcomSuffix = OcWelcomeString ();
+  }
   Status = OcHandleRecoveryRequest (
     &Context->RecoveryInitiator
     );

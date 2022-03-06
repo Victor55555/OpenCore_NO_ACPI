@@ -487,9 +487,9 @@ InternalBootPickerKeyEvent (
           FALSE
       );
     } 
-    else {
-          GuiContext->PickerContext->TitleSuffix = GuiContext->PickerContext->TitleSuffix;
-          GuiContext->PickerContext->WelcomeSuffix =  GuiContext->PickerContext->WelcomeSuffix;
+    else if (GuiContext->PickerContext->TitleSuffix == NULL){
+          GuiContext->PickerContext->TitleSuffix = GuiContext->PickerContext->TempTitleSuffix;
+          GuiContext->PickerContext->WelcomeSuffix =  GuiContext->PickerContext->TempWelcomSuffix;
           GuiContext->Refresh = TRUE;
           DrawContext->GuiContext->PickerContext->PlayAudioFile (
           DrawContext->GuiContext->PickerContext,
