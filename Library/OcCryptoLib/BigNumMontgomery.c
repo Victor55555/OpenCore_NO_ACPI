@@ -159,8 +159,10 @@ BigNumCalculateMontParams (
 {
   OC_BN_WORD      N0Inv;
   UINT32          NumBits;
-  UINTN           SizeRSqr;
+  UINTN           SizeScratch;
   OC_BN_NUM_WORDS NumWordsRSqr;
+  OC_BN_NUM_WORDS NumWordsMod;
+  OC_BN_WORD      *Scratch;
   OC_BN_WORD      *RSqr;
 
   ASSERT (RSqrMod != NULL);
@@ -177,7 +179,7 @@ BigNumCalculateMontParams (
     return 0;
   }
 
-  NumBits = BigNumSignificantBits (N, NumWords);
+  NumBits = NumWords * OC_BN_WORD_SIZE * OC_CHAR_BIT;
 
   STATIC_ASSERT (
     OC_BN_MAX_SIZE * OC_CHAR_BIT <= ((MAX_UINTN - 1) / 2) - (OC_CHAR_BIT - 1),
@@ -185,22 +187,22 @@ BigNumCalculateMontParams (
     );
   //
   // Considering NumBits can at most be MAX_UINT16 * OC_CHAR_BIT, this cannot
-  // overflow. OC_CHAR_BIT-1 is added to achieve rounding towards the next Byte
-  // boundary.
+  // overflow.
   //
-  SizeRSqr = ALIGN_VALUE (
-               ((2 * (NumBits + 1) + (OC_CHAR_BIT - 1)) / OC_CHAR_BIT),
-               OC_BN_WORD_SIZE
-               );
-  if (SizeRSqr > OC_BN_MAX_SIZE) {
+  NumWordsRSqr = (OC_BN_NUM_WORDS)(1 + 2 * NumWords);
+  NumWordsMod  = 2 * NumWordsRSqr;
+  SizeScratch  = (NumWordsRSqr + NumWordsMod) * OC_BN_WORD_SIZE;
+  if (SizeScratch > OC_BN_MAX_SIZE) {
     return 0;
   }
 
-  RSqr = AllocatePool (SizeRSqr);
-  if (RSqr == NULL) {
+  Scratch = AllocatePool (SizeScratch);
+  if (Scratch == NULL) {
     return 0;
   }
-  NumWordsRSqr = (OC_BN_NUM_WORDS)(SizeRSqr / OC_BN_WORD_SIZE);
+
+  RSqr = Scratch + NumWordsMod;
+
   //
   // Calculate Montgomery's R^2 mod N.
   //
@@ -209,9 +211,10 @@ BigNumCalculateMontParams (
   // 2 * NumBits cannot overflow as per above.
   //
   BigNumOrWord (RSqr, NumWordsRSqr, 1, 2 * NumBits);
-  BigNumMod (RSqrMod, NumWords, RSqr, NumWordsRSqr, N);
 
-  FreePool (RSqr);
+  BigNumMod (RSqrMod, NumWords, RSqr, NumWordsRSqr, N, Scratch);
+
+  FreePool (Scratch);
 
   return N0Inv;
 }
