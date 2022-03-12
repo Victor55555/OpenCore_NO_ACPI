@@ -354,7 +354,7 @@ OcMiscGetVersionString (
     /* [12]:[8]   = */ "YYYY-"
     /* [15]:[13]  = */ "MM-"
     /* [17]:[16]  = */ "DD"
-    " | MOD By BTWISE | WeChat:15242609 QQ:15242609"
+    "*****"
   };
 
   STATIC BOOLEAN mOpenCoreVersionReady;
@@ -403,7 +403,7 @@ OcWelcomeString (
 {
 
   STATIC CHAR8 mWelcome[] = {
-    "Welcome To Use  MOD-OC"
+    "Welcome"
   };
 
   STATIC BOOLEAN mWelcomeReady;
